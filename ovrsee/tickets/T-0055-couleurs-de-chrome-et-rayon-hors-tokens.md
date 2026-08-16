@@ -2,7 +2,7 @@
 {
   "id": "T-0055",
   "titre": "Couleurs de chrome et rayon hors tokens",
-  "colonne": "en-cours",
+  "colonne": "revue",
   "priorite": "basse",
   "charge": "xs",
   "tags": [

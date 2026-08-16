@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useState } from 'react'
 import BatchScreen from './components/BatchScreen.tsx'
 import { useConfirm } from './components/ConfirmDialog.tsx'
 import EditorScreen from './components/EditorScreen.tsx'
@@ -8,45 +8,35 @@ import StylesScreen from './components/StylesScreen.tsx'
 import TopBar from './components/TopBar.tsx'
 import { ErrorNote } from './components/ui.tsx'
 import { useBatch } from './hooks/useBatch.ts'
+import { useDocument } from './hooks/useDocument.ts'
 import { useExport } from './hooks/useExport.ts'
 import { useImageInput } from './hooks/useImageInput.ts'
 import { useDocumentHistory } from './hooks/useHistory.ts'
 import { useLayerActions } from './hooks/useLayerActions.ts'
 import { useLibrary } from './hooks/useLibrary.ts'
+import { useScene } from './hooks/useScene.ts'
 import { useStyleActions } from './hooks/useStyleActions.ts'
+import { useStyleScreen } from './hooks/useStyleScreen.ts'
 import { useShots } from './hooks/useShots.ts'
 import { useSideFile, type SideTarget } from './hooks/useSideFile.ts'
 import { useNarrow, useShortcuts } from './hooks/useShortcuts.ts'
 import { loadImage } from './lib/image.ts'
 import { buildBatchJobs } from './lib/export.ts'
-import { computeGeometry } from './lib/render.ts'
 import { getHistoryBlobs } from './lib/store.ts'
-import { exportStyle, parseSettings, withAccent, withColor, withoutAccent } from './lib/styles.ts'
-import {
-  DEFAULT_COMPOSITION,
-  DEFAULT_SETTINGS,
-  type Composition,
-  type Format,
-  type Ratio,
-  type Scene,
-  type Screen,
-  type Palette,
-  type Settings,
-  type WatermarkPosition,
-} from './types.ts'
+import { exportStyle, parseSettings } from './lib/styles.ts'
+import { type Format, type Ratio, type Screen } from './types.ts'
 
 /** Ce qu'un `<input type=file>` sert à choisir, selon le bouton cliqué. */
 type PickTarget = 'shot' | SideTarget
 
 export default function App() {
-  const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS)
-  const [composition, setComposition] = useState<Composition>(DEFAULT_COMPOSITION)
   const [screen, setScreen] = useState<Screen>('edit')
-  const [scale, setScale] = useState(2)
   const [failure, setFailure] = useState<string | null>(null)
-  const [backgroundImage, setBackgroundImage] = useState<HTMLImageElement | null>(null)
   const [batchRatios, setBatchRatios] = useState<Ratio[]>(['16:9'])
   const [harmonize, setHarmonize] = useState(false)
+
+  const doc = useDocument()
+  const { settings, setSettings, composition, setComposition, scale, setScale, patch, compose } = doc
 
   const shots = useShots()
   const library = useLibrary()
@@ -67,10 +57,6 @@ export default function App() {
 
   const input = useImageInput(onImages)
 
-  const patch = (next: Partial<Settings>) => setSettings((current) => ({ ...current, ...next }))
-  const compose = (next: Partial<Composition>) =>
-    setComposition((current) => ({ ...current, ...next }))
-
   const styles = useStyleActions(
     library,
     settings,
@@ -81,55 +67,17 @@ export default function App() {
 
   /* --- Scène ------------------------------------------------------------ */
 
-  const composed = useMemo(() => {
-    if (shots.shots.length === 0) return []
-    if (composition.layout === 'single') {
-      return shots.activeShot ? [shots.activeShot] : []
-    }
-    const picked = shots.shots.filter((shot) => shots.selection.includes(shot.id))
-    return picked.length > 0 ? picked : shots.shots.slice(0, 1)
-  }, [shots.shots, shots.activeShot, shots.selection, composition.layout])
-
-  const scene = useMemo<Scene | null>(() => {
-    if (composed.length === 0) return null
-    return {
-      shots: composed,
-      palette: activeStyle?.palette ?? composed[0].palette,
-      settings,
-      composition,
-      backgroundImage: backgroundImage ?? undefined,
-      watermark:
-        watermarkImage && activeStyle?.watermark
-          ? { image: watermarkImage, mark: activeStyle.watermark }
-          : undefined,
-    }
-  }, [composed, settings, composition, activeStyle, backgroundImage, watermarkImage])
-
-  const geometry = useMemo(() => {
-    const first = composed[0]
-    if (!first) return null
-    return computeGeometry(
-      first.image.naturalWidth,
-      first.image.naturalHeight,
-      settings,
-      1,
-      composition,
-      composed.length,
-    )
-  }, [composed, settings, composition])
-
-  /** Ce que le fichier fera, à l'échelle choisie. Affiché par le filmstrip. */
-  const output = useMemo(
-    () =>
-      geometry
-        ? {
-            width: geometry.width * scale,
-            height: Math.round(geometry.height * scale),
-            format: settings.format,
-          }
-        : null,
-    [geometry, scale, settings.format],
-  )
+  const { scene, output } = useScene({
+    shots: shots.shots,
+    activeShot: shots.activeShot,
+    selection: shots.selection,
+    settings,
+    composition,
+    scale,
+    backgroundImage: doc.backgroundImage,
+    activeStyle,
+    watermarkImage,
+  })
 
   /* --- Export ----------------------------------------------------------- */
 
@@ -167,7 +115,7 @@ export default function App() {
 
   const side = useSideFile({
     onBackground: (image) => {
-      setBackgroundImage(image)
+      doc.setBackgroundImage(image)
       patch({ background: 'image' })
     },
     activeStyle,
@@ -233,34 +181,23 @@ export default function App() {
 
     shots.reset()
     batch.reset()
-    setSettings(DEFAULT_SETTINGS)
-    setComposition(DEFAULT_COMPOSITION)
-    setBackgroundImage(null)
+    doc.reset()
     setBatchRatios(['16:9'])
-    setScale(2)
     setScreen('edit')
     setFailure(null)
-  }, [shots, batch, confirm])
+  }, [shots, batch, doc, confirm])
 
   /* --- Rendu ------------------------------------------------------------ */
 
-  /* --- Palette d'un style ----------------------------------------------- */
-
-  /** Éditer une couleur d'une palette encore échantillonnée la fige dans le
-   *  style : une palette qui se recalcule à chaque screenshot n'est pas
-   *  éditable, et le toggle « Override » ne fait que refléter sa présence. */
-  const editPalette = (change: (palette: Palette) => Palette) => {
-    const current = activeStyle?.palette ?? shots.activeShot?.palette
-    if (!activeStyle || !current) return
-    styles.patch({ ...activeStyle, palette: change(current) })
-  }
-
-  const paletteEdits = {
-    onPatchColor: (index: number, color: string) =>
-      editPalette((palette) => withColor(palette, index, color)),
-    onAddColor: (color: string) => editPalette((palette) => withAccent(palette, color)),
-    onRemoveColor: (index: number) => editPalette((palette) => withoutAccent(palette, index)),
-  }
+  const styleScreen = useStyleScreen({
+    styles,
+    library,
+    activeShot: shots.activeShot,
+    confirm,
+    patch,
+    onEdit: () => setScreen('edit'),
+    onPickWatermark: () => pick('watermark'),
+  })
 
   const empty = shots.shots.length === 0
   const problem = failure ?? exporter.error ?? library.error ?? batch.error
@@ -366,59 +303,7 @@ export default function App() {
             preview={scene}
             shots={shots.shots}
             sampled={shots.activeShot?.palette ?? null}
-            onSelect={styles.apply}
-            onRename={(id, name) => {
-              const style = library.styles.find((item) => item.id === id)
-              if (style) styles.patch({ ...style, name })
-            }}
-            onPatchSettings={(next) => {
-              if (!activeStyle) return
-              styles.patch({ ...activeStyle, settings: { ...activeStyle.settings, ...next } })
-              // Le style affiché au centre est toujours le style appliqué : le
-              // pousser aussi dans l'éditeur garde l'aperçu de droite juste,
-              // sans second chemin de rendu.
-              patch(next)
-            }}
-            onPatchWatermark={(position: WatermarkPosition) => {
-              if (activeStyle?.watermark) {
-                styles.patch({
-                  ...activeStyle,
-                  watermark: { ...activeStyle.watermark, position },
-                })
-              }
-            }}
-            onPickWatermark={() => pick('watermark')}
-            onRemoveWatermark={() => {
-              if (!activeStyle) return
-              // Retirer la clé plutôt que d'y poser `undefined` : c'est un style
-              // sans filigrane qu'on persiste, pas un filigrane vide.
-              const { watermark: _dropped, ...rest } = activeStyle
-              styles.patch(rest)
-            }}
-            onOverridePalette={(override) => {
-              if (!activeStyle) return
-              styles.patch({
-                ...activeStyle,
-                palette: override ? (shots.activeShot?.palette ?? undefined) : undefined,
-              })
-            }}
-            {...paletteEdits}
-            onEditInEditor={(id) => {
-              styles.apply(id)
-              setScreen('edit')
-            }}
-            onDelete={(id) => {
-              // Un style supprimé n'est pas dans la pile d'annulation : on
-              // confirme, comme pour la purge de l'historique.
-              void confirm({
-                title: 'Delete this style?',
-                body: 'This cannot be undone.',
-                action: 'Delete',
-                tone: 'danger',
-              }).then((ok) => {
-                if (ok) void library.removeStyle(id)
-              })
-            }}
+            {...styleScreen}
             onImport={() => pick('style')}
             onExportStyle={exportStyle}
             onSaveStyle={styles.save}

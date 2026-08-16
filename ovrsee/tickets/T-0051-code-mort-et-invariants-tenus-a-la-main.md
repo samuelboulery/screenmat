@@ -2,7 +2,7 @@
 {
   "id": "T-0051",
   "titre": "Code mort et invariants tenus à la main",
-  "colonne": "en-cours",
+  "colonne": "revue",
   "priorite": "moyenne",
   "charge": "s",
   "tags": [

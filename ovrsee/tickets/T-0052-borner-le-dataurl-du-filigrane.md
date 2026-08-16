@@ -2,7 +2,7 @@
 {
   "id": "T-0052",
   "titre": "Borner le dataUrl du filigrane",
-  "colonne": "en-cours",
+  "colonne": "revue",
   "priorite": "moyenne",
   "charge": "xs",
   "tags": [

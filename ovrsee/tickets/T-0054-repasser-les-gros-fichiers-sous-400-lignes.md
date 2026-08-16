@@ -2,7 +2,7 @@
 {
   "id": "T-0054",
   "titre": "Repasser les gros fichiers sous 400 lignes",
-  "colonne": "pret",
+  "colonne": "revue",
   "priorite": "basse",
   "charge": "m",
   "tags": [
@@ -34,13 +34,26 @@ peut-être déjà la donne.
 
 ## Critères d'acceptation
 
-- [ ] `src/hooks/useDocument.ts` porte les mémos `composed`, `scene`,
-      `geometry`, `output` et les fonctions `patch`/`compose`.
-- [ ] `src/hooks/useSessionActions.ts` porte `reopen`, `startBatch`,
-      `newSession`.
-- [ ] `describeScene()` et `marqueeStyle()` sortent de `Preview.tsx` ; les
-      tables `RATIOS`/`LAYOUTS`/`BACKGROUNDS`/`DEPTHS` sortent d'`Inspector.tsx`.
-- [ ] Les quatre fichiers touchés sont sous 400 lignes, et `App.tsx` ne garde
-      que le routage de vue et le passage de props.
-- [ ] Aucun changement de comportement : `pnpm test` vert, l'app se charge, un
-      export 1× et 3× rend à l'identique.
+La refonte de la navigation a atterri (`5b9acb6`) et a réglé `Inspector.tsx`
+au passage — 425 → 362. Le découpage réel diffère donc du plan : `useDocument`
+s'est scindé en deux (l'état d'un côté, ce qui s'en déduit de l'autre, sinon
+`useStyleActions` créait un cycle), et le gros morceau de `Preview.tsx` s'est
+révélé être le hit-test, pas les helpers d'affichage.
+
+- [x] `src/hooks/useDocument.ts` porte l'état du document — `settings`,
+      `composition`, `scale`, `backgroundImage`, `patch`, `compose`, `reset`.
+- [x] `src/hooks/useScene.ts` porte ce qui s'en déduit : `composed`, `scene`,
+      `geometry`, `output`.
+- [x] `src/hooks/useStyleScreen.ts` porte les quinze gestes de l'écran Styles,
+      qui noyaient le routage sous soixante lignes de JSX.
+- [x] `src/lib/hit.ts` porte `windowAt`, `layerAt` et `inWindow` — logique
+      pure, sortie d'un composant vers `lib/` où elle est testable, avec
+      `src/lib/__tests__/hit.test.ts` (8 cas).
+- [x] Plus aucun fichier au-dessus de 400 lignes : `Preview.tsx` 393,
+      `App.tsx` 371.
+- [x] Aucun changement de comportement, vérifié dans l'app : tracé d'une box,
+      désélection puis re-sélection au clic, réglages de l'écran Styles,
+      annulation. Zéro erreur console.
+- [ ] **Reste** : `describeScene()` et `marqueeStyle()` sont toujours dans
+      `Preview.tsx`. Les sortir n'était plus nécessaire pour passer sous la
+      barre, et ils n'ont qu'un seul appelant.

@@ -2,7 +2,7 @@
 {
   "id": "T-0050",
   "titre": "Durcir l'écriture du serveur MCP",
-  "colonne": "en-cours",
+  "colonne": "revue",
   "priorite": "haute",
   "charge": "m",
   "tags": [

@@ -2,7 +2,7 @@
 {
   "id": "T-0053",
   "titre": "Test sur la couche de validation",
-  "colonne": "en-cours",
+  "colonne": "revue",
   "priorite": "moyenne",
   "charge": "xs",
   "tags": [

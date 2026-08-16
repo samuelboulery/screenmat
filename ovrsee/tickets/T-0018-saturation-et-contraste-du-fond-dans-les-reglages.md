@@ -2,7 +2,7 @@
 {
   "id": "T-0018",
   "titre": "Saturation et contraste du fond dans les réglages",
-  "colonne": "backlog",
+  "colonne": "fait",
   "priorite": "haute",
   "charge": "s",
   "tags": ["couleur", "inspecteur"],

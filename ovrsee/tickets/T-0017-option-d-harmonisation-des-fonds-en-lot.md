@@ -2,7 +2,7 @@
 {
   "id": "T-0017",
   "titre": "Option d'harmonisation des fonds en lot",
-  "colonne": "backlog",
+  "colonne": "fait",
   "priorite": "haute",
   "charge": "s",
   "tags": ["batch", "couleur"],

@@ -2,7 +2,7 @@
 {
   "id": "T-0016",
   "titre": "Nouvelle session sans rechargement",
-  "colonne": "backlog",
+  "colonne": "fait",
   "priorite": "moyenne",
   "charge": "xs",
   "tags": ["ui"],

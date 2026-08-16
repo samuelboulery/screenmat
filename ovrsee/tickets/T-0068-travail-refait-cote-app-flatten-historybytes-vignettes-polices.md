@@ -2,7 +2,7 @@
 {
   "id": "T-0068",
   "titre": "Travail refait côté app : flatten, historyBytes, vignettes, polices",
-  "colonne": "revue",
+  "colonne": "en-cours",
   "priorite": "basse",
   "charge": "xs",
   "tags": [

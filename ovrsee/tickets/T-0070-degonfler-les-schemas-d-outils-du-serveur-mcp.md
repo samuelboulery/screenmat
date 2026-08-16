@@ -2,7 +2,7 @@
 {
   "id": "T-0070",
   "titre": "Dégonfler les schémas d'outils du serveur MCP",
-  "colonne": "revue",
+  "colonne": "en-cours",
   "priorite": "moyenne",
   "charge": "s",
   "tags": [

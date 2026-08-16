@@ -2,7 +2,7 @@
 {
   "id": "T-0063",
   "titre": "Le floutage ne relit plus le canvas de destination",
-  "colonne": "revue",
+  "colonne": "en-cours",
   "priorite": "haute",
   "charge": "l",
   "tags": [

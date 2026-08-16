@@ -2,7 +2,7 @@
 {
   "id": "T-0064",
   "titre": "Le grain se blitte au lieu de se peindre en motif",
-  "colonne": "revue",
+  "colonne": "en-cours",
   "priorite": "haute",
   "charge": "s",
   "tags": [

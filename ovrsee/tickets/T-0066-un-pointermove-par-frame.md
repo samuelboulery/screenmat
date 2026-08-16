@@ -2,7 +2,7 @@
 {
   "id": "T-0066",
   "titre": "Un pointermove par frame",
-  "colonne": "revue",
+  "colonne": "en-cours",
   "priorite": "moyenne",
   "charge": "m",
   "tags": [

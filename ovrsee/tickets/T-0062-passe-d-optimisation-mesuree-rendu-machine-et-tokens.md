@@ -2,7 +2,7 @@
 {
   "id": "T-0062",
   "titre": "Passe d'optimisation mesurée : rendu, machine et tokens",
-  "colonne": "revue",
+  "colonne": "en-cours",
   "priorite": "haute",
   "charge": "xl",
   "type": "epic",

@@ -2,7 +2,7 @@
 {
   "id": "T-0069",
   "titre": "Alléger le contexte résident : CLAUDE.md et skills",
-  "colonne": "revue",
+  "colonne": "en-cours",
   "priorite": "haute",
   "charge": "m",
   "tags": [

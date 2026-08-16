@@ -2,7 +2,7 @@
 {
   "id": "T-0067",
   "titre": "Démarrage du CLI et lectures répétées de la porte machine",
-  "colonne": "revue",
+  "colonne": "en-cours",
   "priorite": "moyenne",
   "charge": "s",
   "tags": [

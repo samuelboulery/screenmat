@@ -2,7 +2,7 @@
 {
   "id": "T-0065",
   "titre": "Le fond est mis en cache entre deux frames",
-  "colonne": "revue",
+  "colonne": "en-cours",
   "priorite": "haute",
   "charge": "m",
   "tags": [

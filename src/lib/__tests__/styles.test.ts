@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseStyle } from '../styles.ts'
+import { normalizeStyle, parseStyle } from '../styles.ts'
 import { DEFAULT_SETTINGS } from '../../types.ts'
 
 const wrap = (style: unknown) => JSON.stringify({ kind: 'shotframe-style', version: 1, style })
@@ -59,5 +59,36 @@ describe('parseStyle', () => {
       wrap({ name: 'x', watermark: { dataUrl: 'data:image/png;base64,AAAA', position: 'top-left' } }),
     )
     expect(ok.watermark?.position).toBe('top-left')
+  })
+})
+
+describe('normalizeStyle', () => {
+  it('complète un style écrit avant l’arrivée d’un réglage', () => {
+    // Tel qu'une version antérieure à `saturation`/`contrast` l'a persisté en
+    // IndexedDB. Sans complétion, `undefined` traverse le rendu et
+    // `addColorStop` reçoit `rgba(NaN, NaN, NaN, .75)` : canvas noir.
+    const { saturation: _s, contrast: _c, ...legacy } = DEFAULT_SETTINGS
+    const style = normalizeStyle({
+      id: 'legacy',
+      name: 'Legacy',
+      settings: legacy as typeof DEFAULT_SETTINGS,
+    })
+
+    expect(style.settings.saturation).toBe(DEFAULT_SETTINGS.saturation)
+    expect(style.settings.contrast).toBe(DEFAULT_SETTINGS.contrast)
+    expect(Number.isFinite(style.settings.saturation)).toBe(true)
+    expect(style.id).toBe('legacy')
+    expect(style.name).toBe('Legacy')
+  })
+
+  it('écarte une palette illisible plutôt que de la propager', () => {
+    const style = normalizeStyle({
+      id: 'x',
+      name: 'x',
+      settings: DEFAULT_SETTINGS,
+      palette: { base: 'not-a-color', accents: ['#ff0000'] },
+    })
+
+    expect(style.palette).toBeUndefined()
   })
 })

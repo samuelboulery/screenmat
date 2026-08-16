@@ -1,8 +1,19 @@
 import Preview from './Preview.tsx'
-import { AddIcon, ImageIcon, JsonIcon, POSITION_ICON } from './icons.tsx'
-import { DashedTile, MonoLabel, Row, Section, Toggle } from './ui.tsx'
+import { FRAMES } from './Inspector.tsx'
+import { AddIcon, DeleteIcon, FRAME_ICON, ImageIcon, JsonIcon, POSITION_ICON } from './icons.tsx'
+import {
+  Button,
+  DashedTile,
+  MonoLabel,
+  Row,
+  Section,
+  Segmented,
+  Slider,
+  Tile,
+  Toggle,
+} from './ui.tsx'
 import { WATERMARK_POSITIONS } from '../lib/watermark.ts'
-import type { Palette, Scene, Shot, Style, WatermarkPosition } from '../types.ts'
+import type { Palette, Scene, Settings, Shot, Style, WatermarkPosition } from '../types.ts'
 
 type StylesScreenProps = {
   styles: readonly Style[]
@@ -13,9 +24,12 @@ type StylesScreenProps = {
   sampled: Palette | null
   onSelect: (id: string) => void
   onRename: (id: string, name: string) => void
+  onPatchSettings: (patch: Partial<Settings>) => void
   onPatchWatermark: (position: WatermarkPosition) => void
   onPickWatermark: () => void
   onOverridePalette: (override: boolean) => void
+  onEditInEditor: (id: string) => void
+  onDelete: (id: string) => void
   onImport: () => void
   /** Sous 1100 px : les deux colonnes latérales s'empilent sous le centre. */
   narrow?: boolean
@@ -30,9 +44,12 @@ export default function StylesScreen({
   sampled,
   onSelect,
   onRename,
+  onPatchSettings,
   onPatchWatermark,
   onPickWatermark,
   onOverridePalette,
+  onEditInEditor,
+  onDelete,
   onImport,
   narrow = false,
 }: StylesScreenProps) {
@@ -71,12 +88,17 @@ export default function StylesScreen({
       <div className={`flex flex-col gap-6 p-7 ${narrow ? '' : 'overflow-y-auto'}`}>
         {active ? (
           <>
-            <input
-              value={active.name}
-              onChange={(event) => onRename(active.id, event.target.value)}
-              aria-label="Style name"
-              className="t-title w-full bg-transparent text-ink outline-none"
-            />
+            <div className="flex items-center gap-4">
+              <input
+                value={active.name}
+                onChange={(event) => onRename(active.id, event.target.value)}
+                aria-label="Style name"
+                className="t-title min-w-0 flex-1 bg-transparent text-ink outline-none"
+              />
+              <Button onClick={() => onEditInEditor(active.id)} className="shrink-0">
+                Edit in editor
+              </Button>
+            </div>
 
             <Section title="Watermark">
               <div className="flex items-start gap-4">
@@ -108,8 +130,11 @@ export default function StylesScreen({
                         title={position}
                         aria-label={position}
                         aria-pressed={active.watermark?.position === position}
+                        // Sans logo, la position n'a rien à placer : le bouton
+                        // se voit mort plutôt que d'avaler le clic.
+                        disabled={!active.watermark}
                         onClick={() => onPatchWatermark(position)}
-                        className={`flex h-8 w-11 items-center justify-center rounded-sm border transition-colors duration-140 ${
+                        className={`flex h-8 w-11 items-center justify-center rounded-sm border transition-colors duration-140 disabled:opacity-40 ${
                           active.watermark?.position === position
                             ? 'border-accent/45 bg-accent/[.14] text-accent-ink'
                             : 'border-transparent bg-sunken text-ink-soft hover:text-ink'
@@ -132,6 +157,11 @@ export default function StylesScreen({
                     checked={Boolean(active.palette)}
                     onChange={onOverridePalette}
                     label="Override sampled colors"
+                    // Figer une palette suppose qu'il y en ait une à figer.
+                    disabled={!sampled && !active.palette}
+                    title={
+                      !sampled && !active.palette ? 'Load a shot to sample colors first' : undefined
+                    }
                   />
                 </span>
               }
@@ -157,29 +187,68 @@ export default function StylesScreen({
               </div>
             </Section>
 
+            {/* Les quatre réglages qu'on change le plus souvent. Le reste se
+                règle dans l'éditeur et revient par « Update ». Aucun bouton
+                d'enregistrement : l'écriture est immédiate, comme le nom. */}
             <Section title="Locked in this style">
-              <div className="grid grid-cols-2 gap-2">
-                {[
-                  ['Frame', active.settings.frame],
-                  ['Padding', `${Math.round(active.settings.padding * 100)} %`],
-                  ['Grain', `${Math.round(active.settings.grain * 100)} %`],
-                  ['Export', active.settings.format.toUpperCase()],
-                ].map(([label, value]) => (
-                  <div
-                    key={label}
-                    className="flex items-center justify-between rounded-md border border-white/[.06] bg-white/[.03] px-3.5 py-3"
-                  >
-                    <span className="t-ui text-ink-soft">{label}</span>
-                    <span className="t-ui text-ink">{value}</span>
-                  </div>
-                ))}
+              <div className="grid grid-cols-4 gap-1">
+                {FRAMES.map((frame) => {
+                  const Icon = FRAME_ICON[frame.value]
+                  return (
+                    <Tile
+                      key={frame.value}
+                      active={active.settings.frame === frame.value}
+                      onClick={() => onPatchSettings({ frame: frame.value })}
+                      className="h-12 font-mono text-[10px]"
+                    >
+                      <Icon />
+                      {frame.label}
+                    </Tile>
+                  )
+                })}
               </div>
+              <Slider
+                label="Padding"
+                value={active.settings.padding}
+                display={`${Math.round(active.settings.padding * 100)} %`}
+                min={0}
+                max={0.2}
+                step={0.005}
+                onInput={(padding) => onPatchSettings({ padding })}
+              />
+              <Slider
+                label="Grain"
+                value={active.settings.grain}
+                display={`${Math.round(active.settings.grain * 100)} %`}
+                min={0}
+                max={1}
+                step={0.05}
+                onInput={(grain) => onPatchSettings({ grain })}
+              />
+              <Segmented
+                className="w-full"
+                options={[
+                  { value: 'png', label: 'PNG' },
+                  { value: 'webp', label: 'WebP' },
+                ]}
+                value={active.settings.format}
+                onPick={(format) => onPatchSettings({ format })}
+              />
             </Section>
 
             <p className="t-ui text-dim">
               Styles live in this browser. Exporting a <code>.json</code> is the only way to share
               one — there is no account and no server.
             </p>
+
+            <Button
+              variant="ghost"
+              onClick={() => onDelete(active.id)}
+              className="mr-auto text-danger"
+            >
+              <DeleteIcon />
+              Delete style
+            </Button>
           </>
         ) : (
           <p className="t-body text-dim">

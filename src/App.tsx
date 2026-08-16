@@ -328,6 +328,7 @@ export default function App() {
             onAddShot={() => pick('shot')}
             onApplyStyle={styles.apply}
             onSaveStyle={styles.save}
+            onUpdateStyle={styles.update}
             onPickBackgroundImage={() => pick('background')}
             onCreateAnnotation={shots.createAnnotation}
             onPatchAnnotation={shots.patchAnnotation}
@@ -355,6 +356,14 @@ export default function App() {
               const style = library.styles.find((item) => item.id === id)
               if (style) styles.patch({ ...style, name })
             }}
+            onPatchSettings={(next) => {
+              if (!activeStyle) return
+              styles.patch({ ...activeStyle, settings: { ...activeStyle.settings, ...next } })
+              // Le style affiché au centre est toujours le style appliqué : le
+              // pousser aussi dans l'éditeur garde l'aperçu de droite juste,
+              // sans second chemin de rendu.
+              patch(next)
+            }}
             onPatchWatermark={(position: WatermarkPosition) => {
               if (activeStyle?.watermark) {
                 styles.patch({
@@ -370,6 +379,17 @@ export default function App() {
                 ...activeStyle,
                 palette: override ? (shots.activeShot?.palette ?? undefined) : undefined,
               })
+            }}
+            onEditInEditor={(id) => {
+              styles.apply(id)
+              setView('editor')
+            }}
+            onDelete={(id) => {
+              // Un style supprimé n'est pas dans la pile d'annulation : la
+              // confirmation native, comme pour la purge de l'historique.
+              if (window.confirm('Delete this style? This cannot be undone.')) {
+                void library.removeStyle(id)
+              }
             }}
             onImport={() => pick('style')}
             narrow={narrow}

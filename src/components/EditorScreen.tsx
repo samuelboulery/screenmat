@@ -47,6 +47,7 @@ export type EditorScreenProps = {
   onAddShot: () => void
   onApplyStyle: (id: string) => void
   onSaveStyle: () => void
+  onUpdateStyle: () => void
   onPickBackgroundImage: () => void
   onCreateAnnotation: (shotId: string, kind: AnnotationKind, rect: FractionRect) => string
   onPatchAnnotation: (shotId: string, id: string, patch: Partial<Annotation>) => void
@@ -208,6 +209,7 @@ export default function EditorScreen(props: EditorScreenProps) {
             onCompose={props.onCompose}
             onApplyStyle={props.onApplyStyle}
             onSaveStyle={props.onSaveStyle}
+            onUpdateStyle={props.onUpdateStyle}
             onPickBackgroundImage={props.onPickBackgroundImage}
             offset={narrow}
           />

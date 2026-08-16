@@ -13,7 +13,9 @@ import type {
   Style,
 } from '../types.ts'
 
-const FRAMES: Array<{ value: FrameStyle; label: string }> = [
+/** Exporté : l'écran Styles règle le même cadre, et la liste ne doit pas
+ *  exister en double. */
+export const FRAMES: Array<{ value: FrameStyle; label: string }> = [
   { value: 'browser', label: 'browser' },
   { value: 'macbook', label: 'mac' },
   { value: 'iphone', label: 'phone' },
@@ -58,6 +60,7 @@ type InspectorProps = {
   onCompose: (patch: Partial<Composition>) => void
   onApplyStyle: (id: string) => void
   onSaveStyle: () => void
+  onUpdateStyle: () => void
   onPickBackgroundImage: () => void
   /** Docké (écrans de gestion) plutôt que flottant au-dessus du canvas. */
   docked?: boolean
@@ -77,6 +80,7 @@ export default function Inspector({
   onCompose,
   onApplyStyle,
   onSaveStyle,
+  onUpdateStyle,
   onPickBackgroundImage,
   docked = false,
   offset = false,
@@ -166,6 +170,7 @@ export default function Inspector({
             activeStyleId={activeStyleId}
             onApplyStyle={onApplyStyle}
             onSaveStyle={onSaveStyle}
+            onUpdateStyle={onUpdateStyle}
           />
         </>
       )}

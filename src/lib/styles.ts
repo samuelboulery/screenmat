@@ -28,6 +28,22 @@ export function exportStyle(style: Style): void {
   triggerDownload(new Blob([json], { type: 'application/json' }), styleFilename(style))
 }
 
+/**
+ * Un style relu d'IndexedDB a pu être écrit par une version antérieure de
+ * l'app : les champs ajoutés depuis (`saturation`, `contrast`…) y manquent. Un
+ * `undefined` qui traverse le rendu ressort en `rgba(NaN, NaN, NaN, …)`,
+ * `addColorStop` jette, et le canvas reste noir — appliquer un vieux style
+ * cassait l'écran. Le stockage local est une frontière comme une autre : ce qui
+ * en sort repasse par les mêmes bornes qu'un `.json` importé.
+ */
+export function normalizeStyle(style: Style): Style {
+  return {
+    ...style,
+    settings: parseSettings(style.settings),
+    palette: style.palette ? parsePalette(style.palette) : undefined,
+  }
+}
+
 /* --- Import ------------------------------------------------------------- */
 
 /**

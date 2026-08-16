@@ -56,21 +56,28 @@ const layer = z.object({
   opacity: z.number().min(0.1).max(1).optional(),
 })
 
-const settings = z
-  .object({
-    frame: z.enum(['browser', 'macbook', 'iphone', 'none']).optional(),
+/** Ce qui déplace le screenshot dans sa fenêtre, et rien d'autre : c'est tout ce
+ *  dont `shotframe_inspect` a besoin. Lui exposer le reste coûterait des tokens
+ *  à chaque tour et laisserait croire que la graine ou le grain changent sa
+ *  réponse. */
+const geometrySettings = z.object({
+  frame: z.enum(['browser', 'macbook', 'iphone', 'none']).optional(),
+  ratio: z.enum(['auto', '4:3', '1:1', '16:9', '9:16']).optional(),
+  padding: z.number().min(0).max(0.3).optional(),
+  radius: z.number().min(0).max(0.08).optional(),
+  rotateY: z.number().min(-24).max(24).optional(),
+  titleBar: z.boolean().optional(),
+})
+
+const settings = geometrySettings
+  .extend({
     background: z.enum(['mesh', 'gradient', 'solid']).optional(),
-    ratio: z.enum(['auto', '4:3', '1:1', '16:9', '9:16']).optional(),
     theme: z.enum(['auto', 'light', 'dark']).optional(),
     url: z.string().max(200).optional().describe('Texte de la barre d’adresse, pour frame=browser.'),
-    padding: z.number().min(0).max(0.3).optional(),
-    radius: z.number().min(0).max(0.08).optional(),
-    rotateY: z.number().min(-24).max(24).optional(),
     shadow: z.number().min(0).max(2).optional(),
     grain: z.number().min(0).max(1).optional(),
     seed: z.number().int().optional().describe('Même graine ⇒ même fond, à l’identique.'),
     format: z.enum(['png', 'webp']).optional(),
-    titleBar: z.boolean().optional(),
   })
   .optional()
 
@@ -88,7 +95,8 @@ Appelé sans réglages, il produit déjà un bon résultat : ne rien passer est 
 nominal. N'ajouter des calques que si l'utilisateur a demandé de désigner ou de
 masquer quelque chose.
 
-${REPERE}`,
+Avant de placer un calque, appeler shotframe_inspect : sa description porte le
+repère de coordonnées, et sa réponse dit où le screenshot atterrit.`,
     inputSchema: {
       shots: z
         .array(
@@ -138,7 +146,7 @@ retrouve décalée de la hauteur de la barre de titre.
 ${REPERE}`,
     inputSchema: {
       input: z.string().describe('Chemin du screenshot.'),
-      settings,
+      settings: geometrySettings.optional(),
     },
   },
   async ({ input, settings: overrides }) => json(await inspect(input, overrides)),

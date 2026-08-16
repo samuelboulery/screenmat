@@ -80,6 +80,10 @@ pnpm mcp                # serveur MCP sur stdio
   ici. `lucide-react` est la seule exception, et elle ne fournit que des icônes.
 - Ne pas ajouter d'export SVG (raster embarqué en base64 = plus lourd que le PNG
   sans gain vectoriel). C'est un choix, pas un oubli.
+- **WebP est le format par défaut** — 7 à 10× plus léger que le PNG à grain égal,
+  pour un résultat visuellement identique. Là où l'encodeur manque, le repli sur
+  le PNG est explicite (`supportedDefaults` côté web, `supportsWebp` côté Node)
+  et le format réellement produit est celui qui est annoncé.
 - `canvasToBlob` vérifie le `blob.type` renvoyé : un navigateur sans encodeur
   WebP retombe silencieusement sur du PNG, et il ne faut pas livrer un fichier
   qui ment sur son extension. Ne pas retirer ce garde-fou.

@@ -1,7 +1,7 @@
 import { harmonizePalettes } from './palette.ts'
 import { renderScene } from './render.ts'
 import { makeZip, type ZipEntry } from './zip.ts'
-import type { Format, Palette, Ratio, Scene, Shot } from '../types.ts'
+import type { Format, Palette, Ratio, Scene, Settings, Shot } from '../types.ts'
 
 const MIME: Record<Format, string> = {
   png: 'image/png',
@@ -10,6 +10,25 @@ const MIME: Record<Format, string> = {
 
 /** Assez haut pour qu'aucun artefact ne soit visible sur un aplat dégradé. */
 const WEBP_QUALITY = 0.92
+
+/** Ce navigateur sait-il encoder du WebP. Sondé une fois : un canvas de 1 px
+ *  qui ne sait pas répond en PNG. Sans ça, un défaut WebP casserait chaque
+ *  export là où l'encodeur manque, au lieu d'y peser dix fois moins. */
+let webp: boolean | null = null
+
+export function supportsWebp(): boolean {
+  if (webp !== null) return webp
+  const canvas = document.createElement('canvas')
+  canvas.width = 1
+  canvas.height = 1
+  webp = canvas.toDataURL(MIME.webp).startsWith(`data:${MIME.webp}`)
+  return webp
+}
+
+/** Les réglages par défaut tels que ce navigateur peut vraiment les tenir. */
+export function supportedDefaults(settings: Settings): Settings {
+  return settings.format === 'webp' && !supportsWebp() ? { ...settings, format: 'png' } : settings
+}
 
 export function canvasToBlob(canvas: HTMLCanvasElement, format: Format): Promise<Blob> {
   return new Promise((resolve, reject) => {

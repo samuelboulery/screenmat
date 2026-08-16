@@ -157,13 +157,14 @@ async function buildScene(spec: SceneSpec): Promise<Scene> {
 
 export async function render(input: SceneSpec | SimpleSpec | unknown): Promise<RenderResult> {
   const spec = await toSpec(input)
-  const format = spec.settings.format
+  // Le format par défaut est WebP. Là où l'encodeur manque, on retombe sur le
+  // PNG et on le dit — `format` et `settings` renvoyés portent le vrai format,
+  // et le nom de fichier en découle. Jeter ferait échouer le chemin nominal
+  // pour une capacité de build, et livrer un PNG nommé `.webp` mentirait.
+  const format: Format = spec.settings.format === 'webp' && !supportsWebp ? 'png' : spec.settings.format
+  const settings: Settings = { ...spec.settings, format }
 
-  if (format === 'webp' && !supportsWebp) {
-    throw new Error('Ce build n’a pas d’encodeur WebP — utiliser `format: "png"`')
-  }
-
-  const scene = await buildScene(spec)
+  const scene = await buildScene({ ...spec, settings })
   const canvas = createCanvas(1, 1)
   const context = canvas.getContext('2d')
   if (!context) throw new Error('Canvas 2D indisponible')
@@ -181,7 +182,7 @@ export async function render(input: SceneSpec | SimpleSpec | unknown): Promise<R
     width: geometry.width,
     height: geometry.height,
     format,
-    settings: spec.settings,
+    settings,
   }
 }
 

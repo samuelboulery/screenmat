@@ -2,7 +2,7 @@
 {
   "id": "T-0071",
   "titre": "Juger le worker de lot, et recouvrir les encodages",
-  "colonne": "revue",
+  "colonne": "en-cours",
   "priorite": "moyenne",
   "charge": "s",
   "tags": [
@@ -56,9 +56,7 @@ l'essentiel du temps.
 - [x] Le « reste à faire » du skill `shotframe-moteur` ne réclame plus de
       worker : il dit pourquoi il n'en faut pas.
 
-## Ce qui reste ouvert
+## Suite donnée
 
-Le poids des fichiers, pas leur temps : à l'échelle 3, un PNG pèse 8,4 Mo contre
-0,8 Mo en WebP — dix fois moins pour un résultat visuellement identique, et le
-défaut reste PNG. C'est un arbitrage produit, pas une optimisation ; il mérite
-son propre ticket.
+Le poids, lui, était bien un vrai problème : à l'échelle 3, un PNG pèse 11,5 Mo
+contre 1,5 Mo en WebP. **WebP passe donc en format par défaut** — voir T-0072.

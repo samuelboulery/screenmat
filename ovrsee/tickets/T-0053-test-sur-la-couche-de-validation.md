@@ -2,14 +2,14 @@
 {
   "id": "T-0053",
   "titre": "Test sur la couche de validation",
-  "colonne": "revue",
+  "colonne": "fait",
   "priorite": "moyenne",
   "charge": "xs",
   "tags": [
     "test"
   ],
   "cree": "2026-08-16",
-  "maj": "2026-08-16",
+  "maj": "2026-08-17",
   "plan": "2026-08-16-audit-global-shotframe-constats-et-plan-de-correction.md"
 }
 ---

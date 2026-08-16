@@ -2,7 +2,7 @@
 {
   "id": "T-0005",
   "titre": "Remplissage inversé des labels et badges",
-  "colonne": "revue",
+  "colonne": "fait",
   "priorite": "moyenne",
   "charge": "s",
   "tags": [
@@ -11,7 +11,7 @@
     "a11y"
   ],
   "cree": "2026-08-16",
-  "maj": "2026-08-16",
+  "maj": "2026-08-17",
   "plan": "2026-08-16-shotframe-annotation-rendu-live-texte-au-clic-couleurs-inver.md",
   "epic": "T-0001"
 }

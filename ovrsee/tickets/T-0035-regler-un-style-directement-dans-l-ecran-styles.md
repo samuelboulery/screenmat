@@ -2,7 +2,7 @@
 {
   "id": "T-0035",
   "titre": "Régler un style directement dans l'écran Styles",
-  "colonne": "revue",
+  "colonne": "fait",
   "priorite": "haute",
   "charge": "m",
   "tags": [
@@ -10,7 +10,7 @@
     "styles"
   ],
   "cree": "2026-08-16",
-  "maj": "2026-08-16",
+  "maj": "2026-08-17",
   "plan": "2026-08-16-shotframe-rendre-les-styles-editables-et-supprimables.md"
 }
 ---

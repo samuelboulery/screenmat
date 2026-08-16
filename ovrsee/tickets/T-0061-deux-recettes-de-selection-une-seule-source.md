@@ -2,7 +2,7 @@
 {
   "id": "T-0061",
   "titre": "Deux recettes de sélection, une seule source",
-  "colonne": "revue",
+  "colonne": "fait",
   "priorite": "moyenne",
   "charge": "m",
   "tags": [
@@ -10,7 +10,7 @@
     "design-system"
   ],
   "cree": "2026-08-16",
-  "maj": "2026-08-16",
+  "maj": "2026-08-17",
   "epic": "T-0056",
   "plan": "2026-08-16-shotframe-refonte-de-la-navigation-harmonisation-des-etats-s.md"
 }

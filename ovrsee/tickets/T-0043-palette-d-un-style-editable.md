@@ -2,7 +2,7 @@
 {
   "id": "T-0043",
   "titre": "Palette d'un style éditable",
-  "colonne": "revue",
+  "colonne": "fait",
   "priorite": "haute",
   "charge": "m",
   "tags": [
@@ -11,7 +11,7 @@
     "palette"
   ],
   "cree": "2026-08-16",
-  "maj": "2026-08-16",
+  "maj": "2026-08-17",
   "plan": "2026-08-16-shotframe-ecran-noir-watermark-retirable-palette-editable.md"
 }
 ---

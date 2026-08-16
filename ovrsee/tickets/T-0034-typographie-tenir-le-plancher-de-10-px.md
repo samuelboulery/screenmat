@@ -2,14 +2,14 @@
 {
   "id": "T-0034",
   "titre": "Typographie : tenir le plancher de 10 px",
-  "colonne": "revue",
+  "colonne": "fait",
   "priorite": "moyenne",
   "charge": "xs",
   "tags": [
     "design"
   ],
   "cree": "2026-08-16",
-  "maj": "2026-08-16",
+  "maj": "2026-08-17",
   "epic": "T-0026",
   "plan": "2026-08-16-shotframe-corriger-les-15-constats-de-la-revue-d-interface.md"
 }

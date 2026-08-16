@@ -3,7 +3,7 @@
   "id": "T-0001",
   "type": "epic",
   "titre": "Annotation au geste et vrais calques",
-  "colonne": "revue",
+  "colonne": "fait",
   "priorite": "haute",
   "charge": "xl",
   "tags": [
@@ -11,7 +11,7 @@
     "canvas"
   ],
   "cree": "2026-08-16",
-  "maj": "2026-08-16",
+  "maj": "2026-08-17",
   "plan": "2026-08-16-shotframe-annotation-rendu-live-texte-au-clic-couleurs-inver.md"
 }
 ---

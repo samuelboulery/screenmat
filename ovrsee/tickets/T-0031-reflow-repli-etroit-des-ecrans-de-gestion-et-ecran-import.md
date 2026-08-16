@@ -2,7 +2,7 @@
 {
   "id": "T-0031",
   "titre": "Reflow : repli étroit des écrans de gestion et écran Import",
-  "colonne": "revue",
+  "colonne": "fait",
   "priorite": "haute",
   "charge": "m",
   "tags": [
@@ -10,7 +10,7 @@
     "layout"
   ],
   "cree": "2026-08-16",
-  "maj": "2026-08-16",
+  "maj": "2026-08-17",
   "epic": "T-0026",
   "plan": "2026-08-16-shotframe-corriger-les-15-constats-de-la-revue-d-interface.md"
 }

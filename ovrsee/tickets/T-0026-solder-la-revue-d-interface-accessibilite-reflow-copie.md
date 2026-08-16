@@ -3,7 +3,7 @@
   "id": "T-0026",
   "type": "epic",
   "titre": "Solder la revue d'interface : accessibilité, reflow, copie",
-  "colonne": "revue",
+  "colonne": "fait",
   "priorite": "haute",
   "charge": "l",
   "tags": [
@@ -11,7 +11,7 @@
     "design"
   ],
   "cree": "2026-08-16",
-  "maj": "2026-08-16",
+  "maj": "2026-08-17",
   "plan": "2026-08-16-shotframe-corriger-les-15-constats-de-la-revue-d-interface.md"
 }
 ---

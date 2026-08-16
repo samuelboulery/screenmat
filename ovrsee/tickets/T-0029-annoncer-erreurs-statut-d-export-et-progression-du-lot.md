@@ -2,14 +2,14 @@
 {
   "id": "T-0029",
   "titre": "Annoncer erreurs, statut d'export et progression du lot",
-  "colonne": "revue",
+  "colonne": "fait",
   "priorite": "haute",
   "charge": "s",
   "tags": [
     "a11y"
   ],
   "cree": "2026-08-16",
-  "maj": "2026-08-16",
+  "maj": "2026-08-17",
   "epic": "T-0026",
   "plan": "2026-08-16-shotframe-corriger-les-15-constats-de-la-revue-d-interface.md"
 }

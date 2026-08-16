@@ -2,14 +2,14 @@
 {
   "id": "T-0008",
   "titre": "Mettre CLAUDE.md à jour",
-  "colonne": "revue",
+  "colonne": "fait",
   "priorite": "basse",
   "charge": "xs",
   "tags": [
     "docs"
   ],
   "cree": "2026-08-16",
-  "maj": "2026-08-16",
+  "maj": "2026-08-17",
   "plan": "2026-08-16-shotframe-annotation-rendu-live-texte-au-clic-couleurs-inver.md",
   "epic": "T-0001"
 }

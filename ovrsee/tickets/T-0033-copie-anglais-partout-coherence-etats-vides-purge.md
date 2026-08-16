@@ -2,7 +2,7 @@
 {
   "id": "T-0033",
   "titre": "Copie : anglais partout, cohérence, états vides, purge confirmée",
-  "colonne": "revue",
+  "colonne": "fait",
   "priorite": "moyenne",
   "charge": "s",
   "tags": [
@@ -10,7 +10,7 @@
     "a11y"
   ],
   "cree": "2026-08-16",
-  "maj": "2026-08-16",
+  "maj": "2026-08-17",
   "epic": "T-0026",
   "plan": "2026-08-16-shotframe-corriger-les-15-constats-de-la-revue-d-interface.md"
 }

@@ -2,14 +2,14 @@
 {
   "id": "T-0054",
   "titre": "Repasser les gros fichiers sous 400 lignes",
-  "colonne": "revue",
+  "colonne": "fait",
   "priorite": "basse",
   "charge": "m",
   "tags": [
     "refactor"
   ],
   "cree": "2026-08-16",
-  "maj": "2026-08-16",
+  "maj": "2026-08-17",
   "plan": "2026-08-16-audit-global-shotframe-constats-et-plan-de-correction.md"
 }
 ---

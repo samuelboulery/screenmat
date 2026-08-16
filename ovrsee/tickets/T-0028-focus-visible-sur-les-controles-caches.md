@@ -2,7 +2,7 @@
 {
   "id": "T-0028",
   "titre": "Focus visible sur les contrôles cachés",
-  "colonne": "revue",
+  "colonne": "fait",
   "priorite": "haute",
   "charge": "xs",
   "tags": [
@@ -10,7 +10,7 @@
     "clavier"
   ],
   "cree": "2026-08-16",
-  "maj": "2026-08-16",
+  "maj": "2026-08-17",
   "epic": "T-0026",
   "plan": "2026-08-16-shotframe-corriger-les-15-constats-de-la-revue-d-interface.md"
 }

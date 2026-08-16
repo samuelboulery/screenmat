@@ -2,7 +2,7 @@
 {
   "id": "T-0059",
   "titre": "Fusionner Compose et Annotate en un écran Edit",
-  "colonne": "revue",
+  "colonne": "fait",
   "priorite": "haute",
   "charge": "l",
   "tags": [
@@ -11,7 +11,7 @@
     "editeur"
   ],
   "cree": "2026-08-16",
-  "maj": "2026-08-16",
+  "maj": "2026-08-17",
   "epic": "T-0056",
   "plan": "2026-08-16-shotframe-refonte-de-la-navigation-harmonisation-des-etats-s.md"
 }

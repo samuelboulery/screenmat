@@ -2,7 +2,7 @@
 {
   "id": "T-0060",
   "titre": "Sections repliables de l'inspecteur",
-  "colonne": "revue",
+  "colonne": "fait",
   "priorite": "moyenne",
   "charge": "s",
   "tags": [
@@ -10,7 +10,7 @@
     "editeur"
   ],
   "cree": "2026-08-16",
-  "maj": "2026-08-16",
+  "maj": "2026-08-17",
   "epic": "T-0056",
   "plan": "2026-08-16-shotframe-refonte-de-la-navigation-harmonisation-des-etats-s.md"
 }

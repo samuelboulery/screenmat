@@ -2,7 +2,7 @@
 {
   "id": "T-0050",
   "titre": "Durcir l'écriture du serveur MCP",
-  "colonne": "revue",
+  "colonne": "fait",
   "priorite": "haute",
   "charge": "m",
   "tags": [
@@ -10,7 +10,7 @@
     "cli"
   ],
   "cree": "2026-08-16",
-  "maj": "2026-08-16",
+  "maj": "2026-08-17",
   "plan": "2026-08-16-audit-global-shotframe-constats-et-plan-de-correction.md"
 }
 ---

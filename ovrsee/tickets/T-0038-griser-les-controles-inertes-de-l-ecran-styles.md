@@ -2,7 +2,7 @@
 {
   "id": "T-0038",
   "titre": "Griser les contrôles inertes de l'écran Styles",
-  "colonne": "revue",
+  "colonne": "fait",
   "priorite": "basse",
   "charge": "xs",
   "tags": [
@@ -11,7 +11,7 @@
     "styles"
   ],
   "cree": "2026-08-16",
-  "maj": "2026-08-16",
+  "maj": "2026-08-17",
   "plan": "2026-08-16-shotframe-rendre-les-styles-editables-et-supprimables.md"
 }
 ---

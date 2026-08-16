@@ -2,7 +2,7 @@
 {
   "id": "T-0039",
   "titre": "Appliquer un vieux style noircit le canvas",
-  "colonne": "revue",
+  "colonne": "fait",
   "priorite": "haute",
   "charge": "s",
   "tags": [
@@ -11,7 +11,7 @@
     "render"
   ],
   "cree": "2026-08-16",
-  "maj": "2026-08-16",
+  "maj": "2026-08-17",
   "plan": "2026-08-16-shotframe-rendre-les-styles-editables-et-supprimables.md"
 }
 ---

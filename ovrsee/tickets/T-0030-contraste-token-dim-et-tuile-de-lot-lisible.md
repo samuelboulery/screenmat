@@ -2,7 +2,7 @@
 {
   "id": "T-0030",
   "titre": "Contraste : token dim et tuile de lot lisible",
-  "colonne": "revue",
+  "colonne": "fait",
   "priorite": "haute",
   "charge": "s",
   "tags": [
@@ -10,7 +10,7 @@
     "design"
   ],
   "cree": "2026-08-16",
-  "maj": "2026-08-16",
+  "maj": "2026-08-17",
   "epic": "T-0026",
   "plan": "2026-08-16-shotframe-corriger-les-15-constats-de-la-revue-d-interface.md"
 }

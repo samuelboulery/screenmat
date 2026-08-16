@@ -3,7 +3,7 @@
   "id": "T-0056",
   "titre": "Refonte de la navigation et des états sélectionnés",
   "type": "epic",
-  "colonne": "revue",
+  "colonne": "fait",
   "priorite": "haute",
   "charge": "xl",
   "tags": [
@@ -12,7 +12,7 @@
     "design-system"
   ],
   "cree": "2026-08-16",
-  "maj": "2026-08-16",
+  "maj": "2026-08-17",
   "plan": "2026-08-16-shotframe-refonte-de-la-navigation-harmonisation-des-etats-s.md"
 }
 ---

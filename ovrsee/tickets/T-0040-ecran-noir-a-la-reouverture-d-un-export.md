@@ -2,7 +2,7 @@
 {
   "id": "T-0040",
   "titre": "Écran noir à la réouverture d'un export",
-  "colonne": "revue",
+  "colonne": "fait",
   "priorite": "haute",
   "charge": "s",
   "tags": [
@@ -11,7 +11,7 @@
     "history"
   ],
   "cree": "2026-08-16",
-  "maj": "2026-08-16",
+  "maj": "2026-08-17",
   "plan": "2026-08-16-shotframe-ecran-noir-watermark-retirable-palette-editable.md"
 }
 ---

@@ -2,14 +2,14 @@
 {
   "id": "T-0052",
   "titre": "Borner le dataUrl du filigrane",
-  "colonne": "revue",
+  "colonne": "fait",
   "priorite": "moyenne",
   "charge": "xs",
   "tags": [
     "securite"
   ],
   "cree": "2026-08-16",
-  "maj": "2026-08-16",
+  "maj": "2026-08-17",
   "plan": "2026-08-16-audit-global-shotframe-constats-et-plan-de-correction.md"
 }
 ---

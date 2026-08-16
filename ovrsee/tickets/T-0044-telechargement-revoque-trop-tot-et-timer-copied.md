@@ -2,7 +2,7 @@
 {
   "id": "T-0044",
   "titre": "Téléchargement révoqué trop tôt et timer Copied",
-  "colonne": "revue",
+  "colonne": "fait",
   "priorite": "moyenne",
   "charge": "xs",
   "tags": [
@@ -10,7 +10,7 @@
     "export"
   ],
   "cree": "2026-08-16",
-  "maj": "2026-08-16",
+  "maj": "2026-08-17",
   "plan": "2026-08-16-shotframe-ecran-noir-watermark-retirable-palette-editable.md"
 }
 ---

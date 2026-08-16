@@ -2,14 +2,14 @@
 {
   "id": "T-0055",
   "titre": "Couleurs de chrome et rayon hors tokens",
-  "colonne": "revue",
+  "colonne": "fait",
   "priorite": "basse",
   "charge": "xs",
   "tags": [
     "ui"
   ],
   "cree": "2026-08-16",
-  "maj": "2026-08-16",
+  "maj": "2026-08-17",
   "plan": "2026-08-16-audit-global-shotframe-constats-et-plan-de-correction.md"
 }
 ---

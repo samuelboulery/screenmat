@@ -2,7 +2,7 @@
 {
   "id": "T-0006",
   "titre": "Multi-sélection de calques",
-  "colonne": "revue",
+  "colonne": "fait",
   "priorite": "haute",
   "charge": "l",
   "tags": [
@@ -10,7 +10,7 @@
     "canvas"
   ],
   "cree": "2026-08-16",
-  "maj": "2026-08-16",
+  "maj": "2026-08-17",
   "plan": "2026-08-16-shotframe-annotation-rendu-live-texte-au-clic-couleurs-inver.md",
   "epic": "T-0001"
 }

@@ -1,5 +1,6 @@
 import { nextId } from './annotate.ts'
 import { triggerDownload } from './export.ts'
+import { HEX, clamp, isRecord, num, oneOf } from './parse.ts'
 import { WATERMARK_POSITIONS } from './watermark.ts'
 import {
   DEFAULT_SETTINGS,
@@ -28,17 +29,6 @@ export function exportStyle(style: Style): void {
 }
 
 /* --- Import ------------------------------------------------------------- */
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value)
-
-const num = (value: unknown, fallback: number): number =>
-  typeof value === 'number' && Number.isFinite(value) ? value : fallback
-
-const oneOf = <T extends string>(value: unknown, allowed: readonly T[], fallback: T): T =>
-  typeof value === 'string' && (allowed as readonly string[]).includes(value)
-    ? (value as T)
-    : fallback
 
 /**
  * Valide un fichier importé. Un `.json` venant d'ailleurs est une donnée
@@ -69,7 +59,9 @@ export function parseStyle(raw: string): Style {
   }
 }
 
-function parseSettings(value: unknown): Settings {
+/** Exporté pour `spec.ts` : une scène produite par une machine porte les mêmes
+ *  réglages qu'un style importé, et doit passer par les mêmes bornes. */
+export function parseSettings(value: unknown): Settings {
   if (!isRecord(value)) return DEFAULT_SETTINGS
   const d = DEFAULT_SETTINGS
 
@@ -95,9 +87,7 @@ function parseSettings(value: unknown): Settings {
   }
 }
 
-const HEX = /^#[0-9a-f]{6}$/i
-
-function parsePalette(value: unknown): Palette | undefined {
+export function parsePalette(value: unknown): Palette | undefined {
   if (!isRecord(value) || typeof value.base !== 'string' || !HEX.test(value.base)) return undefined
   const accents = Array.isArray(value.accents)
     ? value.accents.filter((color): color is string => typeof color === 'string' && HEX.test(color))
@@ -116,10 +106,6 @@ function parseWatermark(value: unknown): Watermark | undefined {
     opacity: clamp(num(value.opacity, 0.6), 0, 1),
     size: clamp(num(value.size, 0.09), 0.01, 0.5),
   }
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value))
 }
 
 /* --- Préférences (localStorage) ----------------------------------------- */

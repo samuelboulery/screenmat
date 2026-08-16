@@ -3,7 +3,7 @@
   "id": "T-0025",
   "titre": "Documenter la porte machine",
   "epic": "T-0019",
-  "colonne": "backlog",
+  "colonne": "fait",
   "priorite": "basse",
   "charge": "s",
   "tags": ["docs"],

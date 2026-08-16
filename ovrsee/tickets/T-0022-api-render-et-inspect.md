@@ -3,7 +3,7 @@
   "id": "T-0022",
   "titre": "API render() et inspect()",
   "epic": "T-0019",
-  "colonne": "backlog",
+  "colonne": "fait",
   "priorite": "haute",
   "charge": "m",
   "tags": ["api"],

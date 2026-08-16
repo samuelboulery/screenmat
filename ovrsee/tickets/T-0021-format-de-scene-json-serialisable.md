@@ -3,7 +3,7 @@
   "id": "T-0021",
   "titre": "Format de scène JSON sérialisable",
   "epic": "T-0019",
-  "colonne": "backlog",
+  "colonne": "fait",
   "priorite": "haute",
   "charge": "m",
   "tags": ["api", "annotations"],

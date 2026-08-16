@@ -3,7 +3,7 @@
   "id": "T-0024",
   "titre": "Serveur MCP",
   "epic": "T-0019",
-  "colonne": "backlog",
+  "colonne": "fait",
   "priorite": "moyenne",
   "charge": "s",
   "tags": ["mcp"],

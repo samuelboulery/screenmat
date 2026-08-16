@@ -3,7 +3,7 @@
   "id": "T-0020",
   "titre": "Faire tourner renderScene dans Node",
   "epic": "T-0019",
-  "colonne": "backlog",
+  "colonne": "fait",
   "priorite": "haute",
   "charge": "m",
   "tags": ["cli", "rendu"],

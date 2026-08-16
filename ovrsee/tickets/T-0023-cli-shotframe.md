@@ -3,7 +3,7 @@
   "id": "T-0023",
   "titre": "CLI shotframe",
   "epic": "T-0019",
-  "colonne": "backlog",
+  "colonne": "fait",
   "priorite": "moyenne",
   "charge": "m",
   "tags": ["cli"],

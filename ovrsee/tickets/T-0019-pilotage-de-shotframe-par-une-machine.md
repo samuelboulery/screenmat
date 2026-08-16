@@ -3,7 +3,7 @@
   "id": "T-0019",
   "titre": "Pilotage de shotframe par une machine",
   "type": "epic",
-  "colonne": "backlog",
+  "colonne": "fait",
   "priorite": "moyenne",
   "charge": "xl",
   "tags": ["cli", "mcp", "api"],

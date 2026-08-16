@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
-import { LocalIcon, ModeIcon, NewSessionIcon, ViewIcon } from './icons.tsx'
-import { Badge, IconButton, Segmented } from './ui.tsx'
+import { LocalIcon, ModeIcon, ViewIcon } from './icons.tsx'
+import { Badge, Segmented } from './ui.tsx'
 
 export type Mode = 'compose' | 'annotate' | 'batch'
 export type View = 'editor' | 'styles' | 'history'
@@ -57,14 +57,18 @@ type TopBarProps = {
   showModes?: boolean
   onView: (view: View) => void
   onMode: (mode: Mode) => void
-  /** Repartir de zéro sans recharger la page. Caché tant qu'il n'y a rien à vider. */
-  onNewSession: () => void
+  /** Retour à l'écran d'accueil par la marque — vide la session en cours. */
+  onHome: () => void
   children?: ReactNode
 }
+
+const WORDMARK = 'text-[15px] font-bold tracking-tight'
 
 /**
  * Barre haute unique, 58 px. À gauche les modes d'édition (groupe segmenté), à
  * droite les vues de gestion (liens texte) puis les actions de l'écran courant.
+ * Ce qui décrit ou manipule le *document* — dimensions, undo/redo, nouvelle
+ * session — vit dans le filmstrip, pas ici.
  */
 export default function TopBar({
   view,
@@ -72,12 +76,26 @@ export default function TopBar({
   showModes = true,
   onView,
   onMode,
-  onNewSession,
+  onHome,
   children,
 }: TopBarProps) {
   return (
     <header className="relative z-20 flex h-[58px] items-center gap-4 border-b border-white/5 px-5">
-      <span className="text-[15px] font-bold tracking-tight">shotframe</span>
+      {/* Sur l'écran d'import, la marque n'est pas un bouton : il n'y a nulle
+          part où revenir, et un bouton sans effet est un mensonge. */}
+      {showModes ? (
+        <button
+          type="button"
+          onClick={onHome}
+          title="Back to start"
+          aria-label="Back to start"
+          className={`${WORDMARK} transition-colors duration-140 hover:text-accent-ink`}
+        >
+          shotframe
+        </button>
+      ) : (
+        <span className={WORDMARK}>shotframe</span>
+      )}
       <Badge>
         <span className="flex items-center gap-1">
           <LocalIcon className="size-3" /> LOCAL
@@ -97,9 +115,6 @@ export default function TopBar({
       )}
 
       <div className="ml-auto flex items-center gap-4">
-        {showModes && (
-          <IconButton icon={NewSessionIcon} label="New session" onClick={onNewSession} />
-        )}
         <nav className="flex items-center gap-3.5">
           {VIEWS.map((item) => (
             <button

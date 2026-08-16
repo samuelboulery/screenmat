@@ -7,21 +7,17 @@ import {
   ExportIcon,
   JsonIcon,
   NewShotIcon,
-  RedoIcon,
   SaveStyleIcon,
-  UndoIcon,
 } from './icons.tsx'
-import { Button, IconButton } from './ui.tsx'
+import { Button } from './ui.tsx'
 import { humanSize } from '../lib/export.ts'
-import type { Format, Style } from '../types.ts'
+import type { Style } from '../types.ts'
 
 type TopBarActionsProps = {
   view: View
   mode: Mode
   /** Aucun screenshot chargé : l'écran d'import n'a pas d'action de barre. */
   empty: boolean
-  /** Dimensions de sortie, déjà multipliées par l'échelle. */
-  output: { width: number; height: number; format: Format } | null
   copied: boolean
   selected: number
   filesOut: number
@@ -36,10 +32,6 @@ type TopBarActionsProps = {
   onExportStyle: (style: Style) => void
   onSaveStyle: () => void
   onNewShot: () => void
-  canUndo: boolean
-  canRedo: boolean
-  onUndo: () => void
-  onRedo: () => void
 }
 
 /** Métadonnée annexe : elle disparaît avant que la barre ne déborde. */
@@ -50,24 +42,11 @@ export default function TopBarActions(props: TopBarActionsProps) {
   const { view, mode, empty } = props
   const editing = !empty && view === 'editor'
 
-  if (editing && mode !== 'batch' && props.output) {
+  // Dimensions, undo/redo et nouvelle session décrivent le document : ils
+  // vivent dans le filmstrip. Ne restent ici que les deux fins de course.
+  if (editing && mode !== 'batch') {
     return (
       <>
-        <span className={META}>
-          {props.output.width} × {props.output.height} · {props.output.format}
-        </span>
-        <IconButton
-          icon={UndoIcon}
-          label="Undo (⌘Z)"
-          disabled={!props.canUndo}
-          onClick={props.onUndo}
-        />
-        <IconButton
-          icon={RedoIcon}
-          label="Redo (⇧⌘Z)"
-          disabled={!props.canRedo}
-          onClick={props.onRedo}
-        />
         <Button onClick={props.onCopy}>
           {props.copied ? <CopiedIcon /> : <CopyIcon />}
           {props.copied ? 'Copied' : 'Copy'}

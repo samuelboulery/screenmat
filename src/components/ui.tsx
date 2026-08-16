@@ -1,11 +1,14 @@
-import type { ButtonHTMLAttributes, ReactNode } from 'react'
+import type { ButtonHTMLAttributes, ComponentProps, ReactNode } from 'react'
 import type { LucideIcon } from './icons.tsx'
 
 /* Composants de base de la DA « Afterglow ». Un seul accent, pour exactement
    deux choses : l'action primaire et la sélection courante. */
 
-type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: 'primary' | 'secondary' | 'ghost'
+/* `ComponentProps<'button'>` plutôt que `ButtonHTMLAttributes` : `ref` en fait
+   partie, et le dialogue de confirmation a besoin de poser le focus initial sur
+   l'un de ses deux boutons. */
+type ButtonProps = ComponentProps<'button'> & {
+  variant?: 'primary' | 'secondary' | 'ghost' | 'danger'
 }
 
 export function Button({ variant = 'secondary', className = '', ...rest }: ButtonProps) {
@@ -13,6 +16,10 @@ export function Button({ variant = 'secondary', className = '', ...rest }: Butto
     primary: 'gradient-accent text-stage font-semibold',
     secondary: 'border border-hairline-strong text-ink hover:border-white/20',
     ghost: 'text-ink-soft hover:text-ink',
+    // Le destructif porte `#FF9A9A`, jamais le dégradé d'accent : l'accent est
+    // réservé à l'action primaire. Une variante, pas une classe surchargée —
+    // Tailwind trie ses utilitaires par ordre de feuille, pas par ordre d'écriture.
+    danger: 'border border-danger/40 text-danger hover:border-danger/70',
   }[variant]
 
   return (

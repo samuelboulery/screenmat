@@ -75,7 +75,7 @@ export default function StylePalette({
           }
           className={`relative flex h-10 w-[54px] items-center justify-center rounded-md border border-dashed border-white/15 text-dim ${
             palette && !full
-              ? 'cursor-pointer hover:border-white/25 hover:text-ink-soft'
+              ? 'hover:border-white/25 hover:text-ink-soft'
               : 'pointer-events-none opacity-40'
           }`}
         >
@@ -90,7 +90,7 @@ export default function StylePalette({
             // de sens pour une couleur qui n'existe pas encore.
             value="#ffffff"
             onChange={(event) => onAdd(event.target.value)}
-            className="absolute inset-0 size-full cursor-pointer rounded-md opacity-0"
+            className="absolute inset-0 size-full rounded-md opacity-0"
           />
         </label>
       </div>
@@ -121,14 +121,14 @@ function ColorTile({
       <label
         title={`${label} — ${color}`}
         style={{ background: color }}
-        className="relative flex h-10 w-[54px] cursor-pointer items-center justify-center rounded-md border border-white/10"
+        className="relative flex h-10 w-[54px] items-center justify-center rounded-md border border-white/10"
       >
         <input
           type="color"
           aria-label={label}
           value={color}
           onChange={(event) => onColor(event.target.value)}
-          className="absolute inset-0 size-full cursor-pointer rounded-md opacity-0"
+          className="absolute inset-0 size-full rounded-md opacity-0"
         />
       </label>
       {onRemove && (

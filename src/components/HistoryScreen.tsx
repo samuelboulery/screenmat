@@ -50,15 +50,6 @@ export default function HistoryScreen({
     return sort === 'newest' ? kept : [...kept].reverse()
   }, [entries, filter, query, sort])
 
-  /**
-   * Une purge ne se rattrape pas : l'historique est le seul exemplaire, et la
-   * phrase juste au-dessus vient de le dire. Confirmation native, comme pour
-   * « New session » — le projet n'a pas de modale et n'en a pas besoin ici.
-   */
-  const confirmPurge = () => {
-    if (window.confirm('Delete the oldest exports? They cannot be recovered.')) onPurge()
-  }
-
   return (
     <div className="stage-glow absolute inset-x-0 top-[58px] bottom-0 flex flex-col gap-4 overflow-y-auto p-7">
       <div className="flex items-center gap-4">
@@ -154,7 +145,9 @@ export default function HistoryScreen({
           {bytes > QUOTA_WARNING_BYTES && (
             <>
               {' '}
-              <button type="button" onClick={confirmPurge} className="text-danger hover:underline">
+              {/* La confirmation est posée par `App` : un seul dialogue monté
+                  pour toute l'app. */}
+              <button type="button" onClick={onPurge} className="text-danger hover:underline">
                 Delete the oldest exports
               </button>{' '}
               to get back under {humanSize(QUOTA_WARNING_BYTES)}.

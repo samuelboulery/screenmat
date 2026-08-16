@@ -8,9 +8,13 @@ export type Inset = { left: number; right: number; top: number; bottom: number }
 export type CanvasScene = {
   canvasRef: React.RefObject<HTMLCanvasElement | null>
   boxRef: React.RefObject<HTMLDivElement | null>
-  /** Dernière géométrie rendue. Une ref, pas un état : les gestionnaires de
-   *  pointeur ont besoin de la valeur du moment, pas de celle du rendu React. */
-  geometryRef: React.RefObject<Geometry | null>
+  /** Dernière géométrie rendue, en état et non en ref : elle est écrite dans un
+   *  `requestAnimationFrame`, donc après le rendu React. Un chrome d'édition qui
+   *  lirait une ref resterait sur la géométrie précédente tant que rien d'autre
+   *  ne provoquerait de rendu — un cadre de sélection posé sur l'ancien layout.
+   *  Les gestionnaires de pointeur, eux, tirent après le commit : ils la voient
+   *  à jour. */
+  geometry: Geometry | null
   /** Rapport px CSS / px canvas, `0` tant que rien n'est rendu. */
   ratio: number
   /** Message de la dernière exception de rendu, `null` si le dernier rendu a
@@ -43,6 +47,7 @@ export function useCanvasScene(
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const boxRef = useRef<HTMLDivElement>(null)
   const geometryRef = useRef<Geometry | null>(null)
+  const [geometry, setGeometry] = useState<Geometry | null>(null)
   const [cssWidth, setCssWidth] = useState(0)
   const [resized, setResized] = useState(0)
   const [error, setError] = useState<string | null>(null)
@@ -101,6 +106,7 @@ export function useCanvasScene(
       canvas.style.width = `${width}px`
       canvas.style.height = `${width / aspect}px`
       setCssWidth(width)
+      setGeometry(geometryRef.current)
       onGeometry?.(geometryRef.current)
     }
 
@@ -108,11 +114,10 @@ export function useCanvasScene(
     return () => cancelAnimationFrame(frame)
   }, [scene, inset, resized, onGeometry])
 
-  const geometry = geometryRef.current
   return {
     canvasRef,
     boxRef,
-    geometryRef,
+    geometry,
     ratio: geometry && cssWidth > 0 ? cssWidth / geometry.width : 0,
     error,
   }

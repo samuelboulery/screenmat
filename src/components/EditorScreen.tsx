@@ -8,7 +8,7 @@ import ToolRail, { ANNOTATE_TOOLS, COMPOSE_TOOLS, type AnnotateTool, type Compos
 import type { Mode } from './TopBar.tsx'
 import { displayOrder, findAnnotation } from '../lib/tree.ts'
 import type { NodePatch } from '../hooks/useShots.ts'
-import type { Annotation, AnnotationKind, Composition, FractionRect, Scene, Settings, Shot, Style } from '../types.ts'
+import type { Annotation, AnnotationKind, Composition, Format, FractionRect, Scene, Settings, Shot, Style } from '../types.ts'
 
 /** Les panneaux flottent au-dessus du canvas : la boîte disponible est réduite
  *  d'autant. `[96, 328]` d'inset horizontal, comme spécifié dans le handoff. */
@@ -38,6 +38,13 @@ export type EditorScreenProps = {
   selectedLayerIds: readonly string[]
   /** Vrai sous 1100 px : le rail passe à l'horizontale, l'inspecteur se replie. */
   narrow: boolean
+  /** Dimensions de sortie, affichées par le filmstrip. */
+  output: { width: number; height: number; format: Format } | null
+  canUndo: boolean
+  canRedo: boolean
+  onUndo: () => void
+  onRedo: () => void
+  onNewSession: () => void
   /** Touches nues de l'édition, à poser sur le canvas — voir `useShortcuts`. */
   onKeys: (event: React.KeyboardEvent) => void
   onChange: (patch: Partial<Settings>) => void
@@ -223,6 +230,12 @@ export default function EditorScreen(props: EditorScreenProps) {
         onSelect={props.onSelectShot}
         onAdd={props.onAddShot}
         onReorder={props.onReorderShots}
+        output={props.output}
+        canUndo={props.canUndo}
+        canRedo={props.canRedo}
+        onUndo={props.onUndo}
+        onRedo={props.onRedo}
+        onNewSession={props.onNewSession}
         hint={
           docked
             ? `${props.selection.length} of ${shots.length} shots in composition`

@@ -88,7 +88,7 @@ export default function AnnotationStyle({
               le carré, invisible mais focalisable là où on le voit. */}
           <label
             title="Custom color"
-            className="relative flex size-10 cursor-pointer items-center justify-center rounded-lg border border-dashed border-white/20 text-[10px] text-dim hover:border-white/35"
+            className="relative flex size-10 items-center justify-center rounded-lg border border-dashed border-white/20 text-[10px] text-dim hover:border-white/35"
           >
             <span aria-hidden>···</span>
             <input
@@ -96,7 +96,7 @@ export default function AnnotationStyle({
               value={annotation.color}
               aria-label="Custom color"
               onChange={(event) => onPatch({ color: event.target.value })}
-              className="absolute inset-0 size-full cursor-pointer rounded-lg opacity-0"
+              className="absolute inset-0 size-full rounded-lg opacity-0"
             />
           </label>
         </div>

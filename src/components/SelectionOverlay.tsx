@@ -31,6 +31,34 @@ function handlePoint(annotation: Annotation, box: WindowBox, handle: Handle) {
   return { x: area.x + area.w * anchor.x, y: area.y + area.h * anchor.y }
 }
 
+/**
+ * Repère de la fenêtre active, quand la composition en montre plusieurs.
+ *
+ * Bi-ton, et c'est tout l'intérêt : un trait d'accent seul disparaît sur un
+ * artwork clair. Les deux gardes sombres qui l'encadrent tiennent le contraste
+ * sans rien savoir de la couleur du fond. Un seul `box-shadow` empile les trois
+ * anneaux et suit l'arrondi des coins, ce qu'un `outline` ne garantit pas.
+ */
+export function ShotRing({ box, ratio, radius }: { box: WindowBox; ratio: number; radius: number }) {
+  const matrix: Matrix = windowMatrix(box)
+  const origin = applyMatrix(matrix, { x: box.x, y: box.y })
+
+  return (
+    <div
+      className="pointer-events-none absolute top-0 left-0"
+      style={{
+        width: box.width * ratio,
+        height: box.height * ratio,
+        borderRadius: radius * ratio,
+        transformOrigin: '0 0',
+        transform: `matrix(${matrix[0]}, ${matrix[1]}, ${matrix[2]}, ${matrix[3]}, ${origin.x * ratio}, ${origin.y * ratio})`,
+        boxShadow:
+          '0 0 0 1.5px rgba(7,7,10,.65), 0 0 0 3px #7DE2FF, 0 0 0 4.5px rgba(7,7,10,.65)',
+      }}
+    />
+  )
+}
+
 export default function SelectionOverlay({
   annotation,
   box,

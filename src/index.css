@@ -116,6 +116,16 @@ body {
   flex: none;
 }
 
+/* Tailwind 4 a retiré `cursor: pointer` du preflight des boutons — le défaut du
+   navigateur y est la flèche. On le remet une fois pour tout ce qui se clique
+   plutôt que classe par classe. Un contrôle désactivé garde la flèche : il ne
+   se clique pas. Le canvas n'est pas concerné, il pose ses propres curseurs. */
+button:not(:disabled),
+summary,
+input[type='color']:not(:disabled) {
+  cursor: pointer;
+}
+
 /* Le prototype ne dessine pas le focus ; il est obligatoire. */
 :focus-visible {
   outline: 2px solid var(--color-accent);

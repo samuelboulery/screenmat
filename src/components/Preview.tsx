@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import SelectionOverlay from './SelectionOverlay.tsx'
+import SelectionOverlay, { ShotRing } from './SelectionOverlay.tsx'
 import TextInput, { useCaretBlink } from './TextInput.tsx'
 import {
   bounds,
@@ -119,8 +119,7 @@ export default function Preview({
     return withDraft(withCaret, drag.target.shotId, createAnnotation(drag.kind, toFractions(rect, box)))
   }, [scene, drag, editing, blink, inWindow])
 
-  const { canvasRef, boxRef, geometryRef, ratio, error } = useCanvasScene(painted, inset, onGeometry)
-  const geometry = geometryRef.current
+  const { canvasRef, boxRef, geometry, ratio, error } = useCanvasScene(painted, inset, onGeometry)
 
   // Le canvas est la surface d'édition clavier : lui donner le focus dès qu'il
   // en devient une, sans quoi `r` ou les flèches exigeraient un clic préalable.
@@ -372,6 +371,12 @@ export default function Preview({
             className="pointer-events-none absolute rounded-xs border border-dashed border-accent/70 bg-accent/10"
             style={marquee}
           />
+        )}
+
+        {/* En layout `single` il n'y a qu'une fenêtre : un anneau permanent
+            autour d'elle serait du bruit, pas un repère. */}
+        {scene.shots.length > 1 && selectedBox && geometry && ratio > 0 && (
+          <ShotRing box={selectedBox} ratio={ratio} radius={geometry.radius} />
         )}
 
         {!drawing &&

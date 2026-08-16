@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import BatchScreen from './components/BatchScreen.tsx'
+import { useConfirm } from './components/ConfirmDialog.tsx'
 import EditorScreen from './components/EditorScreen.tsx'
 import HistoryScreen from './components/HistoryScreen.tsx'
 import ImportScreen from './components/ImportScreen.tsx'
@@ -52,6 +53,7 @@ export default function App() {
   const library = useLibrary()
   const batch = useBatch()
   const narrow = useNarrow()
+  const { confirm, dialog } = useConfirm()
 
   const onImages = useCallback(
     (images: HTMLImageElement[], files: File[]) => {
@@ -116,6 +118,19 @@ export default function App() {
       composed.length,
     )
   }, [composed, settings, composition])
+
+  /** Ce que le fichier fera, à l'échelle choisie. Affiché par le filmstrip. */
+  const output = useMemo(
+    () =>
+      geometry
+        ? {
+            width: geometry.width * scale,
+            height: Math.round(geometry.height * scale),
+            format: settings.format,
+          }
+        : null,
+    [geometry, scale, settings.format],
+  )
 
   /* --- Export ----------------------------------------------------------- */
 
@@ -204,12 +219,16 @@ export default function App() {
    * historique persistés — survit : c'est justement ce qu'on veut retrouver au
    * projet suivant.
    */
-  const newSession = useCallback(() => {
+  const newSession = useCallback(async () => {
     // L'image de fond importée n'est pas dans le snapshot d'annulation : un ⌘Z
-    // ne la rendrait pas. D'où la confirmation, native.
+    // ne la rendrait pas. D'où la confirmation.
     if (
       shots.shots.length > 0 &&
-      !window.confirm('Start a new session? The current shots and settings are cleared.')
+      !(await confirm({
+        title: 'Start a new session?',
+        body: 'The current shots and settings are cleared. Saved styles and history are kept.',
+        action: 'Start over',
+      }))
     ) {
       return
     }
@@ -224,7 +243,7 @@ export default function App() {
     setView('editor')
     setMode('compose')
     setFailure(null)
-  }, [shots, batch])
+  }, [shots, batch, confirm])
 
   /* --- Rendu ------------------------------------------------------------ */
 
@@ -257,21 +276,12 @@ export default function App() {
         showModes={!empty}
         onView={setView}
         onMode={setMode}
-        onNewSession={newSession}
+        onHome={() => void newSession()}
       >
         <TopBarActions
           view={view}
           mode={mode}
           empty={empty}
-          output={
-            geometry
-              ? {
-                  width: geometry.width * scale,
-                  height: Math.round(geometry.height * scale),
-                  format: settings.format,
-                }
-              : null
-          }
           copied={exporter.copied}
           selected={shots.selection.length}
           filesOut={shots.selection.length * batchRatios.length}
@@ -285,10 +295,6 @@ export default function App() {
           onExportBatch={startBatch}
           onExportStyle={exportStyle}
           onSaveStyle={styles.save}
-          canUndo={history.canUndo}
-          canRedo={history.canRedo}
-          onUndo={history.undo}
-          onRedo={history.redo}
           onNewShot={() => pick('shot')}
         />
       </TopBar>
@@ -342,6 +348,12 @@ export default function App() {
             activeStyleId={library.activeStyleId}
             selectedLayerIds={shots.selectedLayerIds}
             narrow={narrow}
+            output={output}
+            canUndo={history.canUndo}
+            canRedo={history.canRedo}
+            onUndo={history.undo}
+            onRedo={history.redo}
+            onNewSession={() => void newSession()}
             onKeys={onCanvasKeys}
             onChange={patch}
             onCompose={compose}
@@ -415,11 +427,16 @@ export default function App() {
               setView('editor')
             }}
             onDelete={(id) => {
-              // Un style supprimé n'est pas dans la pile d'annulation : la
-              // confirmation native, comme pour la purge de l'historique.
-              if (window.confirm('Delete this style? This cannot be undone.')) {
-                void library.removeStyle(id)
-              }
+              // Un style supprimé n'est pas dans la pile d'annulation : on
+              // confirme, comme pour la purge de l'historique.
+              void confirm({
+                title: 'Delete this style?',
+                body: 'This cannot be undone.',
+                action: 'Delete',
+                tone: 'danger',
+              }).then((ok) => {
+                if (ok) void library.removeStyle(id)
+              })
             }}
             onImport={() => pick('style')}
             narrow={narrow}
@@ -431,7 +448,18 @@ export default function App() {
             bytes={library.bytes}
             onOpen={(id) => void reopen(id)}
             onAdd={() => pick('shot')}
-            onPurge={() => void library.purge()}
+            onPurge={() =>
+              // Une purge ne se rattrape pas : l'historique est le seul
+              // exemplaire, et l'écran vient de le dire.
+              void confirm({
+                title: 'Delete the oldest exports?',
+                body: 'They cannot be recovered — there is no copy anywhere else.',
+                action: 'Delete',
+                tone: 'danger',
+              }).then((ok) => {
+                if (ok) void library.purge()
+              })
+            }
             narrow={narrow}
           />
         )}
@@ -445,6 +473,9 @@ export default function App() {
       <p role="status" className="absolute right-5 bottom-5 z-30 font-mono text-[10px] text-dim">
         {!problem && (exporter.copied ? 'Copied to clipboard' : (exporter.status ?? ''))}
       </p>
+
+      {/* Un seul dialogue de confirmation pour toute l'app. */}
+      {dialog}
 
       {/* Déclenchés par un bouton : les laisser dans l'ordre de tabulation
           n'offrirait qu'un focus invisible sur 1 px. */}

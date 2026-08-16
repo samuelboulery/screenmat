@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="shotframe">
+  <!-- Le mark : la fenêtre du produit, pleine plutôt qu'au trait — à 16 px un
+       filet de 1,5 px disparaît. Fond opaque, pas de transparence : l'icône doit
+       tenir dans un onglet clair comme sombre. -->
+  <defs>
+    <linearGradient id="afterglow" x1="6" y1="7" x2="26" y2="25" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7DE2FF" />
+      <stop offset="1" stop-color="#A378FF" />
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" rx="7" fill="#07070A" />
+  <rect x="6" y="7" width="20" height="18" rx="3.5" fill="url(#afterglow)" />
+  <path d="M6 13h20" stroke="#07070A" stroke-width="2" />
+  <circle cx="9.5" cy="10" r="1" fill="#07070A" />
+  <circle cx="13" cy="10" r="1" fill="#07070A" />
+</svg>

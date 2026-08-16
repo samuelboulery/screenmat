@@ -1,0 +1,233 @@
+@import 'tailwindcss';
+
+/* Polices embarquées en local : l'app doit rester utilisable hors ligne, donc
+   aucun appel à fonts.googleapis.com. Variables (400..700), sous-ensembles
+   latin + latin-ext seulement. */
+@font-face {
+  font-family: 'Space Grotesk';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/space-grotesk-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Space Grotesk';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/space-grotesk-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/jetbrains-mono-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/jetbrains-mono-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+/* Direction artistique « Afterglow » : scène noire, panneaux translucides
+   flottants, un seul accent cyan→violet. Voir le handoff « Design Tokens ». */
+@theme {
+  --color-stage: #07070a;
+  --color-panel: rgba(16, 16, 22, 0.78);
+  --color-panel-solid: #101016;
+  --color-raised: rgba(255, 255, 255, 0.1);
+  --color-sunken: rgba(255, 255, 255, 0.04);
+  --color-hairline: rgba(255, 255, 255, 0.07);
+  --color-hairline-strong: rgba(255, 255, 255, 0.1);
+  --color-ink: #eceef2;
+  --color-ink-soft: #9599a8;
+  --color-dim: #767a8c;
+  --color-accent: #7de2ff;
+  --color-accent-2: #a378ff;
+  --color-accent-ink: #cfe9ff;
+  --color-danger: #ff9a9a;
+
+  --font-sans: 'Space Grotesk', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* 140 ms pour un changement d'état, 260 ms pour l'apparition d'un panneau. */
+  --ease-out-ui: cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+@layer theme {
+  :root {
+    /* Le dégradé d'accent ne dépasse jamais la taille d'un bouton. */
+    --gradient-accent: linear-gradient(100deg, #7de2ff, #a378ff);
+    /* Les deux lueurs d'ambiance de la scène, présentes sur chaque écran. */
+    --stage-glow:
+      radial-gradient(50% 45% at 12% 0%, rgba(125, 226, 255, 0.1), transparent 70%),
+      radial-gradient(45% 45% at 92% 100%, rgba(163, 120, 255, 0.12), transparent 70%);
+  }
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background: var(--color-stage);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Le prototype ne dessine pas le focus ; il est obligatoire. */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* Les re-rendus de canvas ne sont pas des transitions : ils ne sont pas
+   concernés par cette règle, seuls les panneaux le sont. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+/* Utilitaires de la DA — ce que Tailwind ne dérive pas d'un token de couleur. */
+@utility stage-glow {
+  background-image: var(--stage-glow);
+}
+
+@utility gradient-accent {
+  background-image: var(--gradient-accent);
+}
+
+/* Panneau flottant. Repli opaque là où le backdrop-filter n'existe pas :
+   la lisibilité prime sur la translucidité. */
+@utility panel {
+  background: var(--color-panel-solid);
+  border: 1px solid var(--color-hairline);
+}
+
+@supports (backdrop-filter: blur(12px)) {
+  .panel {
+    background: var(--color-panel);
+    backdrop-filter: blur(12px);
+  }
+}
+
+/* La sélection est un outline, jamais un border : un border décalerait la
+   mise en page d'un demi-pixel à chaque clic. */
+@utility ring-selected {
+  outline: 1.5px solid var(--color-accent);
+  outline-offset: 1.5px;
+}
+
+/* Échelle typographique. Deux familles : Space Grotesk pour ce qu'un humain
+   lit, JetBrains Mono pour ce qu'une machine a produit. Rien sous 10px, et
+   10px uniquement en mono majuscule espacé. */
+@utility t-display {
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+@utility t-title {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+@utility t-card-title {
+  font-size: 17px;
+  font-weight: 600;
+}
+
+@utility t-body {
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+@utility t-ui {
+  font-size: 12px;
+}
+
+@utility t-ui-small {
+  font-size: 11px;
+}
+
+@utility t-mono-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--color-dim);
+}
+
+/* Toléré uniquement en surimpression sur une vignette (métadonnée annexe). */
+@utility t-mono-micro {
+  font-family: var(--font-mono);
+  font-size: 9px;
+}
+
+/* Slider : piste 3px, remplissage en dégradé d'accent, poignée 11px pleine.
+   Le pourcentage de remplissage est posé en variable par le composant. */
+.sf-slider {
+  appearance: none;
+  width: 100%;
+  height: 11px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.sf-slider::-webkit-slider-runnable-track {
+  height: 3px;
+  border-radius: 2px;
+  background:
+    linear-gradient(100deg, #7de2ff, #a378ff) 0 / var(--fill, 0%) 100% no-repeat,
+    rgba(255, 255, 255, 0.09);
+}
+
+.sf-slider::-moz-range-track {
+  height: 3px;
+  border-radius: 2px;
+  background:
+    linear-gradient(100deg, #7de2ff, #a378ff) 0 / var(--fill, 0%) 100% no-repeat,
+    rgba(255, 255, 255, 0.09);
+}
+
+.sf-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 11px;
+  height: 11px;
+  margin-top: -4px;
+  border: 0;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.sf-slider::-moz-range-thumb {
+  width: 11px;
+  height: 11px;
+  border: 0;
+  border-radius: 50%;
+  background: #fff;
+}

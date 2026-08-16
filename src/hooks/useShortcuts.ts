@@ -1,0 +1,81 @@
+import { useEffect, useRef, useState } from 'react'
+
+export type Shortcuts = {
+  onExport: () => void
+  onCopy: () => void
+  /** Nouveau seed : régénère le fond. */
+  onShuffle: () => void
+  onScale: (scale: number) => void
+  onDelete: () => void
+}
+
+/** Vrai quand la frappe appartient à un champ : on ne lui vole pas ses touches. */
+function isTyping(target: EventTarget | null): boolean {
+  return (
+    target instanceof HTMLInputElement ||
+    target instanceof HTMLTextAreaElement ||
+    (target instanceof HTMLElement && target.isContentEditable)
+  )
+}
+
+/**
+ * Raccourcis globaux. `⌘V` n'est pas ici : le collage est géré par
+ * `useImageInput`, qui écoute l'événement `paste` plutôt que la touche.
+ */
+export function useShortcuts(shortcuts: Shortcuts, enabled = true): void {
+  const current = useRef(shortcuts)
+  current.current = shortcuts
+
+  useEffect(() => {
+    if (!enabled) return
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (isTyping(event.target)) return
+      const meta = event.metaKey || event.ctrlKey
+
+      if (meta && event.key === 'e') {
+        event.preventDefault()
+        current.current.onExport()
+        return
+      }
+      if (meta && event.key === 'c') {
+        event.preventDefault()
+        current.current.onCopy()
+        return
+      }
+      if (meta) return
+
+      if (event.key === 'r' || event.key === 'R') {
+        event.preventDefault()
+        current.current.onShuffle()
+      } else if (event.key === '1' || event.key === '2' || event.key === '3') {
+        event.preventDefault()
+        current.current.onScale(Number(event.key))
+      } else if (event.key === 'Delete' || event.key === 'Backspace') {
+        event.preventDefault()
+        current.current.onDelete()
+      }
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [enabled])
+}
+
+/** Sous 1100 px l'inspecteur se replie et le rail passe à l'horizontale. */
+export function useNarrow(breakpoint = 1100): boolean {
+  const query = `(max-width: ${breakpoint - 1}px)`
+  const [narrow, setNarrow] = useState(() =>
+    typeof window === 'undefined' ? false : window.matchMedia(query).matches,
+  )
+
+  useEffect(() => {
+    const media = window.matchMedia(query)
+    const update = () => setNarrow(media.matches)
+    update()
+    media.addEventListener('change', update)
+    return () => media.removeEventListener('change', update)
+  }, [query])
+
+  return narrow
+}

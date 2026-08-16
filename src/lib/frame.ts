@@ -1,3 +1,4 @@
+import type { Point } from './annotate.ts'
 import { css, hexToRgb, luminance, withLuminance, type Rgb } from './color.ts'
 import type { Palette, Settings } from '../types.ts'
 import type { Geometry, WindowBox } from './render.ts'
@@ -66,14 +67,13 @@ export function frameRadius(box: WindowBox, geometry: Geometry, settings: Settin
   return geometry.radius
 }
 
-/** Cisaillement vertical simulant la rotation Y. Doit rester égal à `SKEW` de
- *  `render.ts`, qui l'utilise pour calculer l'encombrement. */
-const SKEW = 0.3
+/** Cisaillement vertical simulant la rotation Y. `render.ts` l'importe pour
+ *  calculer l'encombrement : la matrice et la place qu'elle réclame doivent
+ *  parler du même cisaillement, et c'est l'import qui le garantit. */
+export const SKEW = 0.3
 
 /** Matrice affine 2D `[a, b, c, d, e, f]`, dans l'ordre de `ctx.transform`. */
 export type Matrix = readonly [number, number, number, number, number, number]
-
-export type Point = { x: number; y: number }
 
 export const IDENTITY: Matrix = [1, 0, 0, 1, 0, 0]
 

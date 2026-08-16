@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   MAX_PALETTE_ACCENTS,
+  MAX_WATERMARK_CHARS,
   normalizeStyle,
   parseStyle,
   withAccent,
@@ -66,6 +67,15 @@ describe('parseStyle', () => {
       wrap({ name: 'x', watermark: { dataUrl: 'data:image/png;base64,AAAA', position: 'top-left' } }),
     )
     expect(ok.watermark?.position).toBe('top-left')
+  })
+
+  it('refuse un watermark au préfixe valide mais démesuré', () => {
+    const prefix = 'data:image/png;base64,'
+    const huge = prefix + 'A'.repeat(MAX_WATERMARK_CHARS - prefix.length + 1)
+    expect(parseStyle(wrap({ name: 'x', watermark: { dataUrl: huge } })).watermark).toBeUndefined()
+
+    const limit = prefix + 'A'.repeat(MAX_WATERMARK_CHARS - prefix.length)
+    expect(parseStyle(wrap({ name: 'x', watermark: { dataUrl: limit } })).watermark?.dataUrl).toBe(limit)
   })
 })
 

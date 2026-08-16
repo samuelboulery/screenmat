@@ -59,10 +59,6 @@ export function inkOn(hex: string, dark = '#07070A', light = '#FFFFFF'): string 
   return contrastRatio(hex, dark) >= contrastRatio(hex, light) ? dark : light
 }
 
-export function mix(a: Rgb, b: Rgb, t: number): Rgb {
-  return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t]
-}
-
 export function css([r, g, b]: Rgb, alpha = 1): string {
   return `rgba(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)}, ${alpha})`
 }

@@ -9,10 +9,14 @@ import {
   MultipleIcon,
   UngroupIcon,
 } from './icons.tsx'
-import { Badge, IconButton, Panel, Section } from './ui.tsx'
+import { Badge, IconButton, Section } from './ui.tsx'
 import { findNode, isGroup } from '../lib/tree.ts'
 import type { NodePatch } from '../hooks/useShots.ts'
 import type { Annotation, AnnotationKind, Shot } from '../types.ts'
+
+/* La moitié contextuelle de l'inspecteur : elle ne parle que de la sélection en
+   cours. Elle ne porte pas de panneau — c'est `Inspector` qui l'accueille, en
+   tête de ses sections document, et le panneau reste unique. */
 
 /** Le badge nomme le type du calque sélectionné. Il porte l'icône de l'outil
  *  qui l'a créé et le mot en entier : l'abréviation mono n'avait de sens que
@@ -27,7 +31,7 @@ const KIND_LABEL: Record<AnnotationKind, string> = {
   redaction: 'Redact',
 }
 
-type AnnotateInspectorProps = {
+type LayerInspectorProps = {
   shot: Shot | null
   selectedIds: readonly string[]
   onSelect: (ids: string[], additive: boolean, range: boolean) => void
@@ -38,11 +42,9 @@ type AnnotateInspectorProps = {
   onMoveTo: (shotId: string, ids: readonly string[], parentId: string | null, index: number) => void
   onGroup: (shotId: string, ids: readonly string[]) => void
   onUngroup: (shotId: string, groupId: string) => void
-  /** Descendu sous le bouton de la feuille rétractable, en mode étroit. */
-  offset?: boolean
 }
 
-export default function AnnotateInspector({
+export default function LayerInspector({
   shot,
   selectedIds,
   onSelect,
@@ -53,8 +55,7 @@ export default function AnnotateInspector({
   onMoveTo,
   onGroup,
   onUngroup,
-  offset = false,
-}: AnnotateInspectorProps) {
+}: LayerInspectorProps) {
   const found = shot && selectedIds.length === 1 ? findNode(shot.layers, selectedIds[0]) : null
   const node = found?.node ?? null
   const annotation = node && !isGroup(node) ? node : null
@@ -62,9 +63,7 @@ export default function AnnotateInspector({
   const KindMark = annotation ? KIND_ICON[annotation.kind] : node ? GroupIcon : MultipleIcon
 
   return (
-    <Panel
-      className={`absolute right-5 z-10 max-h-[calc(100%-190px)] w-72 space-y-4 overflow-y-auto p-4 ${offset ? 'top-[124px]' : 'top-[88px]'}`}
-    >
+    <>
       <LayersPanel
         shot={shot}
         selectedIds={selectedIds}
@@ -136,6 +135,6 @@ export default function AnnotateInspector({
           </div>
         </Section>
       )}
-    </Panel>
+    </>
   )
 }

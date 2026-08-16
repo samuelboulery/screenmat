@@ -1,5 +1,5 @@
 import { DeleteIcon, ImageIcon, POSITION_ICON } from './icons.tsx'
-import { Button, DashedTile, Section } from './ui.tsx'
+import { Button, DashedTile, SELECTED, Section } from './ui.tsx'
 import { WATERMARK_POSITIONS } from '../lib/watermark.ts'
 import type { Style, WatermarkPosition } from '../types.ts'
 
@@ -56,7 +56,7 @@ export default function StyleWatermark({
                 onClick={() => onPatchPosition(position)}
                 className={`flex h-8 w-11 items-center justify-center rounded-sm border transition-colors duration-140 disabled:opacity-40 ${
                   mark?.position === position
-                    ? 'border-accent/45 bg-accent/[.14] text-accent-ink'
+                    ? SELECTED
                     : 'border-transparent bg-sunken text-ink-soft hover:text-ink'
                 }`}
               >

@@ -8,7 +8,7 @@ import {
   UnlockedIcon,
   VisibleIcon,
 } from './icons.tsx'
-import { IconButton, Section } from './ui.tsx'
+import { IconButton, SELECTED, Section } from './ui.tsx'
 import { badgeNumbers } from '../lib/annotate.ts'
 import { flatten, isGroup } from '../lib/tree.ts'
 import type { NodePatch } from '../hooks/useShots.ts'
@@ -146,8 +146,8 @@ function LayerRow({
         onDrop({ id: node.id, where: dropZone(event, isGroup(node)) })
       }}
       aria-grabbed={active || undefined}
-      className={`flex items-center gap-2 rounded-sm px-2 py-1 ${
-        active ? 'bg-raised ring-1 ring-accent/60' : 'hover:bg-raised/60'
+      className={`flex items-center gap-2 rounded-sm border px-2 py-1 ${
+        active ? SELECTED : 'border-transparent hover:bg-raised/60'
       } ${target === 'before' ? 'border-t border-accent' : ''} ${
         target === 'after' ? 'border-b border-accent' : ''
       } ${target === 'inside' ? 'ring-1 ring-accent' : ''}`}

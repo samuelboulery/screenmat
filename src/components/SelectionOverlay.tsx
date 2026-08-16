@@ -53,7 +53,7 @@ export function ShotRing({ box, ratio, radius }: { box: WindowBox; ratio: number
         transformOrigin: '0 0',
         transform: `matrix(${matrix[0]}, ${matrix[1]}, ${matrix[2]}, ${matrix[3]}, ${origin.x * ratio}, ${origin.y * ratio})`,
         boxShadow:
-          '0 0 0 1.5px rgba(7,7,10,.65), 0 0 0 3px #7DE2FF, 0 0 0 4.5px rgba(7,7,10,.65)',
+          '0 0 0 1.5px rgba(7,7,10,.65), 0 0 0 3px var(--color-accent), 0 0 0 4.5px rgba(7,7,10,.65)',
       }}
     />
   )
@@ -82,7 +82,7 @@ export default function SelectionOverlay({
           height: area.h * ratio,
           transformOrigin: '0 0',
           transform: frame,
-          border: '1.5px solid #7DE2FF',
+          border: '1.5px solid var(--color-accent)',
           background: 'rgba(7,7,10,.10)',
         }}
       />

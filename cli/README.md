@@ -51,6 +51,14 @@ Trois outils : `shotframe_render`, `shotframe_inspect`, `shotframe_list_styles`.
 Ils renvoient un chemin de fichier, jamais l'image encodée — une PNG en base64
 coûterait des milliers de tokens par appel.
 
+**Où le serveur écrit.** Ici le chemin est choisi par le modèle, pas par vous :
+`shotframe_render` n'écrit donc que sous une racine, le dossier du screenshot
+qu'on lui a donné. `$SHOTFRAME_OUT` la déplace ailleurs. Un `output` qui en
+sort fait échouer l'appel, et rien n'est créé. Le serveur **n'écrase jamais** :
+si le fichier existe, il suffixe `-2`, `-3`… et renvoie le chemin réellement
+écrit. Le CLI, lui, ne connaît pas cette limite — `--out` écrit là où on le lui
+dit, c'est son contrat.
+
 ## Le format de scène
 
 Un document JSON qui décrit tout : entrées, réglages, composition, calques.

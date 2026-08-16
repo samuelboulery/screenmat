@@ -1,6 +1,6 @@
 import { renderAnnotations, renderRedactions } from './layers.ts'
 import { renderBackground } from './background.ts'
-import { renderFrame, windowTransform } from './frame.ts'
+import { SKEW, renderFrame, windowTransform } from './frame.ts'
 import { renderWatermark } from './watermark.ts'
 import { flatten } from './tree.ts'
 import {
@@ -25,9 +25,6 @@ export const BASE_WIDTH = 1600
 /** Hauteur de la barre de titre, en fraction de la largeur de la fenêtre.
  *  Mesuré sur les captures de référence : 48 px pour une fenêtre de 1382 px. */
 export const TITLE_BAR = 0.035
-
-/** Cisaillement vertical simulant la rotation Y. Voir `windowTransform`. */
-const SKEW = 0.3
 
 const RATIOS: Record<Exclude<Ratio, 'auto'>, number> = {
   '4:3': 4 / 3,

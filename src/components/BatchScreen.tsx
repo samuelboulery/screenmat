@@ -1,11 +1,22 @@
 import type { ReactNode } from 'react'
-import { AddIcon, CheckIcon, LocalIcon, WarningIcon } from './icons.tsx'
-import { Badge, DashedTile, MonoLabel, Panel, Section, Segmented } from './ui.tsx'
+import { AddIcon, CancelIcon, ExportAllIcon, LocalIcon, WarningIcon } from './icons.tsx'
+import {
+  Badge,
+  Button,
+  CheckBox,
+  DashedTile,
+  MonoLabel,
+  Panel,
+  Row,
+  Section,
+  Segmented,
+} from './ui.tsx'
 import type { Format, QueueItem, Ratio, Shot, Style } from '../types.ts'
 
 const RATIOS: Ratio[] = ['16:9', '4:3', '1:1', '9:16']
 
-/** Ligne à cocher du panneau : un ratio, une option. */
+/** Ligne à cocher du panneau : un ratio, une option. Même ligne et même case
+ *  que partout ailleurs — `Row` porte la recette de sélection. */
 function CheckRow({
   checked,
   onToggle,
@@ -16,23 +27,10 @@ function CheckRow({
   children: ReactNode
 }) {
   return (
-    <button
-      type="button"
-      onClick={onToggle}
-      aria-pressed={checked}
-      className={`flex w-full items-center gap-2.5 rounded-md border px-2.5 py-2 text-left transition-colors duration-140 ${
-        checked ? 'border-accent/30 bg-accent/10' : 'border-transparent hover:bg-white/[.03]'
-      }`}
-    >
-      <span
-        className={`flex size-[15px] shrink-0 items-center justify-center rounded-xs ${
-          checked ? 'bg-accent text-stage' : 'border-[1.5px] border-white/20'
-        }`}
-      >
-        {checked && <CheckIcon className="size-2.5" />}
-      </span>
+    <Row active={checked} onClick={onToggle} className="py-2">
+      <CheckBox checked={checked} />
       {children}
-    </button>
+    </Row>
   )
 }
 
@@ -62,6 +60,12 @@ type BatchScreenProps = {
   onHarmonize: (harmonize: boolean) => void
   onAddShot: () => void
   onChangeStyle: () => void
+  /* --- Fin de course du lot. Descendue de la barre haute : elle agit sur la
+     file d'à côté, pas sur la navigation. --- */
+  running: boolean
+  filesOut: number
+  onCancel: () => void
+  onExportAll: () => void
   /** Sous 1100 px : le panneau passe sous la grille au lieu d'être docké. */
   narrow?: boolean
 }
@@ -88,6 +92,10 @@ export default function BatchScreen({
   onHarmonize,
   onAddShot,
   onChangeStyle,
+  running,
+  filesOut,
+  onCancel,
+  onExportAll,
   narrow = false,
 }: BatchScreenProps) {
   const byShot = new Map(queue.map((item) => [item.shotId, item]))
@@ -142,12 +150,8 @@ export default function BatchScreen({
                   className={`size-full object-cover ${picked ? '' : 'opacity-50'}`}
                 />
 
-                <span
-                  className={`absolute top-2.5 left-2.5 flex size-4 items-center justify-center rounded-xs ${
-                    picked ? 'bg-accent text-stage' : 'border-[1.5px] border-white/40'
-                  }`}
-                >
-                  {picked && <CheckIcon className="size-3" />}
+                <span className="absolute top-2.5 left-2.5">
+                  <CheckBox checked={picked} />
                 </span>
 
                 <span className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-stage/85 px-2.5 py-2 font-mono text-[10px] text-ink">
@@ -245,6 +249,30 @@ export default function BatchScreen({
           </p>
           <p className="font-mono text-[10px] text-dim">DEST shotframe-batch.zip</p>
         </Section>
+
+        {/* Collé au bas du panneau : la file au-dessus peut défiler, la fin de
+            course reste sous la main. `-mx-6 -mb-6` annule le padding du panneau
+            pour que le filet aille d'un bord à l'autre. */}
+        <div className="panel sticky bottom-0 -mx-6 -mb-6 space-y-2 border-0 border-t border-hairline px-6 py-4">
+          <p className="font-mono text-[10px] text-dim">
+            {selection.length} selected · {filesOut} files out
+          </p>
+          <div className="flex gap-2">
+            <Button onClick={onCancel} disabled={!running} className="flex-1 justify-center">
+              <CancelIcon />
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={onExportAll}
+              disabled={running}
+              className="flex-1 justify-center"
+            >
+              <ExportAllIcon />
+              Export all
+            </Button>
+          </div>
+        </div>
       </Panel>
     </div>
   )

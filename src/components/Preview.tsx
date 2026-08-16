@@ -4,18 +4,18 @@ import TextInput, { useCaretBlink } from './TextInput.tsx'
 import {
   bounds,
   createAnnotation,
-  hitTest,
   overlaps,
   rectFromPoints,
   toFractions,
+  type Point,
 } from '../lib/annotate.ts'
-import { draftRect, withDraft, type Point } from '../lib/draft.ts'
-import { applyMatrix, invertMatrix, windowMatrix } from '../lib/frame.ts'
+import { draftRect, withDraft } from '../lib/draft.ts'
 import { applyHandle, type Handle } from '../lib/handles.ts'
+import { inWindow, layerAt, windowAt, type Target } from '../lib/hit.ts'
 import { pointAt, useCanvasScene, type Inset } from '../hooks/useCanvasScene.ts'
-import type { Geometry, WindowBox } from '../lib/render.ts'
+import type { Geometry } from '../lib/render.ts'
 import { expandSelection, flatten } from '../lib/tree.ts'
-import type { Annotation, AnnotationKind, FractionRect, Scene } from '../types.ts'
+import type { AnnotationKind, FractionRect, Scene } from '../types.ts'
 
 export type { Inset }
 
@@ -23,11 +23,6 @@ const NO_INSET: Inset = { left: 0, right: 0, top: 0, bottom: 0 }
 
 /** Saisie de texte en cours : le calque édité et la position du curseur. */
 export type Editing = { shotId: string; id: string; caret: number }
-
-/** La fenêtre visée par un geste, capturée à son début : le brouillon en a
- *  besoin pendant le rendu, où la géométrie de la frame courante n'existe pas
- *  encore. Elle ne bouge pas en cours de geste. */
-type Target = { shotId: string; box: WindowBox }
 
 type PreviewProps = {
   scene: Scene
@@ -97,12 +92,6 @@ export default function Preview({
   const blink = useCaretBlink(editing !== null)
   const interactive = tool !== null
 
-  /** Le point ramené dans l'espace non tourné d'une fenêtre. */
-  const inWindow = useCallback(
-    (box: WindowBox, point: Point): Point => applyMatrix(invertMatrix(windowMatrix(box)), point),
-    [],
-  )
-
   /** La scène telle qu'elle doit être peinte : brouillon du tracé en cours et
    *  caret de saisie compris. L'export, lui, part de `scene` intacte. */
   const painted = useMemo(() => {
@@ -128,50 +117,8 @@ export default function Preview({
     if (editable) canvasRef.current?.focus()
   }, [editable, canvasRef])
 
-  const shotAt = (index: number) => scene.shots[geometry?.windows[index]?.shot ?? 0] ?? null
-
-  /** Fenêtre visée par un tracé : celle qui contient le point, la plus en avant
-   *  d'abord ; à défaut celle du shot sélectionné. */
-  const targetWindow = (point: Point): Target | null => {
-    if (!geometry) return null
-
-    for (let index = geometry.windows.length - 1; index >= 0; index -= 1) {
-      const box = geometry.windows[index]
-      const local = inWindow(box, point)
-      const inside =
-        local.x >= box.x &&
-        local.x <= box.x + box.width &&
-        local.y >= box.y &&
-        local.y <= box.y + box.height
-      if (inside) {
-        const shot = shotAt(index)
-        if (shot) return { shotId: shot.id, box }
-      }
-    }
-
-    const fallback = geometry.windows.findIndex(
-      (box) => scene.shots[box.shot]?.id === (selectedShotId ?? scene.shots[0]?.id),
-    )
-    const index = fallback >= 0 ? fallback : 0
-    const shot = shotAt(index)
-    return shot ? { shotId: shot.id, box: geometry.windows[index] } : null
-  }
-
-  /** Le calque sous le pointeur, toutes fenêtres confondues. Masqués et
-   *  verrouillés sont hors d'atteinte : c'est tout l'intérêt du cadenas. */
-  const pick = (point: Point): { annotation: Annotation; target: Target } | null => {
-    if (!geometry) return null
-
-    for (let index = geometry.windows.length - 1; index >= 0; index -= 1) {
-      const box = geometry.windows[index]
-      const shot = shotAt(index)
-      if (!shot) continue
-      const reachable = flatten(shot.layers, { skipHidden: true, skipLocked: true })
-      const hit = hitTest(reachable, inWindow(box, point), box)
-      if (hit) return { annotation: hit, target: { shotId: shot.id, box } }
-    }
-    return null
-  }
+  const targetWindow = (point: Point) => windowAt(scene, geometry, point, selectedShotId)
+  const pick = (point: Point) => layerAt(scene, geometry, point)
 
   const selectedShot = scene.shots.find((shot) => shot.id === selectedShotId) ?? scene.shots[0]
   const selectedBox =

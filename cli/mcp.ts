@@ -11,9 +11,9 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { z } from 'zod'
-import { resolve } from 'node:path'
-import { writeFile } from 'node:fs/promises'
+import { basename } from 'node:path'
 import { inspect, render } from './api.ts'
+import { resolveUnder, writeNew, writeRoot } from './write-guard.ts'
 import { STYLES_DIR, listStyles } from './styles-dir.ts'
 import { ANNOTATION_LIMITS } from '../src/lib/annotate.ts'
 
@@ -114,12 +114,15 @@ ${REPERE}`,
   },
   async (args) => {
     const result = await render(args)
-    const output = resolve(args.output ?? defaultOutput(args.shots[0]!.input, result.format))
-    await writeFile(output, result.buffer)
+    const root = writeRoot(args.shots[0]!.input)
+    // Sans `output`, le défaut se replie sur son seul nom de fichier : la
+    // racine décide déjà du dossier, y compris quand SHOTFRAME_OUT la déplace.
+    const wanted = args.output ?? basename(defaultOutput(args.shots[0]!.input, result.format))
+    const output = await writeNew(resolveUnder(root, wanted), result.buffer)
 
     // On renvoie un chemin, jamais l'image : une PNG en base64 coûterait des
     // milliers de tokens par appel pour une image que le modèle n'a pas besoin
-    // de revoir.
+    // de revoir. Ce chemin peut différer de celui demandé — voir `writeNew`.
     return json({ output, width: result.width, height: result.height, bytes: result.buffer.length })
   },
 )

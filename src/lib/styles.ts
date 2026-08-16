@@ -51,6 +51,11 @@ export function normalizeStyle(style: Style): Style {
  *  qu'on vient d'ajouter. */
 export const MAX_PALETTE_ACCENTS = 8
 
+/** Plafond du dataURL d'un filigrane, en caractères — ~2 Mio de base64, soit
+ *  ~1,5 Mio de fichier. Un logo tient très en dessous ; au-delà, c'est un
+ *  `.json` qui essaie de remplir IndexedDB. */
+export const MAX_WATERMARK_CHARS = 2 * 1024 * 1024
+
 export function withAccent(palette: Palette, color: string): Palette {
   if (palette.accents.length >= MAX_PALETTE_ACCENTS) return palette
   return { ...palette, accents: [...palette.accents, color] }
@@ -141,6 +146,9 @@ function parseWatermark(value: unknown): Watermark | undefined {
   if (!isRecord(value) || typeof value.dataUrl !== 'string') return undefined
   // Un dataURL d'image, et rien d'autre : pas de `javascript:` ni d'URL distante.
   if (!/^data:image\/(png|jpeg|webp|svg\+xml);base64,/.test(value.dataUrl)) return undefined
+  // Un logo est un petit fichier. Un `.json` est une donnée externe : sans
+  // plafond, il pousse autant de base64 qu'il veut dans IndexedDB.
+  if (value.dataUrl.length > MAX_WATERMARK_CHARS) return undefined
 
   return {
     dataUrl: value.dataUrl,

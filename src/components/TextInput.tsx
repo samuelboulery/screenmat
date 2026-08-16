@@ -46,7 +46,7 @@ export default function TextInput({ annotation, onText, onCaret, onCommit }: Tex
     <input
       ref={ref}
       value={annotation.text}
-      aria-label="Texte du calque"
+      aria-label="Layer text"
       className="absolute left-0 top-0 size-0 border-0 p-0 opacity-0"
       onChange={(event) => {
         onText(event.target.value)

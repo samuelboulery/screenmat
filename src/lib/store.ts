@@ -39,7 +39,11 @@ function openDb(): Promise<IDBDatabase> {
     }
 
     request.onsuccess = () => resolve(request.result)
-    request.onerror = () => reject(request.error ?? new Error('Ouverture IndexedDB impossible'))
+    request.onerror = () =>
+      reject(
+        request.error ??
+          new Error('Couldn’t open local storage. Private browsing blocks it on some browsers.'),
+      )
   })
 
   return connection
@@ -96,7 +100,8 @@ export async function listHistory(count = 40, before?: number): Promise<HistoryM
       page.push(cursor.value as HistoryMeta)
       cursor.continue()
     }
-    request.onerror = () => reject(request.error ?? new Error('Lecture de l’historique impossible'))
+    request.onerror = () =>
+      reject(request.error ?? new Error('Couldn’t read the export history. Reload the page.'))
   })
 }
 

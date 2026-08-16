@@ -23,7 +23,7 @@ export default function Presets({
             active={style.id === activeStyleId}
             onClick={() => onApplyStyle(style.id)}
             title={style.name}
-            className="size-10 text-[9px]"
+            className="size-10 font-mono text-[10px]"
           >
             {style.name.slice(0, 2).toUpperCase()}
           </Tile>

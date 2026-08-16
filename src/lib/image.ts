@@ -59,7 +59,8 @@ export function toDataUrl(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
     reader.onload = () => resolve(String(reader.result))
-    reader.onerror = () => reject(new Error('Lecture du fichier impossible'))
+    reader.onerror = () =>
+      reject(new Error('Couldn’t read that file. Try a PNG, JPEG or WebP.'))
     reader.readAsDataURL(blob)
   })
 }

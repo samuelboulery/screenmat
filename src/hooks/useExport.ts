@@ -41,7 +41,11 @@ export function useExport(
         await archive(scene, scale, blob, styleId, remember)
       } catch (cause: unknown) {
         setStatus(null)
-        setError(cause instanceof Error ? cause.message : 'Export impossible')
+        setError(
+          cause instanceof Error
+            ? cause.message
+            : 'Export failed. Try a smaller scale or the PNG format.',
+        )
       }
     },
     [remember, styleId],
@@ -54,7 +58,11 @@ export function useExport(
       setCopied(true)
       window.setTimeout(() => setCopied(false), COPIED_MS)
     } catch (cause: unknown) {
-      setError(cause instanceof Error ? cause.message : 'Copie impossible')
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : 'Copy failed. Export the file instead, or allow clipboard access.',
+      )
     }
   }, [])
 

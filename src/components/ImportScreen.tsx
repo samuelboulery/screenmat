@@ -28,9 +28,13 @@ export default function ImportScreen({
   const slots = Array.from({ length: RECENT_SLOTS }, (_, index) => recents[index] ?? null)
 
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-11 px-5">
+    // Ancré sous la barre haute, pas sur le viewport entier : centré sur tout
+    // l'écran, le titre passait derrière la barre dès que la fenêtre raccourcit.
+    // Et `min-h` plutôt que `h` : un centrage flex qui déborde vers le haut
+    // n'est rattrapable par aucun scroll.
+    <div className="stage-glow absolute inset-x-0 top-[58px] bottom-0 flex flex-col items-center justify-center-safe gap-11 overflow-y-auto px-5 py-8">
       <div
-        className={`flex h-[372px] w-[720px] max-w-full flex-col items-center justify-center gap-5 rounded-xl border border-dashed transition-colors duration-140 ${
+        className={`flex min-h-[372px] w-[720px] max-w-full shrink-0 flex-col items-center justify-center gap-5 rounded-xl border border-dashed p-8 transition-colors duration-140 ${
           dragging ? 'border-accent/45 bg-accent/5' : 'border-white/[.16] bg-white/[.02]'
         }`}
       >
@@ -54,8 +58,15 @@ export default function ImportScreen({
         {error && <ErrorNote>{error}</ErrorNote>}
       </div>
 
-      <div className="w-[720px] max-w-full space-y-3">
+      <div className="w-[720px] max-w-full shrink-0 space-y-3">
         <MonoLabel>Recent — this browser</MonoLabel>
+        {/* Quatre cases vides se lisaient comme un chargement bloqué. Tant qu'il
+            n'y a rien, une phrase ; les emplacements reviennent au premier export. */}
+        {recents.length === 0 ? (
+          <p className="t-ui text-dim">
+            Your exports show up here, ready to reopen with the settings that made them.
+          </p>
+        ) : (
         <div className="grid grid-cols-4 gap-4">
           {slots.map((entry, index) =>
             entry ? (
@@ -83,6 +94,7 @@ export default function ImportScreen({
             ),
           )}
         </div>
+        )}
       </div>
     </div>
   )

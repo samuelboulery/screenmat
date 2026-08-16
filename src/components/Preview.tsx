@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import SelectionOverlay from './SelectionOverlay.tsx'
 import TextInput, { useCaretBlink } from './TextInput.tsx'
 import {
@@ -46,6 +46,10 @@ type PreviewProps = {
   onEdit?: (editing: Editing | null) => void
   onEditText?: (shotId: string, id: string, text: string) => void
   onGeometry?: (geometry: Geometry) => void
+  /** Touches nues du canvas (`r`, `1/2/3`, flèches, `⌫`). Présent ⇒ le canvas
+   *  entre dans l'ordre de tabulation et devient la surface d'édition clavier ;
+   *  absent ⇒ aperçu inerte, comme sur l'écran Styles. */
+  onKeys?: (event: React.KeyboardEvent) => void
 }
 
 type Drag =
@@ -85,6 +89,7 @@ export default function Preview({
   onEdit,
   onEditText,
   onGeometry,
+  onKeys,
 }: PreviewProps) {
   const [drag, setDrag] = useState<Drag | null>(null)
   /** Dernière position d'un déplacement, en px canvas. */
@@ -116,6 +121,13 @@ export default function Preview({
 
   const { canvasRef, boxRef, geometryRef, ratio } = useCanvasScene(painted, inset, onGeometry)
   const geometry = geometryRef.current
+
+  // Le canvas est la surface d'édition clavier : lui donner le focus dès qu'il
+  // en devient une, sans quoi `r` ou les flèches exigeraient un clic préalable.
+  const editable = Boolean(onKeys)
+  useEffect(() => {
+    if (editable) canvasRef.current?.focus()
+  }, [editable, canvasRef])
 
   const shotAt = (index: number) => scene.shots[geometry?.windows[index]?.shot ?? 0] ?? null
 
@@ -339,6 +351,13 @@ export default function Preview({
       <div className="relative">
         <canvas
           ref={canvasRef}
+          // `application` plutôt que `img` quand le canvas prend des touches :
+          // c'est ce qui fait passer `r`, les flèches et `⌫` au travers du mode
+          // navigation d'un lecteur d'écran plutôt que de les lui laisser.
+          role={editable ? 'application' : 'img'}
+          aria-label={describeScene(scene)}
+          tabIndex={editable ? 0 : undefined}
+          onKeyDown={onKeys}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
@@ -384,6 +403,22 @@ export default function Preview({
       </div>
     </div>
   )
+}
+
+/**
+ * Le nom accessible du visuel. Un `<canvas>` n'a pas de contenu à lire : sans
+ * cette phrase, le sujet même du produit n'existe pas pour un lecteur d'écran.
+ * Elle dit ce qui a été réglé, pas ce qui a été peint.
+ */
+function describeScene(scene: Scene): string {
+  const layers = scene.shots.reduce((total, shot) => total + flatten(shot.layers).length, 0)
+  const parts = [
+    scene.shots.length > 1 ? `${scene.shots.length} shots` : '1 shot',
+    scene.settings.frame === 'none' ? 'no frame' : `${scene.settings.frame} frame`,
+    `${scene.settings.background} background`,
+  ]
+  if (layers > 0) parts.push(layers > 1 ? `${layers} layers` : '1 layer')
+  return `Export preview — ${parts.join(', ')}`
 }
 
 /** Le rectangle de sélection en px CSS. Il n'appartient pas au visuel : il est

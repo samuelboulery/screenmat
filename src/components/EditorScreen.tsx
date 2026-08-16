@@ -38,6 +38,8 @@ export type EditorScreenProps = {
   selectedLayerIds: readonly string[]
   /** Vrai sous 1100 px : le rail passe à l'horizontale, l'inspecteur se replie. */
   narrow: boolean
+  /** Touches nues de l'édition, à poser sur le canvas — voir `useShortcuts`. */
+  onKeys: (event: React.KeyboardEvent) => void
   onChange: (patch: Partial<Settings>) => void
   onCompose: (patch: Partial<Composition>) => void
   onSelectShot: (id: string, additive: boolean) => void
@@ -129,6 +131,7 @@ export default function EditorScreen(props: EditorScreenProps) {
       <Preview
         scene={scene}
         inset={inset}
+        onKeys={props.onKeys}
         tool={annotating ? ANNOTATION_KIND[annotateTool] : null}
         // Les poignées n'appartiennent qu'au mode annotation : en compose, le
         // canvas doit montrer exactement ce que l'export produira.

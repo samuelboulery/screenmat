@@ -66,7 +66,11 @@ export function useBatch(): Batch {
 
       if (!cancelled.current) triggerDownload(zip, ZIP_NAME)
     } catch (cause: unknown) {
-      setError(cause instanceof Error ? cause.message : 'Export du lot impossible')
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : 'Batch export failed. Try fewer shots or a smaller scale.',
+      )
       setQueue((current) => current.map((item) => ({ ...item, status: 'error' })))
     } finally {
       setRunning(false)

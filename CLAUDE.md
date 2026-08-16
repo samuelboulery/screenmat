@@ -213,12 +213,18 @@ pnpm mcp                # serveur MCP sur stdio
 
 ## Raccourcis
 
-`⌘V` coller · `⌘E` exporter · `⌘C` copier · `R` régénérer le fond ·
-`1/2/3` échelle d'export · `⌘Z` annuler · `⇧⌘Z` refaire.
+**Deux portées, et la frontière n'est pas cosmétique.** Les combinaisons à
+modificateur valent partout : `⌘V` coller · `⌘E` exporter · `⌘C` copier · `⌘Z`
+annuler · `⇧⌘Z` refaire · `⌘D` dupliquer · `⌘A` tout sélectionner · `⌘G` grouper ·
+`⇧⌘G` dégrouper · `⌘↑`/`⌘↓` ordre dans la pile.
 
-Sur la sélection de calques : `Delete` supprimer · `⌘D` dupliquer · `Escape`
-désélectionner · `←↑→↓` déplacer (`⇧` = pas ×5) · `⌘↑`/`⌘↓` ordre dans la pile ·
-`⌘A` tout sélectionner · `⌘G` grouper · `⇧⌘G` dégrouper.
+Les **touches nues** n'existent que quand le canvas a le focus — il l'a par
+défaut dès qu'un shot est chargé : `R` régénérer le fond · `1/2/3` échelle
+d'export · `Delete` supprimer · `Escape` désélectionner · `←↑→↓` déplacer
+(`⇧` = pas ×5). Les poser sur `window` avec `preventDefault()` tuait le
+défilement aux flèches de tout panneau, et WCAG 2.1.4 exige de pouvoir couper,
+remapper, ou n'activer qu'au focus un raccourci à touche unique. `useShortcuts`
+rend le handler du canvas, il ne l'installe pas.
 
 `⇧` **pendant un tracé** aimante une flèche ou un trait aux multiples de 45° —
 horizontales, verticales et diagonales parfaites — et carre une surface. En

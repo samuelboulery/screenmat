@@ -128,7 +128,7 @@ export default function AnnotateInspector({
               )}
               <IconButton
                 icon={DeleteIcon}
-                label="Delete ⌫"
+                label="Delete (⌫)"
                 tone="danger"
                 onClick={() => onDelete(shot.id, selectedIds)}
               />

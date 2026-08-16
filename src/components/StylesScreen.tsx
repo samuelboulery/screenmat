@@ -17,6 +17,8 @@ type StylesScreenProps = {
   onPickWatermark: () => void
   onOverridePalette: (override: boolean) => void
   onImport: () => void
+  /** Sous 1100 px : les deux colonnes latérales s'empilent sous le centre. */
+  narrow?: boolean
 }
 
 /** Un style est un objet local, partageable par fichier. Pas de « brand kit ». */
@@ -32,13 +34,25 @@ export default function StylesScreen({
   onPickWatermark,
   onOverridePalette,
   onImport,
+  narrow = false,
 }: StylesScreenProps) {
   const active = styles.find((style) => style.id === activeId) ?? null
   const palette = active?.palette ?? sampled
 
   return (
-    <div className="stage-glow absolute inset-x-0 top-[58px] bottom-0 grid grid-cols-[236px_1fr_620px] overflow-hidden">
-      <aside className="flex flex-col gap-2 overflow-y-auto border-r border-white/5 p-5">
+    // Trois colonnes fixes tenaient jusqu'à ce qu'on zoome : à 200 %, la colonne
+    // centrale tombait à 56 px et un tiers de l'aperçu sortait du scroll. En
+    // dessous du point de rupture, elles s'empilent.
+    <div
+      className={`stage-glow absolute inset-x-0 top-[58px] bottom-0 grid ${
+        narrow ? 'grid-cols-1 overflow-y-auto' : 'grid-cols-[236px_1fr_620px] overflow-hidden'
+      }`}
+    >
+      <aside
+        className={`flex flex-col gap-2 border-white/5 p-5 ${
+          narrow ? 'border-b' : 'overflow-y-auto border-r'
+        }`}
+      >
         <MonoLabel>Saved — {styles.length}</MonoLabel>
         <div className="space-y-1">
           {styles.map((style) => (
@@ -54,7 +68,7 @@ export default function StylesScreen({
         </DashedTile>
       </aside>
 
-      <div className="flex flex-col gap-6 overflow-y-auto p-7">
+      <div className={`flex flex-col gap-6 p-7 ${narrow ? '' : 'overflow-y-auto'}`}>
         {active ? (
           <>
             <input
@@ -175,7 +189,11 @@ export default function StylesScreen({
         )}
       </div>
 
-      <aside className="flex flex-col gap-4 overflow-y-auto border-l border-white/5 p-7">
+      <aside
+        className={`flex flex-col gap-4 border-white/5 p-7 ${
+          narrow ? 'border-t' : 'overflow-y-auto border-l'
+        }`}
+      >
         <MonoLabel>Live preview</MonoLabel>
         <div className="relative h-[308px] w-full overflow-hidden rounded-lg border border-hairline bg-sunken">
           {preview && <Preview scene={preview} />}

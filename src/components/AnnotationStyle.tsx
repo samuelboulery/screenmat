@@ -54,7 +54,7 @@ export default function AnnotationStyle({
                 tone="danger"
                 active={annotation.redaction === mode.value}
                 onClick={() => onPatch({ redaction: mode.value })}
-                className="h-11 font-mono text-[9px]"
+                className="h-11 font-mono text-[10px]"
               >
                 <Icon />
                 {mode.label}
@@ -83,18 +83,21 @@ export default function AnnotationStyle({
               onClick={() => onPatch({ color })}
             />
           ))}
+          {/* L'input garde sa taille : réduit à 0×0 il restait focalisable, et
+              l'anneau de focus n'avait plus rien à entourer. Ici il couvre tout
+              le carré, invisible mais focalisable là où on le voit. */}
           <label
             title="Custom color"
-            className="flex size-10 cursor-pointer items-center justify-center rounded-lg border border-dashed border-white/20 text-[9px] text-dim hover:border-white/35"
+            className="relative flex size-10 cursor-pointer items-center justify-center rounded-lg border border-dashed border-white/20 text-[10px] text-dim hover:border-white/35"
           >
+            <span aria-hidden>···</span>
             <input
               type="color"
               value={annotation.color}
               aria-label="Custom color"
               onChange={(event) => onPatch({ color: event.target.value })}
-              className="size-0 opacity-0"
+              className="absolute inset-0 size-full cursor-pointer rounded-lg opacity-0"
             />
-            ···
           </label>
         </div>
         <Slider
@@ -123,7 +126,7 @@ export default function AnnotationStyle({
                     key={style.value}
                     active={annotation.labelStyle === style.value}
                     onClick={() => onPatch({ labelStyle: style.value })}
-                    className="h-[34px] font-mono text-[9px]"
+                    className="h-[34px] font-mono text-[10px]"
                   >
                     {style.label}
                   </Tile>
@@ -138,7 +141,7 @@ export default function AnnotationStyle({
               <span className="t-ui text-ink-soft">Invert</span>
               <Toggle
                 checked={annotation.invert}
-                label="Inverser le fond et le texte"
+                label="Invert"
                 onChange={(invert) => onPatch({ invert })}
               />
             </div>

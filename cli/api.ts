@@ -12,6 +12,7 @@ import { createCanvas, loadImage, type Image } from '@napi-rs/canvas'
 import { readFile } from 'node:fs/promises'
 import { resolveStyle } from './styles-dir.ts'
 import { BASE_WIDTH, computeGeometry, renderScene, type Geometry } from '../src/lib/render.ts'
+import { screenRect } from '../src/lib/frame.ts'
 import { extractPalette } from '../src/lib/palette.ts'
 import { isImageSource, parseScene, type ImageSource, type SceneSpec } from '../src/lib/spec.ts'
 import type { FractionRect, Format, Palette, Scene, Settings, Shot } from '../src/types.ts'
@@ -114,17 +115,20 @@ function pickSettings(parsed: Settings, explicit: Record<string, unknown>): Part
 }
 
 async function buildScene(spec: SceneSpec): Promise<Scene> {
-  const shots: Shot[] = []
-  for (const [index, shot] of spec.shots.entries()) {
-    const image = await decode(shot.input)
-    shots.push({
+  // Les décodages sont indépendants : les enchaîner faisait attendre le
+  // vingt-quatrième shot derrière les vingt-trois autres.
+  const images = await Promise.all(spec.shots.map((shot) => decode(shot.input)))
+
+  const shots: Shot[] = spec.shots.map((shot, index) => {
+    const image = asElement(images[index]!)
+    return {
       id: `shot-${index + 1}`,
       name: shot.name,
-      image: asElement(image),
-      palette: spec.palette ?? extractPalette(asElement(image)),
+      image,
+      palette: spec.palette ?? extractPalette(image),
       layers: shot.layers,
-    })
-  }
+    }
+  })
 
   const palette: Palette = spec.palette ?? shots[0]!.palette
 
@@ -202,14 +206,21 @@ export async function inspect(
   )
 
   const { window } = geometry
-  const bar = geometry.titleBar / window.width
+  // Même source que le cadre et que le floutage : le bezel d'un macbook ou d'un
+  // iphone compte, et le recalculer ici l'avait fait oublier.
+  const screen = screenRect(window, geometry, spec.settings)
 
   return {
     imageWidth: image.naturalWidth,
     imageHeight: image.naturalHeight,
     // Origine au coin haut-gauche de la fenêtre, unité = sa largeur.
-    screen: { x: 0, y: bar, w: 1, h: window.height / window.width - bar },
-    titleBar: bar,
+    screen: {
+      x: (screen.x - window.x) / window.width,
+      y: (screen.y - window.y) / window.width,
+      w: screen.width / window.width,
+      h: screen.height / window.width,
+    },
+    titleBar: geometry.titleBar / window.width,
     canvas: { width: geometry.width, height: geometry.height },
   }
 }

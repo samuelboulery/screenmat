@@ -225,21 +225,27 @@ export function renderScene(
 
   renderBackground(ctx, geometry, palette, settings, scale, scene.backgroundImage)
 
-  for (const box of geometry.windows) {
+  // Aplati une fois par fenêtre : le rendu destructif et le rendu des
+  // annotations lisent la même liste, en deux passes séparées.
+  const painted = geometry.windows.map((box) => {
     const shot = shots[box.shot] ?? first
+    return { box, shot, layers: visible(shot) }
+  })
+
+  for (const { box, shot, layers } of painted) {
     ctx.save()
     windowTransform(ctx, box)
     renderFrame(ctx, box, geometry, shot.image, shot.palette, settings)
     ctx.restore()
     // Le floutage est cuit dans les pixels, sous le clip de la fenêtre : la
     // donnée masquée ne se retrouve jamais dans le fichier exporté.
-    renderRedactions(ctx, box, geometry, visible(shot), settings)
+    renderRedactions(ctx, box, geometry, shot.image, layers, settings)
   }
 
   // Les calques non destructifs passent après toutes les fenêtres : en
   // multi-shot, une annotation n'est jamais recouverte par la fenêtre voisine.
-  for (const box of geometry.windows) {
-    renderAnnotations(ctx, box, visible(shots[box.shot] ?? first), scene.editing)
+  for (const { box, layers } of painted) {
+    renderAnnotations(ctx, box, layers, scene.editing)
   }
 
   if (scene.watermark) {

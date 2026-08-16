@@ -2,7 +2,7 @@
 {
   "id": "T-0047",
   "titre": "Repère du shot actif sur le canvas multi-shot",
-  "colonne": "revue",
+  "colonne": "fait",
   "priorite": "haute",
   "charge": "s",
   "tags": [

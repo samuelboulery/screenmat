@@ -2,7 +2,7 @@
 {
   "id": "T-0046",
   "titre": "Le logo ramène à l'écran d'accueil",
-  "colonne": "revue",
+  "colonne": "fait",
   "priorite": "moyenne",
   "charge": "xs",
   "tags": [

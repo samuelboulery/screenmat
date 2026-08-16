@@ -2,7 +2,7 @@
 {
   "id": "T-0045",
   "titre": "Alléger la barre haute vers le filmstrip",
-  "colonne": "revue",
+  "colonne": "fait",
   "priorite": "haute",
   "charge": "m",
   "tags": [

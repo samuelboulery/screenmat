@@ -2,7 +2,7 @@
 {
   "id": "T-0049",
   "titre": "Favicon",
-  "colonne": "revue",
+  "colonne": "fait",
   "priorite": "basse",
   "charge": "xs",
   "tags": [

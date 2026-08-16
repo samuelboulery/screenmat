@@ -2,7 +2,7 @@
 {
   "id": "T-0048",
   "titre": "Confirmations aux couleurs de l'app",
-  "colonne": "revue",
+  "colonne": "fait",
   "priorite": "moyenne",
   "charge": "s",
   "tags": [

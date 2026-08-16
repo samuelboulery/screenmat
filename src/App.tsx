@@ -5,8 +5,7 @@ import EditorScreen from './components/EditorScreen.tsx'
 import HistoryScreen from './components/HistoryScreen.tsx'
 import ImportScreen from './components/ImportScreen.tsx'
 import StylesScreen from './components/StylesScreen.tsx'
-import TopBar, { type Mode, type View } from './components/TopBar.tsx'
-import TopBarActions from './components/TopBarActions.tsx'
+import TopBar from './components/TopBar.tsx'
 import { ErrorNote } from './components/ui.tsx'
 import { useBatch } from './hooks/useBatch.ts'
 import { useExport } from './hooks/useExport.ts'
@@ -30,6 +29,7 @@ import {
   type Format,
   type Ratio,
   type Scene,
+  type Screen,
   type Palette,
   type Settings,
   type WatermarkPosition,
@@ -41,8 +41,7 @@ type PickTarget = 'shot' | SideTarget
 export default function App() {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS)
   const [composition, setComposition] = useState<Composition>(DEFAULT_COMPOSITION)
-  const [view, setView] = useState<View>('editor')
-  const [mode, setMode] = useState<Mode>('compose')
+  const [screen, setScreen] = useState<Screen>('edit')
   const [scale, setScale] = useState(2)
   const [failure, setFailure] = useState<string | null>(null)
   const [backgroundImage, setBackgroundImage] = useState<HTMLImageElement | null>(null)
@@ -61,7 +60,7 @@ export default function App() {
         images,
         files.map((file) => file.name.replace(/\.[a-z0-9]+$/i, '')),
       )
-      setView('editor')
+      setScreen('edit')
     },
     [shots],
   )
@@ -76,7 +75,7 @@ export default function App() {
     library,
     settings,
     setSettings,
-    useCallback(() => setView('styles'), []),
+    useCallback(() => setScreen('styles'), []),
   )
   const { activeStyle, watermarkImage } = styles
 
@@ -194,8 +193,7 @@ export default function App() {
       // l'app : un réglage ajouté depuis y manque, et l'`undefined` ressort en
       // `rgba(NaN, …)` au rendu. IndexedDB est une frontière, comme un import.
       setSettings(parseSettings(entry.settings))
-      setView('editor')
-      setMode('compose')
+      setScreen('edit')
     },
     [library.history, shots],
   )
@@ -240,8 +238,7 @@ export default function App() {
     setBackgroundImage(null)
     setBatchRatios(['16:9'])
     setScale(2)
-    setView('editor')
-    setMode('compose')
+    setScreen('edit')
     setFailure(null)
   }, [shots, batch, confirm])
 
@@ -271,36 +268,14 @@ export default function App() {
   return (
     <div className="stage-glow relative h-full" {...input.dropHandlers}>
       <TopBar
-        view={view}
-        mode={mode}
-        showModes={!empty}
-        onView={setView}
-        onMode={setMode}
+        screen={screen}
+        showNav={!empty}
+        onScreen={setScreen}
         onHome={() => void newSession()}
-      >
-        <TopBarActions
-          view={view}
-          mode={mode}
-          empty={empty}
-          copied={exporter.copied}
-          selected={shots.selection.length}
-          filesOut={shots.selection.length * batchRatios.length}
-          batchRunning={batch.running}
-          activeStyle={activeStyle}
-          exports={library.history.length}
-          bytes={library.bytes}
-          onCopy={onCopy}
-          onExport={onExport}
-          onCancelBatch={batch.cancel}
-          onExportBatch={startBatch}
-          onExportStyle={exportStyle}
-          onSaveStyle={styles.save}
-          onNewShot={() => pick('shot')}
-        />
-      </TopBar>
+      />
 
       <main>
-        {empty && view === 'editor' ? (
+        {empty && screen === 'edit' ? (
           <ImportScreen
             dragging={input.dragging}
             error={input.error}
@@ -310,7 +285,7 @@ export default function App() {
             onUseLastStyle={() => library.activeStyleId && styles.apply(library.activeStyleId)}
             onOpenRecent={(id) => void reopen(id)}
           />
-        ) : view === 'editor' && mode === 'batch' ? (
+        ) : screen === 'batch' ? (
           <BatchScreen
             shots={shots.shots}
             selection={shots.selection}
@@ -334,12 +309,15 @@ export default function App() {
             onFormat={(format: Format) => patch({ format })}
             onHarmonize={setHarmonize}
             onAddShot={() => pick('shot')}
-            onChangeStyle={() => setView('styles')}
+            onChangeStyle={() => setScreen('styles')}
+            running={batch.running}
+            filesOut={shots.selection.length * batchRatios.length}
+            onCancel={batch.cancel}
+            onExportAll={startBatch}
             narrow={narrow}
           />
-        ) : view === 'editor' && scene ? (
+        ) : screen === 'edit' && scene ? (
           <EditorScreen
-            mode={mode === 'annotate' ? 'annotate' : 'compose'}
             scene={scene}
             shots={shots.shots}
             activeShotId={shots.activeShotId}
@@ -351,9 +329,12 @@ export default function App() {
             output={output}
             canUndo={history.canUndo}
             canRedo={history.canRedo}
+            copied={exporter.copied}
             onUndo={history.undo}
             onRedo={history.redo}
             onNewSession={() => void newSession()}
+            onCopy={onCopy}
+            onExport={onExport}
             onKeys={onCanvasKeys}
             onChange={patch}
             onCompose={compose}
@@ -378,7 +359,7 @@ export default function App() {
               shots.selectLayers(ids, additive ? 'toggle' : 'replace')
             }}
           />
-        ) : view === 'styles' ? (
+        ) : screen === 'styles' ? (
           <StylesScreen
             styles={library.styles}
             activeId={library.activeStyleId}
@@ -424,7 +405,7 @@ export default function App() {
             {...paletteEdits}
             onEditInEditor={(id) => {
               styles.apply(id)
-              setView('editor')
+              setScreen('edit')
             }}
             onDelete={(id) => {
               // Un style supprimé n'est pas dans la pile d'annulation : on
@@ -439,6 +420,8 @@ export default function App() {
               })
             }}
             onImport={() => pick('style')}
+            onExportStyle={exportStyle}
+            onSaveStyle={styles.save}
             narrow={narrow}
           />
         ) : (

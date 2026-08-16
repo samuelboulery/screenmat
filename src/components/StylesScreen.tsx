@@ -2,7 +2,7 @@ import Preview from './Preview.tsx'
 import StylePalette from './StylePalette.tsx'
 import StyleWatermark from './StyleWatermark.tsx'
 import { FRAMES } from './Inspector.tsx'
-import { DeleteIcon, FRAME_ICON, JsonIcon } from './icons.tsx'
+import { DeleteIcon, FRAME_ICON, JsonIcon, SaveStyleIcon } from './icons.tsx'
 import { Button, DashedTile, MonoLabel, Row, Section, Segmented, Slider, Tile } from './ui.tsx'
 import type { Palette, Scene, Settings, Shot, Style, WatermarkPosition } from '../types.ts'
 
@@ -26,6 +26,10 @@ type StylesScreenProps = {
   onEditInEditor: (id: string) => void
   onDelete: (id: string) => void
   onImport: () => void
+  /** Écrire le style affiché dans un `.json` — descendu de la barre haute. */
+  onExportStyle: (style: Style) => void
+  /** Enregistrer les réglages courants de l'éditeur comme nouveau style. */
+  onSaveStyle: () => void
   /** Sous 1100 px : les deux colonnes latérales s'empilent sous le centre. */
   narrow?: boolean
 }
@@ -50,6 +54,8 @@ export default function StylesScreen({
   onEditInEditor,
   onDelete,
   onImport,
+  onExportStyle,
+  onSaveStyle,
   narrow = false,
 }: StylesScreenProps) {
   const active = styles.find((style) => style.id === activeId) ?? null
@@ -78,10 +84,19 @@ export default function StylesScreen({
             </Row>
           ))}
         </div>
-        <DashedTile onClick={onImport} className="mt-auto h-11 shrink-0 gap-1.5 font-mono text-[10px]">
-          <JsonIcon />
-          Import .json
-        </DashedTile>
+        {/* C'est ici que naissent les styles : l'un vient d'un fichier, l'autre
+            des réglages en cours dans l'éditeur. Les deux au pied de la liste
+            qu'ils alimentent, plutôt que dans la barre haute. */}
+        <div className="mt-auto flex shrink-0 flex-col gap-2">
+          <Button variant="secondary" onClick={onSaveStyle} className="justify-center">
+            <SaveStyleIcon />
+            Save current settings
+          </Button>
+          <DashedTile onClick={onImport} className="h-11 gap-1.5 font-mono text-[10px]">
+            <JsonIcon />
+            Import .json
+          </DashedTile>
+        </div>
       </aside>
 
       <div className={`flex flex-col gap-6 p-7 ${narrow ? '' : 'overflow-y-auto'}`}>
@@ -94,7 +109,11 @@ export default function StylesScreen({
                 aria-label="Style name"
                 className="t-title min-w-0 flex-1 bg-transparent text-ink outline-none"
               />
-              <Button onClick={() => onEditInEditor(active.id)} className="shrink-0">
+              <Button onClick={() => onExportStyle(active)} className="shrink-0">
+                <JsonIcon />
+                Export .json
+              </Button>
+              <Button variant="primary" onClick={() => onEditInEditor(active.id)} className="shrink-0">
                 Edit in editor
               </Button>
             </div>

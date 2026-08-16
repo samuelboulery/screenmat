@@ -1,3 +1,10 @@
+/**
+ * Les quatre destinations de l'app. `edit` porte à lui seul l'embellissement et
+ * l'annotation : ce sont deux moitiés du même geste, pas deux écrans. L'import
+ * n'en fait pas partie — il se déduit de « aucun shot chargé ».
+ */
+export type Screen = 'edit' | 'batch' | 'styles' | 'history'
+
 export type Ratio = '4:3' | '1:1' | '16:9' | '9:16' | 'auto'
 
 export type Format = 'png' | 'webp'

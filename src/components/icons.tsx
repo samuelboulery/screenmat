@@ -25,7 +25,6 @@ import {
   FileJson,
   FilePlus2,
   FolderOpen,
-  Frame,
   Grid3x3,
   Group,
   Hash,
@@ -37,11 +36,9 @@ import {
   Lock,
   LockOpen,
   MousePointer2,
-  PaintBucket,
   Palette,
   PanelRightClose,
   PanelRightOpen,
-  PenLine,
   Plus,
   Redo2,
   Rotate3d,
@@ -77,18 +74,19 @@ export type { LucideIcon }
 
 /* ── Navigation ─────────────────────────────────────────────────────────── */
 
-export const ViewIcon = { editor: Image, styles: Palette, history: History } as const
-export const ModeIcon = { compose: Wand2, annotate: PenLine, batch: Boxes } as const
+/** Une icône par destination — quatre, comme la barre haute. */
+export const ScreenIcon = {
+  edit: Wand2,
+  batch: Boxes,
+  styles: Palette,
+  history: History,
+} as const
 export const LocalIcon = ShieldCheck
 
 /* ── Outils ─────────────────────────────────────────────────────────────── */
 
 export const TOOL_ICON: Record<Tool, LucideIcon> = {
-  FRM: Frame,
-  BG: PaintBucket,
-  '3D': Rotate3d,
   TXT: Type,
-  BLUR: Droplet,
   SEL: MousePointer2,
   NUM: Hash,
   ARR: ArrowUpRight,

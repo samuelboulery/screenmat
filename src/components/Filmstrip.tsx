@@ -1,6 +1,14 @@
 import { useRef } from 'react'
-import { AddIcon, NewSessionIcon, RedoIcon, UndoIcon } from './icons.tsx'
-import { DashedTile, IconButton, Panel } from './ui.tsx'
+import {
+  AddIcon,
+  CopiedIcon,
+  CopyIcon,
+  ExportIcon,
+  NewSessionIcon,
+  RedoIcon,
+  UndoIcon,
+} from './icons.tsx'
+import { Button, DashedTile, IconButton, Panel } from './ui.tsx'
 import type { Format, Shot } from '../types.ts'
 
 type FilmstripProps = {
@@ -13,6 +21,7 @@ type FilmstripProps = {
   onReorder: (from: number, to: number) => void
   /** Docké en bas de la scène plutôt que flottant et centré. */
   docked?: boolean
+  /** Un état, jamais un mode d'emploi : « 2 of 5 shots in composition ». */
   hint?: string
   /* --- Groupe « document ». Descendu de la barre haute : ces trois-là
      décrivent ou manipulent le document, pas la navigation. Facultatif en bloc
@@ -24,6 +33,11 @@ type FilmstripProps = {
   onUndo?: () => void
   onRedo?: () => void
   onNewSession?: () => void
+  /* --- Fin de course. Elles aussi appartiennent au document : les laisser dans
+     la barre haute y faisait entrer et sortir des boutons à chaque écran. --- */
+  copied?: boolean
+  onCopy?: () => void
+  onExport?: () => void
 }
 
 /** Filet de séparation, celui déjà en place entre vignettes et hint. */
@@ -43,13 +57,16 @@ export default function Filmstrip({
   onAdd,
   onReorder,
   docked = false,
-  hint = '⌘V to add · drag to reorder',
+  hint,
   output,
   canUndo = false,
   canRedo = false,
   onUndo,
   onRedo,
   onNewSession,
+  copied = false,
+  onCopy,
+  onExport,
 }: FilmstripProps) {
   const dragged = useRef<number | null>(null)
   const size = docked ? 'h-[42px] w-[66px]' : 'h-10 w-[62px]'
@@ -67,7 +84,7 @@ export default function Filmstrip({
       {/* `p-1` compensé par `-m-1` : l'anneau de sélection déborde de 3 px
           (1,5 px de trait + 1,5 px d'offset) et `overflow-x-auto` le rognerait.
           La marge négative rend la place prise, la mise en page ne bouge pas. */}
-      <div className="-m-1 flex min-w-0 items-center gap-2 overflow-x-auto p-1">
+      <div className="-m-1 flex min-w-0 flex-1 items-center gap-2 overflow-x-auto p-1">
         {shots.map((shot, index) => {
           const included = selection ? selection.includes(shot.id) : shot.id === activeId
           return (
@@ -107,8 +124,15 @@ export default function Filmstrip({
         </DashedTile>
       </div>
 
-      <Divider />
-      <span className="t-mono-micro shrink-0 text-dim">{hint}</span>
+      {/* Un hint n'existe que s'il dit un état — combien de shots la composition
+          retient. Le mode d'emploi (« ⌘V to add · drag to reorder ») a été
+          retiré : il volait la place aux vignettes, qui, elles, montrent. */}
+      {hint && (
+        <>
+          <Divider />
+          <span className="t-mono-micro shrink-0 text-dim">{hint}</span>
+        </>
+      )}
 
       {onUndo && (
         <>
@@ -136,6 +160,30 @@ export default function Filmstrip({
               />
             </>
           )}
+        </>
+      )}
+
+      {onExport && (
+        <>
+          <Divider />
+          {/* Le mot tombe sous 1180 px, comme le reste du panneau — mais un mot
+              masqué en `display:none` sort aussi du nom accessible : d'où
+              `aria-label`, qui ne bouge pas avec la largeur. */}
+          <div className="flex shrink-0 items-center gap-2">
+            <Button onClick={onCopy} title="Copy (⌘C)" aria-label="Copy (⌘C)">
+              {copied ? <CopiedIcon /> : <CopyIcon />}
+              <span className="max-[1180px]:hidden">{copied ? 'Copied' : 'Copy'}</span>
+            </Button>
+            <Button
+              variant="primary"
+              onClick={onExport}
+              title="Export (⌘E)"
+              aria-label="Export (⌘E)"
+            >
+              <ExportIcon />
+              <span className="max-[1180px]:hidden">Export</span>
+            </Button>
+          </div>
         </>
       )}
     </Panel>

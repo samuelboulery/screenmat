@@ -1,8 +1,25 @@
 import type { ButtonHTMLAttributes, ComponentProps, ReactNode } from 'react'
-import type { LucideIcon } from './icons.tsx'
+import { CheckIcon, CollapsedIcon, type LucideIcon } from './icons.tsx'
 
 /* Composants de base de la DA « Afterglow ». Un seul accent, pour exactement
    deux choses : l'action primaire et la sélection courante. */
+
+/* Deux recettes de sélection, pas six. Elles se définissent ici et nulle part
+   ailleurs — un composant qui réécrit la chaîne fait diverger la DA au premier
+   ajustement d'opacité.
+
+   `SWITCH_ON` marque un **commutateur** : ce qui change de vue ou de réglage
+   (navigation, instrument, ratio, format). Neutre, parce qu'il y en a toujours
+   un d'allumé et que l'accent y perdrait son sens.
+
+   `SELECTED` marque un **contenu sélectionné** : ce sur quoi la prochaine
+   action portera (un shot, un calque, un style, un preset). C'est là que
+   l'accent gagne sa place. Une image ou une couleur, elles, prennent
+   `ring-selected` : un fond teinté mentirait sur ce qu'elles montrent. */
+export const SWITCH_ON = 'bg-raised text-white'
+export const SELECTED = 'border-accent/35 bg-accent/12 text-accent-ink'
+/** Même recette pour ce qui touche au floutage — l'accent y est interdit. */
+export const SELECTED_DANGER = 'border-danger/35 bg-danger/12 text-[#FFC9C9]'
 
 /* `ComponentProps<'button'>` plutôt que `ButtonHTMLAttributes` : `ref` en fait
    partie, et le dialogue de confirmation a besoin de poser le focus initial sur
@@ -95,14 +112,40 @@ export function MonoLabel({ children, className = '' }: { children: ReactNode; c
 export function Section({
   title,
   aside,
+  collapsible = false,
+  open = false,
   children,
 }: {
   title: string
   aside?: ReactNode
+  /** Repliable : l'inspecteur unique porte neuf sections dans 288 px. */
+  collapsible?: boolean
+  open?: boolean
   children: ReactNode
 }) {
+  const frame = 'space-y-3 border-t border-hairline pt-4 first:border-0 first:pt-0'
+
+  // `<details>` natif plutôt qu'un état et un `aria-expanded` à la main : le
+  // clavier, le nom accessible et la recherche dans la page marchent seuls.
+  // ponytail: l'ouverture n'est pas persistée — la poser dans `localStorage`
+  // (comme `LAST_STYLE_KEY`, lib/styles.ts) si le repli se refait chaque session.
+  if (collapsible) {
+    return (
+      <details open={open} className={`group ${frame}`}>
+        <summary className="flex list-none items-center justify-between [&::-webkit-details-marker]:hidden">
+          <h2 className="t-mono-label flex items-center gap-1.5">
+            <CollapsedIcon className="size-3 transition-transform duration-140 group-open:rotate-90" />
+            {title}
+          </h2>
+          {aside}
+        </summary>
+        <div className="space-y-3 pt-3">{children}</div>
+      </details>
+    )
+  }
+
   return (
-    <section className="space-y-3 border-t border-hairline pt-4 first:border-0 first:pt-0">
+    <section className={frame}>
       <div className="flex items-center justify-between">
         <h2 className="t-mono-label">{title}</h2>
         {aside}
@@ -134,10 +177,13 @@ export function Segmented<T extends string>({
           key={option.value}
           type="button"
           title={option.title}
+          // Un libellé que la largeur peut masquer (`display:none`) sort aussi du
+          // nom accessible : `title` sert alors de nom, et il ne bouge pas.
+          aria-label={option.title}
           aria-pressed={value === option.value}
           onClick={() => onPick(option.value)}
           className={`t-ui flex items-center gap-1.5 rounded-sm px-3 py-1.5 transition-colors duration-140 ${
-            value === option.value ? 'bg-raised text-white' : 'text-ink-soft hover:text-ink'
+            value === option.value ? SWITCH_ON : 'text-ink-soft hover:text-ink'
           }`}
         >
           {option.label}
@@ -221,7 +267,7 @@ export function Toggle({
   )
 }
 
-/** Case d'outil ou de preset. La sélection est un fond translucide accent. */
+/** Case de preset ou de commutateur. `tone` dit laquelle des deux recettes. */
 export function Tile({
   active,
   tone = 'accent',
@@ -234,10 +280,10 @@ export function Tile({
 }) {
   const selected =
     tone === 'danger'
-      ? 'bg-danger/[.12] border-danger/35 text-[#FFC9C9]'
+      ? SELECTED_DANGER
       : tone === 'raised'
-        ? 'bg-raised border-transparent text-white'
-        : 'bg-accent/[.14] border-accent/45 text-accent-ink'
+        ? `border-transparent ${SWITCH_ON}`
+        : SELECTED
 
   return (
     <button
@@ -265,14 +311,30 @@ export function Row({
       type="button"
       aria-pressed={active}
       className={`flex w-full items-center gap-2.5 rounded-md border px-2.5 py-2.5 text-left transition-colors duration-140 ${
-        active
-          ? 'border-accent/30 bg-accent/10 text-ink'
-          : 'border-transparent text-ink-soft hover:bg-white/[.03] hover:text-ink'
+        active ? SELECTED : 'border-transparent text-ink-soft hover:bg-white/[.03] hover:text-ink'
       } ${className}`}
       {...rest}
     >
       {children}
     </button>
+  )
+}
+
+/**
+ * Case à cocher, une seule taille et une seule bordure. Purement visuelle : le
+ * bouton qui la porte annonce déjà son état par `aria-pressed`, une seconde
+ * annonce ferait doublon au lecteur d'écran.
+ */
+export function CheckBox({ checked }: { checked: boolean }) {
+  return (
+    <span
+      aria-hidden
+      className={`flex size-[15px] shrink-0 items-center justify-center rounded-xs ${
+        checked ? 'bg-accent text-stage' : 'border-[1.5px] border-white/20'
+      }`}
+    >
+      {checked && <CheckIcon className="size-2.5" />}
+    </span>
   )
 }
 

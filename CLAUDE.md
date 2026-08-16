@@ -18,6 +18,15 @@ primaire et la sélection courante. `#FF9A9A` est réservé au floutage et au
 destructif. Aucune ombre portée dans le chrome — la seule ombre du produit
 appartient à l'artwork.
 
+**Deux recettes de sélection, définies dans `src/components/ui.tsx` et nulle
+part ailleurs.** `SWITCH_ON` (`bg-raised text-white`) marque un *commutateur* —
+navigation, instrument, ratio, format : il y en a toujours un d'allumé, l'accent
+y perdrait son sens. `SELECTED` marque un *contenu sélectionné* — shot, calque,
+style, preset : ce sur quoi la prochaine action portera, et c'est là que
+l'accent gagne sa place. Une image ou une couleur prennent `ring-selected` : un
+fond teinté mentirait sur ce qu'elles montrent. Un composant qui réécrit une de
+ces chaînes fait diverger la DA au premier ajustement d'opacité.
+
 Deux familles : **Space Grotesk** (ce qu'un humain lit) et **JetBrains Mono**
 (ce qu'une machine a produit : labels de section, dimensions, seeds, noms de
 fichiers). Les deux sont embarquées en woff2 dans `public/fonts/` — l'app doit
@@ -70,8 +79,10 @@ src/
     useExport.ts          ← export, copie, écriture dans l'historique
     useBatch.ts           ← file d'attente et zip
     useShortcuts.ts       ← raccourcis globaux + point de rupture 1100 px
-  components/             ← TopBar · ToolRail · Inspector · LayersPanel ·
-                            TextInput · Filmstrip · écrans
+  components/             ← TopBar (nav seule) · ToolRail (instruments) ·
+                            Inspector = LayerInspector + BackgroundSection +
+                            sections document · LayersPanel · TextInput ·
+                            Filmstrip (dock du document) · écrans
 cli/                      ← la porte machine, voir « Pilotage par une machine »
   dom-shim.ts             ← globales Canvas pour Node — le seul polyfill
   api.ts                  ← render(spec) · inspect(input) — LE CŒUR
@@ -89,18 +100,31 @@ n'en embarque aucune.
 
 ## Écrans
 
-Une barre haute unique de 58 px : modes d'édition à gauche (**Compose /
-Annotate / Batch**), vues de gestion à droite (**Editor / Styles / History**).
+**Quatre destinations, un seul état** (`Screen`, dans `types.ts`) : `edit`,
+`batch`, `styles`, `history`. La barre haute de 58 px ne porte que l'identité et
+la navigation — deux groupes segmentés, `Edit | Batch` (le document) puis
+`Styles | History` (la bibliothèque), séparés par un espace et non par un trait.
+Aucune action n'y entre : sa largeur ne bouge donc plus d'un écran à l'autre.
+
+**Une action vit près de ce qu'elle manipule.** Copy et Export sont dans le
+filmstrip, avec les dimensions, undo/redo et la nouvelle session ; les actions
+de lot au pied du panneau Batch ; l'export et l'enregistrement d'un style dans
+l'écran Styles, chacun du côté de ce qu'il produit.
 
 | Écran | Rôle |
 |---|---|
-| Import | premier écran, dropzone + exports récents |
-| Compose | éditeur principal : rail d'outils, inspecteur flottant, filmstrip |
-| Annotate | calques et floutage, un jeu par shot, sur la composition en cours |
-| Layouts | compositions multi-shot (single/stack/side/tilt3d), filmstrip docké |
+| Import | premier écran, dropzone + exports récents (déduit de « aucun shot ») |
+| Edit | embellir **et** annoter : rail d'instruments à gauche, inspecteur unique à droite, filmstrip en bas. Les compositions multi-shot (single/stack/side/tilt3d) s'y règlent aussi, filmstrip docké |
 | Styles | nommer et réutiliser un réglage complet, partage par `.json` |
 | Batch | appliquer un style à N shots, sortir un zip ; « Harmonize backgrounds » aligne l'intensité des fonds du lot sans toucher aux teintes |
 | History | retrouver un export passé et le réouvrir avec ses réglages |
+
+**Le rail gauche ne porte que des instruments** — ce qui laisse une trace sur le
+screenshot (`SEL TXT NUM ARR LIN BOX ELL RDC`). Les réglages du document sont
+des sections repliables de l'inspecteur, pas des outils. Le chrome d'annotation
+— cadres, poignées, caret — ne se dessine que quand un calque est sélectionné ou
+qu'un instrument de tracé est en main : avec `SEL` et rien de sélectionné, le
+canvas montre exactement ce que l'export produira, et `Escape` y ramène.
 
 Sous 1100 px : le rail passe en barre horizontale, l'inspecteur devient une
 feuille rétractable. Pas de version mobile — l'outil vit à côté d'un screenshot

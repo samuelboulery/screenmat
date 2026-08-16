@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
 import AnnotateInspector from './AnnotateInspector.tsx'
 import Filmstrip from './Filmstrip.tsx'
+import { CloseSheetIcon, OpenSheetIcon } from './icons.tsx'
 import Inspector from './Inspector.tsx'
 import Preview, { type Editing } from './Preview.tsx'
 import ToolRail, { ANNOTATE_TOOLS, COMPOSE_TOOLS, type AnnotateTool, type ComposeTool } from './ToolRail.tsx'
@@ -168,9 +169,11 @@ export default function EditorScreen(props: EditorScreenProps) {
           type="button"
           onClick={() => setSheetOpen((open) => !open)}
           aria-expanded={sheetOpen}
-          className="panel absolute top-[76px] right-5 z-20 rounded-[10px] px-3 py-2 font-mono text-[10px] tracking-[0.18em] text-ink-soft uppercase"
+          title={sheetOpen ? 'Close the inspector' : 'Open the inspector'}
+          aria-label={sheetOpen ? 'Close the inspector' : 'Open the inspector'}
+          className="panel absolute top-[76px] right-5 z-20 flex size-9 items-center justify-center rounded-md text-ink-soft hover:text-ink"
         >
-          {sheetOpen ? 'Close ›' : '‹ Inspect'}
+          {sheetOpen ? <CloseSheetIcon /> : <OpenSheetIcon />}
         </button>
       )}
 

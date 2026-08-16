@@ -1,3 +1,4 @@
+import { PickFileIcon, SaveStyleIcon } from './icons.tsx'
 import { Button, ErrorNote, MonoLabel } from './ui.tsx'
 import type { HistoryMeta } from '../lib/store.ts'
 
@@ -29,11 +30,11 @@ export default function ImportScreen({
   return (
     <div className="flex h-full flex-col items-center justify-center gap-11 px-5">
       <div
-        className={`flex h-[372px] w-[720px] max-w-full flex-col items-center justify-center gap-[22px] rounded-[20px] border border-dashed transition-colors duration-140 ${
+        className={`flex h-[372px] w-[720px] max-w-full flex-col items-center justify-center gap-5 rounded-xl border border-dashed transition-colors duration-140 ${
           dragging ? 'border-accent/45 bg-accent/5' : 'border-white/[.16] bg-white/[.02]'
         }`}
       >
-        <span className="rounded-xl border border-accent/30 bg-accent/[.08] px-[18px] py-3 font-mono text-[15px] text-accent-ink">
+        <span className="rounded-md border border-accent/30 bg-accent/[.08] px-4 py-3 font-mono text-[15px] text-accent-ink">
           ⌘ V
         </span>
         <h1 className="t-display">Paste a screenshot</h1>
@@ -42,9 +43,11 @@ export default function ImportScreen({
         </p>
         <div className="flex items-center gap-2.5">
           <Button variant="primary" onClick={onPick}>
+            <PickFileIcon />
             Choose file
           </Button>
           <Button onClick={onUseLastStyle} disabled={!hasLastStyle}>
+            <SaveStyleIcon />
             Start from last style
           </Button>
         </div>
@@ -61,7 +64,7 @@ export default function ImportScreen({
                 type="button"
                 onClick={() => onOpenRecent(entry.id)}
                 title={entry.name}
-                className="relative h-[106px] overflow-hidden rounded-[10px] border border-hairline bg-sunken"
+                className="relative h-[106px] overflow-hidden rounded-md border border-hairline bg-sunken"
               >
                 <img src={entry.thumbnail} alt="" className="size-full object-cover" />
                 {/* Voile de lisibilité : sans lui, la métadonnée blanche
@@ -75,7 +78,7 @@ export default function ImportScreen({
             ) : (
               <div
                 key={`empty-${index}`}
-                className="h-[106px] rounded-[10px] border border-hairline bg-white/[.03]"
+                className="h-[106px] rounded-md border border-hairline bg-white/[.03]"
               />
             ),
           )}

@@ -1,3 +1,4 @@
+import { REDACTION_ICON } from './icons.tsx'
 import { Section, Slider, Swatch, Tile, Toggle } from './ui.tsx'
 import { ANNOTATION_LIMITS, isPoint, isSegment } from '../lib/annotate.ts'
 import type { Annotation, LabelStyle, Palette, RedactionMode } from '../types.ts'
@@ -45,17 +46,21 @@ export default function AnnotationStyle({
     return (
       <Section title="Redaction">
         <div className="grid grid-cols-3 gap-1">
-          {REDACTIONS.map((mode) => (
-            <Tile
-              key={mode.value}
-              tone="danger"
-              active={annotation.redaction === mode.value}
-              onClick={() => onPatch({ redaction: mode.value })}
-              className="h-[34px] rounded-lg font-mono text-[9px]"
-            >
-              {mode.label}
-            </Tile>
-          ))}
+          {REDACTIONS.map((mode) => {
+            const Icon = REDACTION_ICON[mode.value]
+            return (
+              <Tile
+                key={mode.value}
+                tone="danger"
+                active={annotation.redaction === mode.value}
+                onClick={() => onPatch({ redaction: mode.value })}
+                className="h-11 font-mono text-[9px]"
+              >
+                <Icon />
+                {mode.label}
+              </Tile>
+            )
+          })}
         </div>
         <p className="t-ui-small text-dim">
           Baked into the pixels at export — the original is never recoverable from the file.
@@ -110,7 +115,7 @@ export default function AnnotationStyle({
                 value={annotation.text}
                 onChange={(event) => onPatch({ text: event.target.value })}
                 aria-label="Label text"
-                className="w-full rounded-[9px] border border-hairline bg-sunken px-3 py-2 text-[12px] text-ink placeholder:text-dim"
+                className="w-full rounded-md border border-hairline bg-sunken px-3 py-2 text-[12px] text-ink placeholder:text-dim"
               />
               <div className="grid grid-cols-3 gap-1">
                 {LABEL_STYLES.map((style) => (
@@ -118,7 +123,7 @@ export default function AnnotationStyle({
                     key={style.value}
                     active={annotation.labelStyle === style.value}
                     onClick={() => onPatch({ labelStyle: style.value })}
-                    className="h-[34px] rounded-lg font-mono text-[9px]"
+                    className="h-[34px] font-mono text-[9px]"
                   >
                     {style.label}
                   </Tile>

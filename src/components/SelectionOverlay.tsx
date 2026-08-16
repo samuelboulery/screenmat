@@ -48,7 +48,7 @@ export default function SelectionOverlay({
   return (
     <>
       <div
-        className="pointer-events-none absolute left-0 top-0 rounded-[3px]"
+        className="pointer-events-none absolute left-0 top-0 rounded-xs"
         style={{
           width: area.w * ratio,
           height: area.h * ratio,
@@ -66,7 +66,7 @@ export default function SelectionOverlay({
             key={handle}
             role="presentation"
             onPointerDown={(event) => onGrab?.(handle, event)}
-            className="absolute size-[9px] -translate-x-1/2 -translate-y-1/2 rounded-[2px] border border-stage bg-accent"
+            className="absolute size-[9px] -translate-x-1/2 -translate-y-1/2 rounded-xs border border-stage bg-accent"
             style={{
               left: point.x * ratio,
               top: point.y * ratio,

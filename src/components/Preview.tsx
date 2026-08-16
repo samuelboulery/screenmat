@@ -350,7 +350,7 @@ export default function Preview({
 
         {marquee && (
           <div
-            className="pointer-events-none absolute rounded-[3px] border border-dashed border-accent/70 bg-accent/10"
+            className="pointer-events-none absolute rounded-xs border border-dashed border-accent/70 bg-accent/10"
             style={marquee}
           />
         )}

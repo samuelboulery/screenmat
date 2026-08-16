@@ -1,5 +1,14 @@
 import { useRef, useState } from 'react'
-import { Section } from './ui.tsx'
+import {
+  CollapsedIcon,
+  ExpandedIcon,
+  HiddenIcon,
+  KIND_ICON,
+  LockedIcon,
+  UnlockedIcon,
+  VisibleIcon,
+} from './icons.tsx'
+import { IconButton, Section } from './ui.tsx'
 import { badgeNumbers } from '../lib/annotate.ts'
 import { flatten, isGroup } from '../lib/tree.ts'
 import type { NodePatch } from '../hooks/useShots.ts'
@@ -8,16 +17,6 @@ import type { Annotation, AnnotationKind, LayerNode, Shot } from '../types.ts'
 /* La pile de calques : arbre, glisser-déposer, œil et cadenas. Aucune
    dépendance — le glisser-déposer est celui du navigateur, comme dans
    `Filmstrip`. */
-
-const KIND_LABEL: Record<AnnotationKind, string> = {
-  text: 'TXT',
-  badge: 'NUM',
-  arrow: 'ARR',
-  line: 'LIN',
-  box: 'BOX',
-  ellipse: 'ELL',
-  redaction: 'RDC',
-}
 
 const KIND_NAME: Record<AnnotationKind, string> = {
   text: 'Label',
@@ -147,7 +146,7 @@ function LayerRow({
         onDrop({ id: node.id, where: dropZone(event, isGroup(node)) })
       }}
       aria-grabbed={active || undefined}
-      className={`flex items-center gap-2 rounded-md px-2 py-[5px] ${
+      className={`flex items-center gap-2 rounded-sm px-2 py-1 ${
         active ? 'bg-raised ring-1 ring-accent/60' : 'hover:bg-raised/60'
       } ${target === 'before' ? 'border-t border-accent' : ''} ${
         target === 'after' ? 'border-b border-accent' : ''
@@ -155,22 +154,19 @@ function LayerRow({
       style={{ marginLeft: depth * 12 }}
     >
       {isGroup(node) ? (
-        <button
-          type="button"
-          title={node.collapsed ? 'Expand' : 'Collapse'}
+        <IconButton
+          icon={node.collapsed ? CollapsedIcon : ExpandedIcon}
+          label={node.collapsed ? 'Expand' : 'Collapse'}
           onClick={() => onPatch(node.id, { collapsed: !node.collapsed })}
-          className="t-ui-small w-3 text-dim hover:text-ink"
-        >
-          {node.collapsed ? '›' : '⌄'}
-        </button>
+          className="size-5"
+        />
       ) : (
-        <span
-          className={`w-8 font-mono text-[9px] ${
+        <KindIcon
+          node={node}
+          className={
             active ? 'text-accent' : node.kind === 'redaction' ? 'text-danger' : 'text-dim'
-          }`}
-        >
-          {KIND_LABEL[node.kind]}
-        </span>
+          }
+        />
       )}
 
       {renaming ? (
@@ -202,45 +198,32 @@ function LayerRow({
         </button>
       )}
 
-      <Toggle
-        on={node.hidden}
-        title={node.hidden ? 'Show' : 'Hide'}
+      <IconButton
+        icon={node.hidden ? HiddenIcon : VisibleIcon}
+        label={node.hidden ? 'Show' : 'Hide'}
+        active={node.hidden}
         onClick={() => onPatch(node.id, { hidden: !node.hidden })}
-      >
-        {node.hidden ? '◌' : '◉'}
-      </Toggle>
-      <Toggle
-        on={node.locked}
-        title={node.locked ? 'Unlock' : 'Lock'}
+        className="size-6"
+      />
+      <IconButton
+        icon={node.locked ? LockedIcon : UnlockedIcon}
+        label={node.locked ? 'Unlock' : 'Lock'}
+        active={node.locked}
         onClick={() => onPatch(node.id, { locked: !node.locked })}
-      >
-        {node.locked ? '⊘' : '○'}
-      </Toggle>
+        className="size-6"
+      />
     </div>
   )
 }
 
-function Toggle({
-  on,
-  title,
-  onClick,
-  children,
-}: {
-  on: boolean
-  title: string
-  onClick: () => void
-  children: React.ReactNode
-}) {
+/** Un calque porte l'icône de l'outil qui l'a créé. Décorative : la ligne dit
+ *  déjà son nom, et le type se relit dans l'inspecteur. */
+function KindIcon({ node, className }: { node: Annotation; className: string }) {
+  const Icon = KIND_ICON[node.kind]
   return (
-    <button
-      type="button"
-      title={title}
-      aria-pressed={on}
-      onClick={onClick}
-      className={`t-ui-small ${on ? 'text-accent' : 'text-dim hover:text-ink'}`}
-    >
-      {children}
-    </button>
+    <span className={`flex w-5 justify-center ${className}`}>
+      <Icon aria-hidden />
+    </span>
   )
 }
 

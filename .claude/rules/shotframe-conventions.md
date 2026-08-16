@@ -11,7 +11,9 @@ Ces règles s'appliquent à chaque session Claude sur ce projet. Sans exception.
   largeur du canvas, sinon l'export 3× diverge de la preview.
 - Ajouter un appel réseau, quel qu'il soit. L'app doit tourner hors ligne.
 - Installer une dépendance sans demande explicite — surtout pas une librairie de
-  couleur, de canvas ou de composants UI.
+  couleur, de canvas ou de composants UI. `lucide-react` est le seul jeu
+  d'icônes sanctionné, importé par le seul `src/components/icons.tsx` : ajouter
+  une icône, c'est l'ajouter là, jamais importer `lucide-react` ailleurs.
 - Muter un objet de state — toujours de nouvelles copies (spread).
 
 ## Organisation des fichiers

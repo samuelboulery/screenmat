@@ -1,18 +1,30 @@
 import AnnotationStyle from './AnnotationStyle.tsx'
 import LayersPanel from './LayersPanel.tsx'
-import { Badge, Panel, Section } from './ui.tsx'
+import {
+  BackwardIcon,
+  DeleteIcon,
+  ForwardIcon,
+  GroupIcon,
+  KIND_ICON,
+  MultipleIcon,
+  UngroupIcon,
+} from './icons.tsx'
+import { Badge, IconButton, Panel, Section } from './ui.tsx'
 import { findNode, isGroup } from '../lib/tree.ts'
 import type { NodePatch } from '../hooks/useShots.ts'
 import type { Annotation, AnnotationKind, Shot } from '../types.ts'
 
+/** Le badge nomme le type du calque sélectionné. Il porte l'icône de l'outil
+ *  qui l'a créé et le mot en entier : l'abréviation mono n'avait de sens que
+ *  tant que le rail parlait le même dialecte. */
 const KIND_LABEL: Record<AnnotationKind, string> = {
-  text: 'TXT',
-  badge: 'NUM',
-  arrow: 'ARR',
-  line: 'LIN',
-  box: 'BOX',
-  ellipse: 'ELL',
-  redaction: 'RDC',
+  text: 'Label',
+  badge: 'Badge',
+  arrow: 'Arrow',
+  line: 'Line',
+  box: 'Box',
+  ellipse: 'Ellipse',
+  redaction: 'Redact',
 }
 
 type AnnotateInspectorProps = {
@@ -47,10 +59,11 @@ export default function AnnotateInspector({
   const node = found?.node ?? null
   const annotation = node && !isGroup(node) ? node : null
   const siblings = found ? (found.parent?.children ?? shot?.layers ?? []) : []
+  const KindMark = annotation ? KIND_ICON[annotation.kind] : node ? GroupIcon : MultipleIcon
 
   return (
     <Panel
-      className={`absolute right-5 z-10 max-h-[calc(100%-190px)] w-72 space-y-4 overflow-y-auto p-[18px] ${offset ? 'top-[124px]' : 'top-[88px]'}`}
+      className={`absolute right-5 z-10 max-h-[calc(100%-190px)] w-72 space-y-4 overflow-y-auto p-4 ${offset ? 'top-[124px]' : 'top-[88px]'}`}
     >
       <LayersPanel
         shot={shot}
@@ -72,59 +85,53 @@ export default function AnnotateInspector({
         <Section title={selectedIds.length > 1 ? `Layers — ${selectedIds.length}` : 'Layer'}>
           <div className="flex items-center justify-between">
             <Badge tone={annotation?.kind === 'redaction' ? 'danger' : undefined}>
-              {node && isGroup(node) ? 'GRP' : annotation ? KIND_LABEL[annotation.kind] : 'MUL'}
+              <span className="flex items-center gap-1.5">
+                <KindMark className="size-3" />
+                {node && isGroup(node)
+                  ? 'Group'
+                  : annotation
+                    ? KIND_LABEL[annotation.kind]
+                    : `${selectedIds.length} layers`}
+              </span>
             </Badge>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-0.5">
               {node && (
                 <>
-                  <button
-                    type="button"
-                    title="Send backward (⌘↓)"
+                  <IconButton
+                    icon={BackwardIcon}
+                    label="Send backward (⌘↓)"
                     disabled={!found || found.index <= 0}
                     onClick={() => onMove(shot.id, node.id, 'down')}
-                    className="t-ui-small text-ink-soft hover:text-ink disabled:opacity-30"
-                  >
-                    ↓
-                  </button>
-                  <button
-                    type="button"
-                    title="Bring forward (⌘↑)"
+                  />
+                  <IconButton
+                    icon={ForwardIcon}
+                    label="Bring forward (⌘↑)"
                     disabled={!found || found.index >= siblings.length - 1}
                     onClick={() => onMove(shot.id, node.id, 'up')}
-                    className="t-ui-small text-ink-soft hover:text-ink disabled:opacity-30"
-                  >
-                    ↑
-                  </button>
+                  />
                 </>
               )}
               {node && isGroup(node) ? (
-                <button
-                  type="button"
-                  title="Ungroup (⇧⌘G)"
+                <IconButton
+                  icon={UngroupIcon}
+                  label="Ungroup (⇧⌘G)"
                   onClick={() => onUngroup(shot.id, node.id)}
-                  className="t-ui-small text-ink-soft hover:text-ink"
-                >
-                  Ungroup
-                </button>
+                />
               ) : (
                 selectedIds.length > 1 && (
-                  <button
-                    type="button"
-                    title="Group (⌘G)"
+                  <IconButton
+                    icon={GroupIcon}
+                    label="Group (⌘G)"
                     onClick={() => onGroup(shot.id, selectedIds)}
-                    className="t-ui-small text-ink-soft hover:text-ink"
-                  >
-                    Group
-                  </button>
+                  />
                 )
               )}
-              <button
-                type="button"
+              <IconButton
+                icon={DeleteIcon}
+                label="Delete ⌫"
+                tone="danger"
                 onClick={() => onDelete(shot.id, selectedIds)}
-                className="t-ui-small text-danger hover:underline"
-              >
-                Delete ⌫
-              </button>
+              />
             </div>
           </div>
         </Section>

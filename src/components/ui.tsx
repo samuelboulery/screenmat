@@ -1,4 +1,5 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react'
+import type { LucideIcon } from './icons.tsx'
 
 /* Composants de base de la DA « Afterglow ». Un seul accent, pour exactement
    deux choses : l'action primaire et la sélection courante. */
@@ -9,17 +10,51 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 
 export function Button({ variant = 'secondary', className = '', ...rest }: ButtonProps) {
   const styles = {
-    primary: 'gradient-accent text-stage font-semibold px-[17px] py-2',
-    secondary: 'border border-hairline-strong text-ink px-[14px] py-2 hover:border-white/20',
-    ghost: 'text-ink-soft px-2 py-2 hover:text-ink',
+    primary: 'gradient-accent text-stage font-semibold',
+    secondary: 'border border-hairline-strong text-ink hover:border-white/20',
+    ghost: 'text-ink-soft hover:text-ink',
   }[variant]
 
   return (
     <button
       type="button"
-      className={`t-ui rounded-lg transition-colors duration-140 disabled:opacity-40 ${styles} ${className}`}
+      className={`t-ui inline-flex items-center gap-1.5 rounded-md px-3.5 py-2 transition-colors duration-140 disabled:opacity-40 ${styles} ${className}`}
       {...rest}
     />
+  )
+}
+
+/**
+ * Bouton icône-seule : barres denses, lignes de calque, poignées de panneau.
+ * `label` est obligatoire et alimente à la fois l'infobulle et le nom
+ * accessible — sans texte à lire, l'oublier rendrait le bouton muet.
+ */
+export function IconButton({
+  icon: Icon,
+  label,
+  active,
+  tone,
+  className = '',
+  ...rest
+}: Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'aria-label' | 'title'> & {
+  icon: LucideIcon
+  label: string
+  active?: boolean
+  tone?: 'danger'
+}) {
+  const color = tone === 'danger' ? 'text-danger' : active ? 'text-ink' : 'text-ink-soft'
+
+  return (
+    <button
+      type="button"
+      title={label}
+      aria-label={label}
+      aria-pressed={active}
+      className={`flex size-8 shrink-0 items-center justify-center rounded-md transition-colors duration-140 hover:bg-white/[.04] hover:text-ink disabled:opacity-40 disabled:hover:bg-transparent ${color} ${className}`}
+      {...rest}
+    >
+      <Icon />
+    </button>
   )
 }
 
@@ -31,13 +66,13 @@ export function Badge({ children, tone }: { children: ReactNode; tone?: 'accent'
         ? 'text-danger border-danger/30'
         : 'text-dim border-[#23232C]'
   return (
-    <span className={`rounded border px-[7px] py-1 font-mono text-[10px] ${color}`}>{children}</span>
+    <span className={`rounded-xs border px-[7px] py-1 font-mono text-[10px] ${color}`}>{children}</span>
   )
 }
 
 /** Panneau flottant : translucide quand le navigateur sait, opaque sinon. */
 export function Panel({ children, className = '' }: { children: ReactNode; className?: string }) {
-  return <div className={`panel rounded-2xl ${className}`}>{children}</div>
+  return <div className={`panel rounded-lg ${className}`}>{children}</div>
 }
 
 export function MonoLabel({ children, className = '' }: { children: ReactNode; className?: string }) {
@@ -79,7 +114,7 @@ export function Segmented<T extends string>({
 }) {
   return (
     <div
-      className={`inline-flex gap-1 rounded-[9px] border border-hairline bg-sunken p-[3px] ${className}`}
+      className={`inline-flex gap-1 rounded-md border border-hairline bg-sunken p-[3px] ${className}`}
     >
       {options.map((option) => (
         <button
@@ -88,7 +123,7 @@ export function Segmented<T extends string>({
           title={option.title}
           aria-pressed={value === option.value}
           onClick={() => onPick(option.value)}
-          className={`t-ui rounded-md px-[13px] py-1.5 transition-colors duration-140 ${
+          className={`t-ui flex items-center gap-1.5 rounded-sm px-3 py-1.5 transition-colors duration-140 ${
             value === option.value ? 'bg-raised text-white' : 'text-ink-soft hover:text-ink'
           }`}
         >
@@ -154,7 +189,7 @@ export function Toggle({
       aria-checked={checked}
       aria-label={label}
       onClick={() => onChange(!checked)}
-      className={`relative h-5 w-[34px] shrink-0 rounded-[10px] transition-colors duration-140 ${
+      className={`relative h-5 w-[34px] shrink-0 rounded-full transition-colors duration-140 ${
         checked ? 'bg-accent/35' : 'bg-white/[.09]'
       }`}
     >
@@ -189,7 +224,7 @@ export function Tile({
     <button
       type="button"
       aria-pressed={active}
-      className={`flex flex-col items-center justify-center gap-1 rounded-[10px] border transition-colors duration-140 ${
+      className={`flex flex-col items-center justify-center gap-1 rounded-md border transition-colors duration-140 ${
         active ? selected : 'border-transparent bg-sunken text-ink-soft hover:text-ink'
       } ${className}`}
       {...rest}
@@ -210,7 +245,7 @@ export function Row({
     <button
       type="button"
       aria-pressed={active}
-      className={`flex w-full items-center gap-2.5 rounded-lg border px-2.5 py-[9px] text-left transition-colors duration-140 ${
+      className={`flex w-full items-center gap-2.5 rounded-md border px-2.5 py-2.5 text-left transition-colors duration-140 ${
         active
           ? 'border-accent/30 bg-accent/10 text-ink'
           : 'border-transparent text-ink-soft hover:bg-white/[.03] hover:text-ink'
@@ -240,7 +275,7 @@ export function Swatch({
       aria-pressed={active}
       onClick={onClick}
       style={{ background: color }}
-      className={`size-10 rounded-lg border border-white/10 ${active ? 'ring-selected' : ''}`}
+      className={`size-10 rounded-md border border-white/10 ${active ? 'ring-selected' : ''}`}
     />
   )
 }
@@ -254,7 +289,7 @@ export function DashedTile({
   return (
     <button
       type="button"
-      className={`flex items-center justify-center rounded-[10px] border border-dashed border-white/15 text-dim transition-colors duration-140 hover:border-white/25 hover:text-ink-soft ${className}`}
+      className={`flex items-center justify-center rounded-md border border-dashed border-white/15 text-dim transition-colors duration-140 hover:border-white/25 hover:text-ink-soft ${className}`}
       {...rest}
     >
       {children}

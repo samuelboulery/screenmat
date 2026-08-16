@@ -1,5 +1,17 @@
 import type { Mode, View } from './TopBar.tsx'
-import { Button } from './ui.tsx'
+import {
+  CancelIcon,
+  CopiedIcon,
+  CopyIcon,
+  ExportAllIcon,
+  ExportIcon,
+  JsonIcon,
+  NewShotIcon,
+  RedoIcon,
+  SaveStyleIcon,
+  UndoIcon,
+} from './icons.tsx'
+import { Button, IconButton } from './ui.tsx'
 import { humanSize } from '../lib/export.ts'
 import type { Format, Style } from '../types.ts'
 
@@ -30,7 +42,8 @@ type TopBarActionsProps = {
   onRedo: () => void
 }
 
-const META = 'font-mono text-[11px] text-[#6F7386]'
+/** Métadonnée annexe : elle disparaît avant que la barre ne déborde. */
+const META = 'font-mono text-[11px] whitespace-nowrap text-[#6F7386] max-[1180px]:hidden'
 
 /** Ce que la barre haute affiche à droite, selon l'écran courant. */
 export default function TopBarActions(props: TopBarActionsProps) {
@@ -43,14 +56,24 @@ export default function TopBarActions(props: TopBarActionsProps) {
         <span className={META}>
           {props.output.width} × {props.output.height} · {props.output.format}
         </span>
-        <Button variant="ghost" title="Undo ⌘Z" disabled={!props.canUndo} onClick={props.onUndo}>
-          ↺
+        <IconButton
+          icon={UndoIcon}
+          label="Undo ⌘Z"
+          disabled={!props.canUndo}
+          onClick={props.onUndo}
+        />
+        <IconButton
+          icon={RedoIcon}
+          label="Redo ⇧⌘Z"
+          disabled={!props.canRedo}
+          onClick={props.onRedo}
+        />
+        <Button onClick={props.onCopy}>
+          {props.copied ? <CopiedIcon /> : <CopyIcon />}
+          {props.copied ? 'Copied' : 'Copy'}
         </Button>
-        <Button variant="ghost" title="Redo ⇧⌘Z" disabled={!props.canRedo} onClick={props.onRedo}>
-          ↻
-        </Button>
-        <Button onClick={props.onCopy}>{props.copied ? 'Copied' : 'Copy'}</Button>
         <Button variant="primary" onClick={props.onExport}>
+          <ExportIcon />
           Export
         </Button>
       </>
@@ -64,9 +87,11 @@ export default function TopBarActions(props: TopBarActionsProps) {
           {props.selected} selected · {props.filesOut} files out
         </span>
         <Button onClick={props.onCancelBatch} disabled={!props.batchRunning}>
+          <CancelIcon />
           Cancel
         </Button>
         <Button variant="primary" onClick={props.onExportBatch} disabled={props.batchRunning}>
+          <ExportAllIcon />
           Export all
         </Button>
       </>
@@ -77,8 +102,12 @@ export default function TopBarActions(props: TopBarActionsProps) {
     const style = props.activeStyle
     return (
       <>
-        <Button onClick={() => props.onExportStyle(style)}>Export .json</Button>
+        <Button onClick={() => props.onExportStyle(style)}>
+          <JsonIcon />
+          Export .json
+        </Button>
         <Button variant="primary" onClick={props.onSaveStyle}>
+          <SaveStyleIcon />
           Save style
         </Button>
       </>
@@ -91,7 +120,10 @@ export default function TopBarActions(props: TopBarActionsProps) {
         <span className={META}>
           {props.exports} exports · {humanSize(props.bytes)} local
         </span>
-        <Button onClick={props.onNewShot}>New shot</Button>
+        <Button onClick={props.onNewShot}>
+          <NewShotIcon />
+          New shot
+        </Button>
       </>
     )
   }

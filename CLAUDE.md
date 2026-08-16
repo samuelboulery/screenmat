@@ -23,6 +23,15 @@ Deux familles : **Space Grotesk** (ce qu'un humain lit) et **JetBrains Mono**
 fichiers). Les deux sont embarquées en woff2 dans `public/fonts/` — l'app doit
 rester utilisable hors ligne. Tokens et échelle typographique : `src/index.css`.
 
+Un seul jeu d'icônes, **Lucide**, importé par le seul `src/components/icons.tsx`
+— aucun autre fichier n'importe `lucide-react`. Taille (16 px, 20 px dans le
+rail) et épaisseur du trait (1.5) sont posées une fois en CSS sur la classe
+`.lucide` : le 2 px par défaut écraserait une DA dont les filets font 1 px.
+Icône seule là où l'espace est compté et où le geste est évident (rail, œil et
+cadenas d'un calque, undo/redo) ; icône **et** mot sur la navigation et les
+actions de fin de course. Un raccourci clavier (`⌘V`, `⌫`) s'écrit, il ne se
+dessine pas. Cinq rayons, pas seize : `--radius-xs|sm|md|lg|xl`.
+
 ## Architecture
 
 ```
@@ -65,7 +74,8 @@ src/
 ```
 
 **Tech stack :** React 19 · TypeScript strict · Vite 8 · Tailwind CSS 4 (config
-CSS-first) · Vitest. Zéro dépendance runtime hors React.
+CSS-first) · Vitest. Deux dépendances runtime seulement : React et
+`lucide-react` (icônes, tree-shakées, bundlées — rien n'est chargé en ligne).
 
 ## Écrans
 
@@ -149,7 +159,8 @@ pnpm exec tsc -b        # vérification TypeScript
 - Aucun appel réseau, aucune dépendance à un service distant. L'app doit
   fonctionner hors ligne, polices comprises.
 - Ne pas installer de dépendance sans demander — en particulier pas de librairie
-  de couleur, de canvas, de zip ou d'UI : tout est écrit à la main ici.
+  de couleur, de canvas, de zip ou de composants UI : tout est écrit à la main
+  ici. `lucide-react` est la seule exception, et elle ne fournit que des icônes.
 - Ne pas ajouter d'export SVG (raster embarqué en base64 = plus lourd que le PNG
   sans gain vectoriel). C'est un choix, pas un oubli.
 - `canvasToBlob` vérifie le `blob.type` renvoyé : un navigateur sans encodeur

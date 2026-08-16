@@ -65,6 +65,14 @@
   --font-sans: 'Space Grotesk', ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 
+  /* Cinq rayons, pas seize. xs pour ce qui est minuscule (poignées, cases),
+     md pour tout ce qui se clique, lg pour ce qui flotte, xl pour la dropzone. */
+  --radius-xs: 4px;
+  --radius-sm: 7px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+
   /* 140 ms pour un changement d'état, 260 ms pour l'apparition d'un panneau. */
   --ease-out-ui: cubic-bezier(0.22, 0.61, 0.36, 1);
 }
@@ -92,6 +100,17 @@ body {
   font-family: var(--font-sans);
   font-size: 13px;
   -webkit-font-smoothing: antialiased;
+}
+
+/* Taille et épaisseur des icônes, réglées une fois pour toutes : Lucide pose
+   une classe `.lucide` sur chaque svg, et `stroke-width` comme `width` sont
+   surchargeables en CSS. Le 2 px par défaut écraserait une DA dont les filets
+   font 1 px. Le rail passe `size-5` pour ses 20 px. */
+.lucide {
+  width: 16px;
+  height: 16px;
+  stroke-width: 1.5;
+  flex: none;
 }
 
 /* Le prototype ne dessine pas le focus ; il est obligatoire. */

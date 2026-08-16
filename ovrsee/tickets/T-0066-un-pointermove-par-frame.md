@@ -43,3 +43,7 @@ frame même quand la géométrie est identique.
 - [x] Tracé live vérifié à la souris dans le navigateur : une zone de floutage
       tirée d'un geste se termine au point de relâchement et couvre exactement la
       ligne visée.
+- [x] `React.memo` rejugé après coup, comme promis, et toujours écarté : un
+      glissement natif du calque ne produit **aucune tâche longue**, donc la
+      passe React tient largement dans la frame. Mémoïser 28 props d'`EditorScreen`
+      achèterait un gain que rien ne mesure.

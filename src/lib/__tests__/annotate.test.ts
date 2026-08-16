@@ -101,6 +101,16 @@ describe('bounds', () => {
     expect(bounds(small, window).w).toBeLessThan(0.9 * window.width)
   })
 
+  it('reste attrapable pour un label posé d’un clic', () => {
+    // `isPoint` couvre le texte : son rect ne porte que son ancre, `w` et `h`
+    // sont nuls et sa boîte vient entièrement de son texte.
+    const label = make('text', { x: 0.3, y: 0.3, w: 0, h: 0 }, { text: 'Étape 1' })
+    const area = bounds(label, box())
+
+    expect(area.w).toBeGreaterThan(0)
+    expect(area.h).toBeGreaterThan(0)
+  })
+
   it('donne un carré au badge, quel que soit le tracé', () => {
     const badge = make('badge', { x: 0.2, y: 0.2, w: 0, h: 0 })
     const area = bounds(badge, box())

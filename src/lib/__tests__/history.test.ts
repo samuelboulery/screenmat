@@ -11,14 +11,14 @@ import {
   type Snapshot,
 } from '../history.ts'
 import { createAnnotation } from '../annotate.ts'
-import { DEFAULT_COMPOSITION, DEFAULT_SETTINGS, type Annotation, type Shot } from '../../types.ts'
+import { DEFAULT_COMPOSITION, DEFAULT_SETTINGS, type LayerNode, type Shot } from '../../types.ts'
 
-const shot = (id: string, annotations: Annotation[] = []): Shot => ({
+const shot = (id: string, layers: LayerNode[] = []): Shot => ({
   id,
   name: id,
   image: {} as HTMLImageElement,
   palette: { base: '#101014', accents: [] },
-  annotations,
+  layers,
 })
 
 const snapshot = (patch: Partial<Snapshot> = {}): Snapshot => ({
@@ -104,5 +104,29 @@ describe('signature', () => {
 
     expect(signature(restyled)).toBe(signature(withLayer))
     expect(signature(withTwo)).not.toBe(signature(withLayer))
+  })
+
+  it('change quand un groupe apparaît, même à calques identiques', () => {
+    const layer = createAnnotation('box', { x: 0, y: 0, w: 0.2, h: 0.2 })
+    const flat = snapshot({ shots: [shot('a', [layer])] })
+    const grouped = snapshot({
+      shots: [
+        shot('a', [
+          {
+            id: 'g1',
+            kind: 'group',
+            name: 'Flow',
+            collapsed: false,
+            hidden: false,
+            locked: false,
+            children: [layer],
+          },
+        ]),
+      ],
+    })
+
+    // Sans les groupes dans la signature, grouper passerait pour un réglage et
+    // se ferait fusionner avec l'entrée d'historique précédente.
+    expect(signature(grouped)).not.toBe(signature(flat))
   })
 })

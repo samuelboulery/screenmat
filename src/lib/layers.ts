@@ -1,5 +1,5 @@
 import { badgeNumbers, badgeRadius, normalizeRect, toLength, toPixels, type Rect } from './annotate.ts'
-import { css, hexToRgb, luminance } from './color.ts'
+import { css, hexToRgb, inkOn } from './color.ts'
 import { frameRadius, windowPath, windowTransform } from './frame.ts'
 import type { Geometry, WindowBox } from './render.ts'
 import type { Annotation, LabelStyle, Settings } from '../types.ts'
@@ -90,6 +90,7 @@ export function renderAnnotations(
   ctx: CanvasRenderingContext2D,
   box: WindowBox,
   annotations: readonly Annotation[],
+  editing?: { id: string; caret: number; blink: boolean },
 ): void {
   const numbers = badgeNumbers(annotations)
 
@@ -115,7 +116,8 @@ export function renderAnnotations(
     else if (annotation.kind === 'badge') {
       drawBadge(ctx, annotation, rect, box, numbers.get(annotation.id) ?? 1)
     } else if (annotation.kind === 'text') {
-      drawLabel(ctx, annotation, rect, toLength(annotation.size, box))
+      const edited = editing?.id === annotation.id ? editing : null
+      drawLabel(ctx, annotation, rect, toLength(annotation.size, box), edited)
     }
 
     ctx.restore()
@@ -210,44 +212,78 @@ function drawBadge(
 
   ctx.beginPath()
   ctx.arc(cx, cy, radius, 0, Math.PI * 2)
-  ctx.fill()
+  // Inversé, la pastille devient un contour : le numéro reprend la couleur du
+  // calque, le disque le fond de scène.
+  if (annotation.invert) {
+    ctx.fillStyle = STAGE
+    ctx.fill()
+    ctx.lineWidth = Math.max(1, radius * 0.14)
+    ctx.stroke()
+  } else {
+    ctx.fill()
+  }
 
-  ctx.fillStyle = luminance(hexToRgb(annotation.color)) > 0.5 ? '#07070A' : '#FFFFFF'
+  ctx.fillStyle = annotation.invert ? annotation.color : inkOn(annotation.color)
   ctx.font = `600 ${toLength(annotation.size, box)}px ${MONO}`
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
   ctx.fillText(String(number), cx, cy)
 }
 
+/**
+ * Label. `invert` échange le fond et l'encre : pastille à la couleur du calque,
+ * texte automatiquement noir ou blanc selon son contraste. Sans effet sur
+ * `plain`, qui n'a pas de fond à remplir.
+ *
+ * `editing` porte la saisie en cours. Le caret est dessiné ici et nulle part
+ * ailleurs : c'est la seule façon qu'il tombe au bon pixel quelle que soit
+ * l'échelle et l'inclinaison de la fenêtre. Un label en cours de saisie garde
+ * sa pastille même vide — sinon elle clignoterait avec le curseur.
+ */
 function drawLabel(
   ctx: CanvasRenderingContext2D,
   annotation: Annotation,
   rect: Rect,
   fontSize: number,
+  editing: { caret: number; blink: boolean } | null = null,
 ): void {
   const label = annotation.text.trim()
-  if (!label) return
+  if (!label && !editing) return
 
   const style: LabelStyle = annotation.labelStyle
   ctx.font = `${fontSize}px ${MONO}`
   ctx.textAlign = 'left'
   ctx.textBaseline = 'middle'
 
+  const filled = annotation.invert && style !== 'plain'
   const padX = style === 'plain' ? 0 : fontSize * 0.8
   const padY = style === 'plain' ? 0 : fontSize * 0.55
   const width = ctx.measureText(label).width + padX * 2
   const height = fontSize + padY * 2
 
   if (style !== 'plain') {
-    ctx.fillStyle = STAGE
+    ctx.fillStyle = filled ? annotation.color : STAGE
     ctx.beginPath()
     ctx.roundRect(rect.x, rect.y, width, height, style === 'pill' ? height / 2 : fontSize * 0.35)
     ctx.fill()
-    ctx.strokeStyle = annotation.color
-    ctx.lineWidth = Math.max(1, fontSize * 0.09)
-    ctx.stroke()
+    if (!filled) {
+      ctx.strokeStyle = annotation.color
+      ctx.lineWidth = Math.max(1, fontSize * 0.09)
+      ctx.stroke()
+    }
   }
 
-  ctx.fillStyle = annotation.color
+  const ink = filled ? inkOn(annotation.color) : annotation.color
+  ctx.fillStyle = ink
   ctx.fillText(label, rect.x + padX, rect.y + height / 2)
+
+  if (!editing || !editing.blink) return
+  const caret = Math.max(0, Math.min(editing.caret, label.length))
+  const offset = ctx.measureText(label.slice(0, caret)).width
+  ctx.fillRect(
+    rect.x + padX + offset,
+    rect.y + height / 2 - fontSize * 0.6,
+    Math.max(1, fontSize * 0.06),
+    fontSize * 1.2,
+  )
 }

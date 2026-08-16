@@ -1,6 +1,6 @@
-import { useCallback, useMemo } from 'react'
+import { useCallback } from 'react'
 import type { ShotsState } from './useShots.ts'
-import { nudge } from '../lib/handles.ts'
+import { expandSelection, isGroup } from '../lib/tree.ts'
 
 /** Pas d'un déplacement au clavier, en fraction de la largeur de la fenêtre. */
 const NUDGE_STEP = 0.002
@@ -11,55 +11,68 @@ export type LayerActions = {
   onEscape: () => void
   onLayerMove: (direction: 'up' | 'down') => void
   onNudge: (dx: number, dy: number, large: boolean) => void
+  onSelectAll: () => void
+  onGroup: () => void
+  onUngroup: () => void
 }
 
 /**
- * Les actions clavier qui portent sur le calque sélectionné. Toutes sont des
+ * Les actions clavier qui portent sur la sélection de calques. Toutes sont des
  * no-op sans sélection : le raccourci ne doit jamais toucher un autre calque.
  */
 export function useLayerActions(shots: ShotsState): LayerActions {
-  const shotId = shots.activeShot?.id ?? null
-  const layerId = shots.selectedAnnotationId
+  const shot = shots.activeShot
+  const shotId = shot?.id ?? null
+  const ids = shots.selectedLayerIds
 
-  const selected = useMemo(
-    () =>
-      shots.activeShot?.annotations.find((annotation) => annotation.id === layerId) ?? null,
-    [shots.activeShot, layerId],
-  )
+  const {
+    deleteLayers,
+    duplicateLayers,
+    moveLayer,
+    translateLayers,
+    groupLayers,
+    ungroupLayer,
+    selectLayers,
+  } = shots
 
-  const onSelected = useCallback(
-    (act: (shot: string, layer: string) => void) => {
-      if (shotId && layerId) act(shotId, layerId)
+  const onSelection = useCallback(
+    (act: (shot: string, layers: readonly string[]) => void) => {
+      if (shotId && ids.length > 0) act(shotId, ids)
     },
-    [shotId, layerId],
+    [shotId, ids],
   )
-
-  const { deleteAnnotation, duplicateAnnotation, moveAnnotation, patchAnnotation } = shots
-  const selectAnnotation = shots.selectAnnotation
 
   return {
-    onDelete: useCallback(
-      () => onSelected(deleteAnnotation),
-      [onSelected, deleteAnnotation],
-    ),
-    onDuplicate: useCallback(
-      () => onSelected(duplicateAnnotation),
-      [onSelected, duplicateAnnotation],
-    ),
-    onEscape: useCallback(() => selectAnnotation(null), [selectAnnotation]),
+    onDelete: useCallback(() => onSelection(deleteLayers), [onSelection, deleteLayers]),
+    onDuplicate: useCallback(() => onSelection(duplicateLayers), [onSelection, duplicateLayers]),
+    onEscape: useCallback(() => selectLayers([]), [selectLayers]),
+    // Un ordre de pile ne se déplace qu'un nœud à la fois : à plusieurs, les
+    // permutations se marcheraient dessus.
     onLayerMove: useCallback(
-      (direction: 'up' | 'down') =>
-        onSelected((shot, layer) => moveAnnotation(shot, layer, direction)),
-      [onSelected, moveAnnotation],
+      (direction: 'up' | 'down') => {
+        if (shotId && ids.length === 1) moveLayer(shotId, ids[0], direction)
+      },
+      [shotId, ids, moveLayer],
     ),
     onNudge: useCallback(
-      (dx: number, dy: number, large: boolean) =>
-        onSelected((shot, layer) => {
-          if (!selected) return
-          const step = NUDGE_STEP * (large ? 5 : 1)
-          patchAnnotation(shot, layer, { rect: nudge(selected.rect, dx * step, dy * step) })
-        }),
-      [onSelected, patchAnnotation, selected],
+      (dx: number, dy: number, large: boolean) => {
+        const step = NUDGE_STEP * (large ? 5 : 1)
+        onSelection((id, layers) =>
+          translateLayers(id, expandSelection(shot?.layers ?? [], layers), dx * step, dy * step),
+        )
+      },
+      [onSelection, translateLayers, shot],
     ),
+    onSelectAll: useCallback(() => {
+      if (shot) selectLayers(shot.layers.map((node) => node.id))
+    }, [shot, selectLayers]),
+    onGroup: useCallback(() => onSelection(groupLayers), [onSelection, groupLayers]),
+    onUngroup: useCallback(() => {
+      if (!shotId || !shot) return
+      for (const id of ids) {
+        const node = shot.layers.find((item) => item.id === id)
+        if (node && isGroup(node)) ungroupLayer(shotId, id)
+      }
+    }, [shotId, shot, ids, ungroupLayer]),
   }
 }

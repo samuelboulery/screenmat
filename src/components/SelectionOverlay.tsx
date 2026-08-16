@@ -12,7 +12,9 @@ type SelectionOverlayProps = {
   box: WindowBox
   /** Rapport px CSS / px canvas — la preview est rendue à l'échelle écran. */
   ratio: number
-  onGrab: (handle: Handle, event: React.PointerEvent) => void
+  /** Absent ⇒ cadre seul, sans poignées : c'est le cas d'une sélection
+   *  multiple, ou d'un tracé en cours. */
+  onGrab?: (handle: Handle, event: React.PointerEvent) => void
 }
 
 /** Position d'une poignée en px canvas, avant la rotation de la fenêtre. */
@@ -57,13 +59,13 @@ export default function SelectionOverlay({
         }}
       />
 
-      {handlesFor(annotation.kind).map((handle) => {
+      {(onGrab ? handlesFor(annotation.kind) : []).map((handle) => {
         const point = applyMatrix(matrix, handlePoint(annotation, box, handle))
         return (
           <span
             key={handle}
             role="presentation"
-            onPointerDown={(event) => onGrab(handle, event)}
+            onPointerDown={(event) => onGrab?.(handle, event)}
             className="absolute size-[9px] -translate-x-1/2 -translate-y-1/2 rounded-[2px] border border-stage bg-accent"
             style={{
               left: point.x * ratio,

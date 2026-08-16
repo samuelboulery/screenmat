@@ -15,6 +15,9 @@ export type Shortcuts = {
   onNudge: (dx: number, dy: number, large: boolean) => void
   /** Ordre du calque dans la pile. */
   onLayerMove: (direction: 'up' | 'down') => void
+  onSelectAll: () => void
+  onGroup: () => void
+  onUngroup: () => void
 }
 
 /** Direction de chaque flèche du clavier. */
@@ -68,6 +71,17 @@ export function useShortcuts(shortcuts: Shortcuts, enabled = true): void {
       if (meta && (event.key === 'd' || event.key === 'D')) {
         event.preventDefault()
         current.current.onDuplicate()
+        return
+      }
+      if (meta && (event.key === 'a' || event.key === 'A')) {
+        event.preventDefault()
+        current.current.onSelectAll()
+        return
+      }
+      if (meta && (event.key === 'g' || event.key === 'G')) {
+        event.preventDefault()
+        if (event.shiftKey) current.current.onUngroup()
+        else current.current.onGroup()
         return
       }
       if (meta && (event.key === 'ArrowUp' || event.key === 'ArrowDown')) {

@@ -31,7 +31,7 @@ export const HANDLE_CURSOR: Record<Handle, string> = {
  */
 export function handlesFor(kind: AnnotationKind): readonly Handle[] {
   if (isSegment(kind)) return SEGMENT_HANDLES
-  if (isPoint(kind) || kind === 'text') return []
+  if (isPoint(kind)) return []
   return AREA_HANDLES
 }
 
@@ -52,8 +52,9 @@ export function handleAnchor(handle: Handle): Point {
   return anchors[handle]
 }
 
-/** Aimante un vecteur au multiple de 45° le plus proche, longueur conservée. */
-function snapTo45(w: number, h: number): { w: number; h: number } {
+/** Aimante un vecteur au multiple de 45° le plus proche, longueur conservée.
+ *  Utilisé par les poignées et par le tracé (`lib/draft.ts`). */
+export function snapTo45(w: number, h: number): { w: number; h: number } {
   const length = Math.hypot(w, h)
   if (length === 0) return { w, h }
   const step = Math.PI / 4

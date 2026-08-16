@@ -89,9 +89,19 @@ export type Annotation = {
   id: string
   kind: AnnotationKind
   rect: FractionRect
+  /** Nom affiché dans la pile. Vide ⇒ dérivé du texte, puis du type. */
+  name: string
+  /** Retiré du rendu — donc aussi de l'export — et du hit-test. */
+  hidden: boolean
+  /** Plus attrapable au clic ni au rectangle de sélection ; le panneau, lui,
+   *  le sélectionne toujours. */
+  locked: boolean
   /** Texte du callout. Ignoré hors `text`. */
   text: string
   labelStyle: LabelStyle
+  /** Inverse le contraste d'un label ou d'un badge : la pastille prend la
+   *  couleur du calque, le texte l'encre lisible dessus. Ignoré sur `plain`. */
+  invert: boolean
   /** Taille de police, en fraction de la largeur de la fenêtre. */
   size: number
   /** Mode de floutage. Ignoré hors `redaction`. */
@@ -110,12 +120,31 @@ export type Annotation = {
   opacity: number
 }
 
+/** Regroupement de calques. `kind` discrimine un groupe d'une annotation dans
+ *  un `LayerNode` — un groupe n'a pas de géométrie propre, il n'existe que dans
+ *  la pile. */
+export type LayerGroup = {
+  id: string
+  kind: 'group'
+  name: string
+  collapsed: boolean
+  /** Masque ou verrouille tout le sous-arbre : un enfant hérite du plus
+   *  restrictif de ses ancêtres. */
+  hidden: boolean
+  locked: boolean
+  children: LayerNode[]
+}
+
+export type LayerNode = Annotation | LayerGroup
+
 export type Shot = {
   id: string
   name: string
   image: HTMLImageElement
   palette: Palette
-  annotations: Annotation[]
+  /** Pile de calques, du fond vers l'avant. `flatten` (`lib/tree.ts`) en tire
+   *  la liste plate que le rendu et le hit-test consomment. */
+  layers: LayerNode[]
 }
 
 export type Composition = {
@@ -159,6 +188,12 @@ export type Scene = {
   /** Image de fond décodée, requise si `settings.background === 'image'`. */
   backgroundImage?: HTMLImageElement
   watermark?: { image: HTMLImageElement; mark: Watermark }
+  /** Saisie de texte en cours : le caret est dessiné par le moteur, seule façon
+   *  qu'il tombe au bon pixel quelle que soit l'échelle et la rotation. `blink`
+   *  porte la phase du clignotement — la pastille, elle, reste affichée même
+   *  vide, sinon elle disparaîtrait une fois sur deux. Absent de la scène
+   *  d'export : un caret n'a rien à faire dans le fichier. */
+  editing?: { id: string; caret: number; blink: boolean }
 }
 
 export type QueueStatus = 'queued' | 'rendering' | 'done' | 'skipped' | 'error'

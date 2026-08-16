@@ -281,7 +281,7 @@ export default function App() {
           selection={shots.selection}
           styles={library.styles}
           activeStyleId={library.activeStyleId}
-          selectedAnnotationId={shots.selectedAnnotationId}
+          selectedLayerIds={shots.selectedLayerIds}
           narrow={narrow}
           onChange={patch}
           onCompose={compose}
@@ -293,11 +293,16 @@ export default function App() {
           onPickBackgroundImage={() => pick('background')}
           onCreateAnnotation={shots.createAnnotation}
           onPatchAnnotation={shots.patchAnnotation}
-          onDeleteAnnotation={shots.deleteAnnotation}
-          onMoveAnnotation={shots.moveAnnotation}
-          onSelectAnnotation={(shotId, id) => {
+          onPatchNode={shots.patchNode}
+          onTranslateLayers={shots.translateLayers}
+          onDeleteLayers={shots.deleteLayers}
+          onMoveLayer={shots.moveLayer}
+          onMoveLayers={shots.moveLayers}
+          onGroupLayers={shots.groupLayers}
+          onUngroupLayer={shots.ungroupLayer}
+          onSelectLayers={(shotId, ids, additive) => {
             if (shotId) shots.focusShot(shotId)
-            shots.selectAnnotation(id)
+            shots.selectLayers(ids, additive ? 'toggle' : 'replace')
           }}
         />
       ) : view === 'styles' ? (

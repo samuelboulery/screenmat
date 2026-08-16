@@ -1,3 +1,4 @@
+import { nodeIds } from './tree.ts'
 import type { Composition, Settings, Shot } from '../types.ts'
 
 /* Historique d'édition. Réducteur pur, sans React : c'est ce qui le rend
@@ -27,13 +28,14 @@ export function initHistory(present: Snapshot): History {
 
 /**
  * Signature structurelle d'un instantané : identifiants des shots et de leurs
- * calques. Deux états de même signature ne diffèrent que par des réglages —
- * un glissement de slider, pas une création ni une suppression.
+ * calques, groupes compris. Deux états de même signature ne diffèrent que par
+ * des réglages — un glissement de slider, pas une création ni une suppression.
+ *
+ * Les groupes comptent : sans eux, en créer un ou le dissoudre passerait pour un
+ * réglage et se ferait fusionner avec l'entrée d'historique précédente.
  */
 export function signature(snapshot: Snapshot): string {
-  return snapshot.shots
-    .map((shot) => `${shot.id}:${shot.annotations.map((a) => a.id).join(',')}`)
-    .join('|')
+  return snapshot.shots.map((shot) => `${shot.id}:${nodeIds(shot.layers).join(',')}`).join('|')
 }
 
 /**

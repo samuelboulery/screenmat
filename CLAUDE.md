@@ -36,6 +36,8 @@ src/
     background.ts         ← presets de fond : mesh · gradient · solid · image
     frame.ts              ← cadres browser/macbook/iphone/none + rotation Y
     annotate.ts           ← modèle et géométrie des calques, hit-test, bornes
+    tree.ts               ← arbre de calques : groupes, aplatissement, déplacement
+    draft.ts              ← tracé en cours : rect aimanté, scène augmentée
     layers.ts             ← rendu des calques, floutage cuit
     handles.ts            ← poignées : redimensionnement, aimantation, nudge
     history.ts            ← réducteur d'annulation, pur et sans React
@@ -49,15 +51,17 @@ src/
   hooks/
     useImageInput.ts      ← click + drag&drop + paste (⌘V) sur les shots
     useSideFile.ts        ← fond, watermark, import de style
-    useShots.ts           ← shots, sélection, calques
-    useLayerActions.ts    ← actions clavier sur le calque sélectionné
+    useShots.ts           ← shots, sélection, arbre de calques
+    useLayerActions.ts    ← actions clavier sur la sélection de calques
+    useCanvasScene.ts     ← dimensionnement et boucle de rendu du canvas
     useHistory.ts         ← pile d'annulation du document
     useStyleActions.ts    ← appliquer, enregistrer un style, filigrane décodé
     useLibrary.ts         ← styles et historique persistés
     useExport.ts          ← export, copie, écriture dans l'historique
     useBatch.ts           ← file d'attente et zip
     useShortcuts.ts       ← raccourcis globaux + point de rupture 1100 px
-  components/             ← TopBar · ToolRail · Inspector · Filmstrip · écrans
+  components/             ← TopBar · ToolRail · Inspector · LayersPanel ·
+                            TextInput · Filmstrip · écrans
 ```
 
 **Tech stack :** React 19 · TypeScript strict · Vite 8 · Tailwind CSS 4 (config
@@ -101,8 +105,21 @@ pnpm exec tsc -b        # vérification TypeScript
 - **Un seul chemin de rendu.** `renderScene(ctx, scene, scale)` est appelé par
   la preview (`scale = devicePixelRatio`) et par l'export (`scale = 1|2|3`). Ne
   jamais introduire de rendu DOM/CSS parallèle : l'export doit correspondre à la
-  preview par construction, pas par vigilance. Seules les poignées de sélection
-  sont en DOM — elles ne sont pas dans le visuel exporté.
+  preview par construction, pas par vigilance. **Le tracé en cours et le caret de
+  saisie en font partie** : le premier est une annotation brouillon glissée dans
+  la scène (`withDraft`), le second un champ `scene.editing` que le moteur
+  dessine. Seul le chrome d'édition — cadres de sélection, poignées, rectangle de
+  sélection, ligne de dépôt du panneau — est en DOM, et n'apparaît nulle part
+  dans le fichier exporté.
+- **Les calques forment un arbre** (`Shot.layers: LayerNode[]`) : une annotation
+  ou un groupe imbricable. Le rendu et le hit-test ne connaissent que la liste
+  plate qu'en tire `flatten()` (`lib/tree.ts`) ; un calque masqué en est écarté,
+  et n'existe donc pas non plus à l'export. Toute manipulation d'arbre passe par
+  `lib/tree.ts`, jamais par un `map`/`filter` local.
+- **Le contraste d'une encre sur un aplat se décide par `inkOn()`**
+  (`lib/color.ts`), qui compare les rapports WCAG réels. Ne pas reposer un seuil
+  de luminance dans un coin : `luminance()` n'est pas corrigée en gamma et se
+  trompe sur les tons moyens.
 - **Toutes les dimensions sont relatives à la largeur du canvas**, jamais en px
   absolus, sinon l'export 3× ne ressemble plus à la preview. `y` est divisé par
   la largeur, pas par la hauteur.
@@ -146,10 +163,18 @@ pnpm exec tsc -b        # vérification TypeScript
 `⌘V` coller · `⌘E` exporter · `⌘C` copier · `R` régénérer le fond ·
 `1/2/3` échelle d'export · `⌘Z` annuler · `⇧⌘Z` refaire.
 
-Sur le calque sélectionné : `Delete` supprimer · `⌘D` dupliquer · `Escape`
-désélectionner · `←↑→↓` déplacer (`⇧` = pas ×5) · `⌘↑`/`⌘↓` ordre dans la pile.
-En tirant une poignée, `⇧` conserve les proportions d'une surface et aimante une
-flèche aux multiples de 45°.
+Sur la sélection de calques : `Delete` supprimer · `⌘D` dupliquer · `Escape`
+désélectionner · `←↑→↓` déplacer (`⇧` = pas ×5) · `⌘↑`/`⌘↓` ordre dans la pile ·
+`⌘A` tout sélectionner · `⌘G` grouper · `⇧⌘G` dégrouper.
+
+`⇧` **pendant un tracé** aimante une flèche ou un trait aux multiples de 45° —
+horizontales, verticales et diagonales parfaites — et carre une surface. En
+tirant une poignée, il conserve les proportions et aimante de même. Sur le canvas
+avec l'outil Select : `⇧`/`⌘`-clic ajoute au lot, glisser sur le vide trace un
+rectangle de sélection.
+
+L'outil Texte pose son label d'un clic et ouvre la saisie sur place ; un
+double-clic la rouvre, un texte laissé vide supprime le calque.
 
 ## Références visuelles
 

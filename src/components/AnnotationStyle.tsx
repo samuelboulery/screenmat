@@ -1,4 +1,4 @@
-import { Section, Slider, Swatch, Tile } from './ui.tsx'
+import { Section, Slider, Swatch, Tile, Toggle } from './ui.tsx'
 import { ANNOTATION_LIMITS, isPoint, isSegment } from '../lib/annotate.ts'
 import type { Annotation, LabelStyle, Palette, RedactionMode } from '../types.ts'
 
@@ -101,7 +101,7 @@ export default function AnnotationStyle({
         />
       </Section>
 
-      {(kind === 'text' || isPoint(kind)) && (
+      {isPoint(kind) && (
         <Section title={kind === 'text' ? 'Label' : 'Badge'}>
           {kind === 'text' && (
             <>
@@ -125,6 +125,18 @@ export default function AnnotationStyle({
                 ))}
               </div>
             </>
+          )}
+          {/* Le contraste du texte se déduit du fond : pas de réglage à
+              rater côté accessibilité. Sans effet sur un label `plain`. */}
+          {(kind === 'badge' || annotation.labelStyle !== 'plain') && (
+            <div className="flex items-center justify-between">
+              <span className="t-ui text-ink-soft">Invert</span>
+              <Toggle
+                checked={annotation.invert}
+                label="Inverser le fond et le texte"
+                onChange={(invert) => onPatch({ invert })}
+              />
+            </div>
           )}
           <Slider
             label="Size"

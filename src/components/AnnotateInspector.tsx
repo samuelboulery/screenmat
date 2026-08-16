@@ -1,6 +1,8 @@
 import AnnotationStyle from './AnnotationStyle.tsx'
-import { Badge, Panel, Row, Section } from './ui.tsx'
-import { badgeNumbers } from '../lib/annotate.ts'
+import LayersPanel from './LayersPanel.tsx'
+import { Badge, Panel, Section } from './ui.tsx'
+import { findNode, isGroup } from '../lib/tree.ts'
+import type { NodePatch } from '../hooks/useShots.ts'
 import type { Annotation, AnnotationKind, Shot } from '../types.ts'
 
 const KIND_LABEL: Record<AnnotationKind, string> = {
@@ -13,115 +15,112 @@ const KIND_LABEL: Record<AnnotationKind, string> = {
   redaction: 'RDC',
 }
 
-const KIND_NAME: Record<AnnotationKind, string> = {
-  text: 'Label',
-  badge: 'Badge',
-  arrow: 'Arrow',
-  line: 'Line',
-  box: 'Box',
-  ellipse: 'Ellipse',
-  redaction: 'Redacted area',
-}
-
 type AnnotateInspectorProps = {
   shot: Shot | null
-  selectedId: string | null
-  onSelect: (id: string) => void
+  selectedIds: readonly string[]
+  onSelect: (ids: string[], additive: boolean, range: boolean) => void
   onPatch: (shotId: string, id: string, patch: Partial<Annotation>) => void
-  onDelete: (shotId: string, id: string) => void
+  onPatchNode: (shotId: string, id: string, patch: NodePatch) => void
+  onDelete: (shotId: string, ids: readonly string[]) => void
   onMove: (shotId: string, id: string, direction: 'up' | 'down') => void
+  onMoveTo: (shotId: string, ids: readonly string[], parentId: string | null, index: number) => void
+  onGroup: (shotId: string, ids: readonly string[]) => void
+  onUngroup: (shotId: string, groupId: string) => void
   /** Descendu sous le bouton de la feuille rétractable, en mode étroit. */
   offset?: boolean
 }
 
 export default function AnnotateInspector({
   shot,
-  selectedId,
+  selectedIds,
   onSelect,
   onPatch,
+  onPatchNode,
   onDelete,
   onMove,
+  onMoveTo,
+  onGroup,
+  onUngroup,
   offset = false,
 }: AnnotateInspectorProps) {
-  const annotations = shot?.annotations ?? []
-  const selected = annotations.find((annotation) => annotation.id === selectedId) ?? null
-  const numbers = badgeNumbers(annotations)
-  const index = selected ? annotations.indexOf(selected) : -1
+  const found = shot && selectedIds.length === 1 ? findNode(shot.layers, selectedIds[0]) : null
+  const node = found?.node ?? null
+  const annotation = node && !isGroup(node) ? node : null
+  const siblings = found ? (found.parent?.children ?? shot?.layers ?? []) : []
 
   return (
     <Panel
       className={`absolute right-5 z-10 max-h-[calc(100%-190px)] w-72 space-y-4 overflow-y-auto p-[18px] ${offset ? 'top-[124px]' : 'top-[88px]'}`}
     >
-      <Section title={shot ? `Layers — ${shot.name}` : 'Layers'}>
-        <div className="space-y-[3px]">
-          {annotations.length === 0 && (
-            <p className="t-ui-small text-dim">No layer yet — pick a tool and drag on the shot.</p>
-          )}
-          {/* La pile se lit de haut en bas comme elle se dessine : le dernier
-              calque créé passe au-dessus, il apparaît donc en tête. */}
-          {[...annotations].reverse().map((annotation) => (
-            <Row
-              key={annotation.id}
-              active={annotation.id === selectedId}
-              onClick={() => onSelect(annotation.id)}
-            >
-              <span
-                className={`font-mono text-[9px] ${
-                  annotation.id === selectedId
-                    ? 'text-accent-ink'
-                    : annotation.kind === 'redaction'
-                      ? 'text-danger'
-                      : 'text-dim'
-                }`}
-              >
-                {KIND_LABEL[annotation.kind]}
-              </span>
-              <span className="t-ui truncate">
-                {annotation.kind === 'badge'
-                  ? `Badge ${numbers.get(annotation.id) ?? 1}`
-                  : annotation.text.trim() || KIND_NAME[annotation.kind]}
-              </span>
-            </Row>
-          ))}
-        </div>
-      </Section>
+      <LayersPanel
+        shot={shot}
+        selectedIds={selectedIds}
+        onSelect={onSelect}
+        onPatch={(id, patch) => shot && onPatchNode(shot.id, id, patch)}
+        onMove={(ids, parentId, index) => shot && onMoveTo(shot.id, ids, parentId, index)}
+      />
 
-      {selected && shot && (
+      {annotation && shot && (
         <AnnotationStyle
-          annotation={selected}
+          annotation={annotation}
           palette={shot.palette}
-          onPatch={(patch) => onPatch(shot.id, selected.id, patch)}
+          onPatch={(patch) => onPatch(shot.id, annotation.id, patch)}
         />
       )}
 
-      {selected && shot && (
-        <Section title="Layer">
+      {shot && selectedIds.length > 0 && (
+        <Section title={selectedIds.length > 1 ? `Layers — ${selectedIds.length}` : 'Layer'}>
           <div className="flex items-center justify-between">
-            <Badge tone={selected.kind === 'redaction' ? 'danger' : undefined}>
-              {KIND_LABEL[selected.kind]}
+            <Badge tone={annotation?.kind === 'redaction' ? 'danger' : undefined}>
+              {node && isGroup(node) ? 'GRP' : annotation ? KIND_LABEL[annotation.kind] : 'MUL'}
             </Badge>
             <div className="flex items-center gap-2">
+              {node && (
+                <>
+                  <button
+                    type="button"
+                    title="Send backward (⌘↓)"
+                    disabled={!found || found.index <= 0}
+                    onClick={() => onMove(shot.id, node.id, 'down')}
+                    className="t-ui-small text-ink-soft hover:text-ink disabled:opacity-30"
+                  >
+                    ↓
+                  </button>
+                  <button
+                    type="button"
+                    title="Bring forward (⌘↑)"
+                    disabled={!found || found.index >= siblings.length - 1}
+                    onClick={() => onMove(shot.id, node.id, 'up')}
+                    className="t-ui-small text-ink-soft hover:text-ink disabled:opacity-30"
+                  >
+                    ↑
+                  </button>
+                </>
+              )}
+              {node && isGroup(node) ? (
+                <button
+                  type="button"
+                  title="Ungroup (⇧⌘G)"
+                  onClick={() => onUngroup(shot.id, node.id)}
+                  className="t-ui-small text-ink-soft hover:text-ink"
+                >
+                  Ungroup
+                </button>
+              ) : (
+                selectedIds.length > 1 && (
+                  <button
+                    type="button"
+                    title="Group (⌘G)"
+                    onClick={() => onGroup(shot.id, selectedIds)}
+                    className="t-ui-small text-ink-soft hover:text-ink"
+                  >
+                    Group
+                  </button>
+                )
+              )}
               <button
                 type="button"
-                title="Send backward (⌘↓)"
-                disabled={index <= 0}
-                onClick={() => onMove(shot.id, selected.id, 'down')}
-                className="t-ui-small text-ink-soft hover:text-ink disabled:opacity-30"
-              >
-                ↓
-              </button>
-              <button
-                type="button"
-                title="Bring forward (⌘↑)"
-                disabled={index < 0 || index >= annotations.length - 1}
-                onClick={() => onMove(shot.id, selected.id, 'up')}
-                className="t-ui-small text-ink-soft hover:text-ink disabled:opacity-30"
-              >
-                ↑
-              </button>
-              <button
-                type="button"
-                onClick={() => onDelete(shot.id, selected.id)}
+                onClick={() => onDelete(shot.id, selectedIds)}
                 className="t-ui-small text-danger hover:underline"
               >
                 Delete ⌫

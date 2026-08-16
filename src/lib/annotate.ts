@@ -23,6 +23,10 @@ const MONO_ADVANCE = 0.6
 /** Valeurs de départ d'un calque. Toutes les tailles sont des fractions de la
  *  largeur de la fenêtre. */
 export const ANNOTATION_DEFAULTS = {
+  name: '',
+  hidden: false,
+  locked: false,
+  invert: false,
   color: ANNOTATION_ACCENT,
   strokeWidth: 0.0022,
   radius: 0.006,
@@ -46,9 +50,11 @@ export function isSegment(kind: AnnotationKind): boolean {
   return kind === 'arrow' || kind === 'line'
 }
 
-/** Formes posées d'un clic, sans glisser : leur taille vient de `size`. */
+/** Formes posées d'un clic, sans glisser : leur taille vient de `size`, leur
+ *  rect ne porte que leur ancre. Un label en fait partie — `bounds()` le mesure
+ *  depuis son texte, glisser une boîte autour n'aurait rien changé. */
 export function isPoint(kind: AnnotationKind): boolean {
-  return kind === 'badge'
+  return kind === 'badge' || kind === 'text'
 }
 
 let counter = 0
@@ -65,7 +71,9 @@ export function createAnnotation(kind: AnnotationKind, rect: FractionRect): Anno
     id: nextId(kind),
     kind,
     rect,
-    text: kind === 'text' ? 'Label' : '',
+    // Vide : la saisie s'ouvre dans la foulée, un texte par défaut n'aurait
+    // qu'à être effacé.
+    text: '',
     labelStyle: 'pill',
     size: DEFAULT_LABEL_SIZE,
     redaction: 'blur',
@@ -109,6 +117,23 @@ export function normalizeRect(rect: Rect): Rect {
     w: Math.abs(rect.w),
     h: Math.abs(rect.h),
   }
+}
+
+/** Rectangle normalisé couvrant deux points — le rectangle de sélection. */
+export function rectFromPoints(a: { x: number; y: number }, b: { x: number; y: number }): Rect {
+  return {
+    x: Math.min(a.x, b.x),
+    y: Math.min(a.y, b.y),
+    w: Math.abs(b.x - a.x),
+    h: Math.abs(b.y - a.y),
+  }
+}
+
+/** Vrai si les deux rectangles se touchent. Le rectangle de sélection prend ce
+ *  qu'il effleure, pas seulement ce qu'il contient : un trait long dépasse
+ *  presque toujours du geste. */
+export function overlaps(a: Rect, b: Rect): boolean {
+  return a.x <= b.x + b.w && b.x <= a.x + a.w && a.y <= b.y + b.h && b.y <= a.y + a.h
 }
 
 /** Numéro affiché par chaque badge : son rang parmi les badges du shot.

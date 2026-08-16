@@ -234,17 +234,17 @@ input[type='color']:not(:disabled) {
 
 .sf-slider::-webkit-slider-runnable-track {
   height: 3px;
-  border-radius: 2px;
+  border-radius: var(--radius-xs);
   background:
-    linear-gradient(100deg, #7de2ff, #a378ff) 0 / var(--fill, 0%) 100% no-repeat,
+    linear-gradient(100deg, var(--color-accent), var(--color-accent-2)) 0 / var(--fill, 0%) 100% no-repeat,
     rgba(255, 255, 255, 0.09);
 }
 
 .sf-slider::-moz-range-track {
   height: 3px;
-  border-radius: 2px;
+  border-radius: var(--radius-xs);
   background:
-    linear-gradient(100deg, #7de2ff, #a378ff) 0 / var(--fill, 0%) 100% no-repeat,
+    linear-gradient(100deg, var(--color-accent), var(--color-accent-2)) 0 / var(--fill, 0%) 100% no-repeat,
     rgba(255, 255, 255, 0.09);
 }
 

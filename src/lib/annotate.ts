@@ -4,6 +4,11 @@ import type { Annotation, AnnotationKind, FractionRect } from '../types.ts'
 /* Modèle et géométrie des calques. Le dessin vit dans `layers.ts` : ici, rien
    qui touche à un contexte canvas — tout est testable sans navigateur. */
 
+/** Un point, dans l'unité de celui qui le manipule — px canvas pour un tracé,
+ *  fraction de largeur pour une poignée. Défini ici parce que c'est le module
+ *  dont `draft.ts`, `handles.ts` et `frame.ts` dépendent tous les trois. */
+export type Point = { x: number; y: number }
+
 /** Accent de la DA, couleur par défaut d'un calque. */
 export const ANNOTATION_ACCENT = '#7DE2FF'
 

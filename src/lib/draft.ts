@@ -1,4 +1,4 @@
-import { isPoint, isSegment, type Rect } from './annotate.ts'
+import { isPoint, isSegment, type Point, type Rect } from './annotate.ts'
 import { snapTo45 } from './handles.ts'
 import type { AnnotationKind, LayerNode, Scene } from '../types.ts'
 
@@ -8,8 +8,6 @@ import type { AnnotationKind, LayerNode, Scene } from '../types.ts'
 
 /** Longueur minimale d'un tracé pour qu'il crée un calque, en px canvas. */
 export const MIN_DRAW = 4
-
-export type Point = { x: number; y: number }
 
 /**
  * Rectangle tracé, en px canvas et dans l'espace non tourné de la fenêtre.

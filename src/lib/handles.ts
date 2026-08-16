@@ -1,12 +1,10 @@
-import { isPoint, isSegment } from './annotate.ts'
+import { isPoint, isSegment, type Point } from './annotate.ts'
 import type { AnnotationKind, FractionRect } from '../types.ts'
 
 /* Géométrie des poignées de sélection. Logique pure : les poignées elles-mêmes
    sont en DOM (`SelectionOverlay`) et ne sortent jamais dans l'export. */
 
 export type Handle = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w' | 'start' | 'end'
-
-export type Point = { x: number; y: number }
 
 const AREA_HANDLES: readonly Handle[] = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w']
 const SEGMENT_HANDLES: readonly Handle[] = ['start', 'end']

@@ -8,8 +8,9 @@ import {
   overlaps,
   rectFromPoints,
   toFractions,
+  type Point,
 } from '../lib/annotate.ts'
-import { draftRect, withDraft, type Point } from '../lib/draft.ts'
+import { draftRect, withDraft } from '../lib/draft.ts'
 import { applyMatrix, invertMatrix, windowMatrix } from '../lib/frame.ts'
 import { applyHandle, type Handle } from '../lib/handles.ts'
 import { pointAt, useCanvasScene, type Inset } from '../hooks/useCanvasScene.ts'

@@ -1,3 +1,4 @@
+import { AddIcon } from './icons.tsx'
 import { DashedTile, Section, Tile } from './ui.tsx'
 import type { Style } from '../types.ts'
 
@@ -22,13 +23,18 @@ export default function Presets({
             active={style.id === activeStyleId}
             onClick={() => onApplyStyle(style.id)}
             title={style.name}
-            className="size-[38px] rounded-[9px] text-[9px]"
+            className="size-10 text-[9px]"
           >
             {style.name.slice(0, 2).toUpperCase()}
           </Tile>
         ))}
-        <DashedTile onClick={onSaveStyle} className="size-[38px] rounded-[9px]" title="Save current settings as a style">
-          +
+        <DashedTile
+          onClick={onSaveStyle}
+          className="size-10"
+          title="Save current settings as a style"
+          aria-label="Save current settings as a style"
+        >
+          <AddIcon />
         </DashedTile>
       </div>
     </Section>

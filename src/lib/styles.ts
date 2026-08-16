@@ -83,6 +83,8 @@ function parseSettings(value: unknown): Settings {
     blur: clamp(num(value.blur, d.blur), 1, 32),
     shapes: clamp(Math.round(num(value.shapes, d.shapes)), 0, 12),
     shapeOpacity: clamp(num(value.shapeOpacity, d.shapeOpacity), 0, 1),
+    saturation: clamp(num(value.saturation, d.saturation), 0, 2),
+    contrast: clamp(num(value.contrast, d.contrast), 0, 2),
     grain: clamp(num(value.grain, d.grain), 0, 1),
     seed: Math.round(num(value.seed, d.seed)),
     format: oneOf(value.format, ['png', 'webp'] as const, d.format),

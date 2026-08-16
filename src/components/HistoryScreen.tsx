@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { NewShotIcon, SearchIcon, SortNewestIcon, SortOldestIcon } from './icons.tsx'
 import { DashedTile, Segmented } from './ui.tsx'
 import { humanSize } from '../lib/export.ts'
 import { QUOTA_WARNING_BYTES, type HistoryMeta } from '../lib/store.ts'
@@ -47,23 +48,27 @@ export default function HistoryScreen({
   }, [entries, filter, query, sort])
 
   return (
-    <div className="stage-glow absolute inset-x-0 top-[58px] bottom-0 flex flex-col gap-4 overflow-y-auto p-[26px_28px]">
+    <div className="stage-glow absolute inset-x-0 top-[58px] bottom-0 flex flex-col gap-4 overflow-y-auto p-7">
       <div className="flex items-center gap-4">
         <Segmented options={filters} value={filter} onPick={setFilter} />
         <div className="ml-auto flex items-center gap-3">
-          <input
-            type="search"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search exports"
-            aria-label="Search exports"
-            className="w-[220px] rounded-[9px] border border-hairline bg-sunken px-3 py-2 text-[12px] text-ink placeholder:text-dim"
-          />
+          <div className="relative">
+            <SearchIcon className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-dim" />
+            <input
+              type="search"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search exports"
+              aria-label="Search exports"
+              className="w-[220px] rounded-md border border-hairline bg-sunken py-2 pr-3 pl-9 text-[12px] text-ink placeholder:text-dim"
+            />
+          </div>
           <button
             type="button"
             onClick={() => setSort(sort === 'newest' ? 'oldest' : 'newest')}
-            className="font-mono text-[10px] tracking-[0.18em] text-dim uppercase hover:text-ink"
+            className="flex items-center gap-1.5 font-mono text-[10px] tracking-[0.18em] text-dim uppercase hover:text-ink"
           >
+            {sort === 'newest' ? <SortNewestIcon /> : <SortOldestIcon />}
             {sort}
           </button>
         </div>
@@ -76,7 +81,7 @@ export default function HistoryScreen({
             type="button"
             onClick={() => onOpen(entry.id)}
             title={entry.name}
-            className="relative overflow-hidden rounded-[14px] border border-hairline bg-sunken"
+            className="relative overflow-hidden rounded-lg border border-hairline bg-sunken"
           >
             <img src={entry.thumbnail} alt="" className="size-full object-cover" />
             {/* Voile de lisibilité : la métadonnée est blanche, les screenshots
@@ -91,7 +96,8 @@ export default function HistoryScreen({
           </button>
         ))}
 
-        <DashedTile onClick={onAdd} className="rounded-[14px] font-mono text-[10px]">
+        <DashedTile onClick={onAdd} className="flex-col gap-1.5 rounded-lg font-mono text-[10px]">
+          <NewShotIcon />
           ⌘V to add
         </DashedTile>
       </div>

@@ -1,7 +1,40 @@
+import type { ReactNode } from 'react'
+import { AddIcon, CheckIcon, LocalIcon, WarningIcon } from './icons.tsx'
 import { Badge, DashedTile, MonoLabel, Panel, Section, Segmented } from './ui.tsx'
 import type { Format, QueueItem, Ratio, Shot, Style } from '../types.ts'
 
 const RATIOS: Ratio[] = ['16:9', '4:3', '1:1', '9:16']
+
+/** Ligne à cocher du panneau : un ratio, une option. */
+function CheckRow({
+  checked,
+  onToggle,
+  children,
+}: {
+  checked: boolean
+  onToggle: () => void
+  children: ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-pressed={checked}
+      className={`flex w-full items-center gap-2.5 rounded-md border px-2.5 py-2 text-left transition-colors duration-140 ${
+        checked ? 'border-accent/30 bg-accent/10' : 'border-transparent hover:bg-white/[.03]'
+      }`}
+    >
+      <span
+        className={`flex size-[15px] shrink-0 items-center justify-center rounded-xs ${
+          checked ? 'bg-accent text-stage' : 'border-[1.5px] border-white/20'
+        }`}
+      >
+        {checked && <CheckIcon className="size-2.5" />}
+      </span>
+      {children}
+    </button>
+  )
+}
 
 const STATUS_LABEL: Record<QueueItem['status'], string> = {
   queued: 'queued',
@@ -21,10 +54,12 @@ type BatchScreenProps = {
   ratios: readonly Ratio[]
   scale: number
   format: Format
+  harmonize: boolean
   onToggleShot: (id: string) => void
   onToggleRatio: (ratio: Ratio) => void
   onScale: (scale: number) => void
   onFormat: (format: Format) => void
+  onHarmonize: (harmonize: boolean) => void
   onAddShot: () => void
   onChangeStyle: () => void
 }
@@ -43,10 +78,12 @@ export default function BatchScreen({
   ratios,
   scale,
   format,
+  harmonize,
   onToggleShot,
   onToggleRatio,
   onScale,
   onFormat,
+  onHarmonize,
   onAddShot,
   onChangeStyle,
 }: BatchScreenProps) {
@@ -55,10 +92,10 @@ export default function BatchScreen({
 
   return (
     <div className="stage-glow absolute inset-x-0 top-[58px] bottom-0 flex overflow-hidden">
-      <div className="flex min-w-0 flex-1 flex-col gap-[18px] overflow-y-auto p-[26px_28px]">
+      <div className="flex min-w-0 flex-1 flex-col gap-4 overflow-y-auto p-7">
         <div className="flex items-center gap-4">
           <MonoLabel>Queue</MonoLabel>
-          <div className="h-1 w-full max-w-[300px] overflow-hidden rounded-[3px] bg-white/[.09]">
+          <div className="h-1 w-full max-w-[300px] overflow-hidden rounded-xs bg-white/[.09]">
             <div className="gradient-accent h-full" style={{ width: `${progress}%` }} />
           </div>
           <span className="font-mono text-[10px] text-dim">
@@ -78,23 +115,25 @@ export default function BatchScreen({
                 type="button"
                 onClick={() => onToggleShot(shot.id)}
                 aria-pressed={picked}
-                className={`relative h-[148px] overflow-hidden rounded-xl border border-hairline text-left ${
+                className={`relative h-[148px] overflow-hidden rounded-lg border border-hairline text-left ${
                   picked ? 'bg-sunken' : 'bg-white/[.04] opacity-60'
                 }`}
               >
                 <img src={shot.image.src} alt="" className="size-full object-cover" />
 
                 <span
-                  className={`absolute top-2.5 left-2.5 size-4 rounded-[5px] ${
-                    picked ? 'bg-accent' : 'border-[1.5px] border-white/20'
+                  className={`absolute top-2.5 left-2.5 flex size-4 items-center justify-center rounded-xs ${
+                    picked ? 'bg-accent text-stage' : 'border-[1.5px] border-white/20'
                   }`}
-                />
+                >
+                  {picked && <CheckIcon className="size-3" />}
+                </span>
 
                 <span className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-stage/60 px-2.5 py-2 font-mono text-[9px]">
                   <span className={picked ? 'text-ink' : 'text-dim'}>
                     {String(index + 1).padStart(2, '0')} · {STATUS_LABEL[status]}
                   </span>
-                  {item?.error && <span className="text-danger">!</span>}
+                  {item?.error && <WarningIcon className="size-3 text-danger" />}
                 </span>
 
                 {status === 'rendering' && (
@@ -107,51 +146,53 @@ export default function BatchScreen({
             )
           })}
 
-          <DashedTile onClick={onAddShot} className="h-[148px] rounded-xl font-mono text-[10px]">
-            + add
+          <DashedTile onClick={onAddShot} className="h-[148px] flex-col gap-1.5 rounded-lg font-mono text-[10px]">
+            <AddIcon />
+            add
           </DashedTile>
         </div>
 
-        <div className="flex items-center gap-2.5 rounded-[10px] border border-accent/20 bg-accent/[.06] px-3.5 py-2.5">
-          <Badge tone="accent">OFFLINE</Badge>
+        <div className="flex items-center gap-2.5 rounded-md border border-accent/20 bg-accent/[.06] px-3.5 py-2.5">
+          <Badge tone="accent">
+            <span className="flex items-center gap-1">
+              <LocalIcon className="size-3" /> OFFLINE
+            </span>
+          </Badge>
           <span className="t-ui text-accent-ink">
             Everything renders on this machine. No file is ever uploaded.
           </span>
         </div>
       </div>
 
-      <Panel className="w-[316px] shrink-0 space-y-5 overflow-y-auto rounded-none border-0 border-l border-white/5 p-[26px_22px]">
+      <Panel className="w-[316px] shrink-0 space-y-5 overflow-y-auto rounded-none border-0 border-l border-white/5 p-6">
         <Section title="Style applied" aside={<button type="button" onClick={onChangeStyle} className="t-ui-small text-accent hover:underline">Change</button>}>
           <div className="flex items-center gap-2.5">
-            <span className="h-[22px] w-[30px] rounded border border-hairline bg-sunken" />
+            <span className="h-[22px] w-[30px] rounded-xs border border-hairline bg-sunken" />
             <span className="t-ui text-ink">{style?.name ?? 'Current settings'}</span>
           </div>
         </Section>
 
         <Section title="Ratio set">
           <div className="space-y-1">
-            {RATIOS.map((ratio) => {
-              const checked = ratios.includes(ratio)
-              return (
-                <button
-                  key={ratio}
-                  type="button"
-                  onClick={() => onToggleRatio(ratio)}
-                  aria-pressed={checked}
-                  className={`flex w-full items-center gap-2.5 rounded-[9px] border px-2.5 py-2 transition-colors duration-140 ${
-                    checked ? 'border-accent/30 bg-accent/10' : 'border-transparent hover:bg-white/[.03]'
-                  }`}
-                >
-                  <span
-                    className={`size-[15px] rounded-[4px] ${
-                      checked ? 'bg-accent' : 'border-[1.5px] border-white/20'
-                    }`}
-                  />
-                  <span className="t-ui text-ink">{ratio}</span>
-                </button>
-              )
-            })}
+            {RATIOS.map((ratio) => (
+              <CheckRow
+                key={ratio}
+                checked={ratios.includes(ratio)}
+                onToggle={() => onToggleRatio(ratio)}
+              >
+                <span className="t-ui text-ink">{ratio}</span>
+              </CheckRow>
+            ))}
           </div>
+        </Section>
+
+        <Section title="Consistency">
+          <CheckRow checked={harmonize} onToggle={() => onHarmonize(!harmonize)}>
+            <span className="t-ui text-ink">Harmonize backgrounds</span>
+          </CheckRow>
+          <p className="px-2.5 font-mono text-[10px] leading-[1.5] text-dim">
+            Same saturation and contrast across the batch. Each shot keeps its own hue.
+          </p>
         </Section>
 
         <Section title="Output">

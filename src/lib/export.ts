@@ -1,3 +1,4 @@
+import { harmonizePalettes } from './palette.ts'
 import { renderScene } from './render.ts'
 import { makeZip, type ZipEntry } from './zip.ts'
 import type { Format, Palette, Ratio, Scene, Shot } from '../types.ts'
@@ -127,6 +128,10 @@ export type BatchJob = {
  * Développe une sélection de shots × ratios en fichiers à rendre. Chaque job
  * repart de la scène courante mais n'y garde qu'un shot et force le layout
  * `single` : un lot produit des visuels individuels, pas des compositions.
+ *
+ * `harmonize` aligne l'intensité des palettes du lot sans toucher à leur teinte
+ * — l'entre-deux entre un fond par capture et l'uniformité totale d'une palette
+ * imposée par un style, qui reste prioritaire quand elle existe.
  */
 export function buildBatchJobs(
   scene: Scene,
@@ -134,8 +139,13 @@ export function buildBatchJobs(
   ratios: readonly Ratio[],
   scale: number,
   palette?: Palette,
+  harmonize = false,
 ): BatchJob[] {
-  return shots.flatMap((shot) =>
+  const palettes = harmonize
+    ? harmonizePalettes(shots.map((shot) => shot.palette))
+    : shots.map((shot) => shot.palette)
+
+  return shots.flatMap((shot, index) =>
     ratios.map((ratio) => ({
       shotId: shot.id,
       name: shot.name,
@@ -144,7 +154,7 @@ export function buildBatchJobs(
       scene: {
         ...scene,
         shots: [shot],
-        palette: palette ?? shot.palette,
+        palette: palette ?? palettes[index],
         composition: { ...scene.composition, layout: 'single' as const },
         settings: { ...scene.settings, ratio },
       },

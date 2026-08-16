@@ -1,5 +1,5 @@
-import LayoutIcon from './LayoutIcon.tsx'
 import Presets from './Presets.tsx'
+import { FRAME_ICON, ImageIcon, LAYOUT_ICON, ShuffleIcon } from './icons.tsx'
 import type { ComposeTool } from './ToolRail.tsx'
 import { DashedTile, MonoLabel, Panel, Section, Segmented, Slider, Swatch, Tile, Toggle } from './ui.tsx'
 import type {
@@ -20,6 +20,7 @@ const FRAMES: Array<{ value: FrameStyle; label: string }> = [
   { value: 'none', label: 'none' },
 ]
 
+/** Les ratios restent en mono : c'est une donnée, pas une action. */
 const RATIOS: Ratio[] = ['4:3', '1:1', '16:9', '9:16', 'auto']
 
 const LAYOUTS: Array<{ value: LayoutKind; label: string }> = [
@@ -100,24 +101,28 @@ export default function Inspector({
     <Panel
       className={
         docked
-          ? 'w-[316px] shrink-0 space-y-4 rounded-none border-0 border-l border-white/5 p-[22px_26px]'
-          : `absolute right-5 z-10 max-h-[calc(100%-190px)] w-72 space-y-4 overflow-y-auto p-[18px] ${offset ? 'top-[124px]' : 'top-[88px]'}`
+          ? 'w-[316px] shrink-0 space-y-4 rounded-none border-0 border-l border-white/5 p-6'
+          : `absolute right-5 z-10 max-h-[calc(100%-190px)] w-72 space-y-4 overflow-y-auto p-4 ${offset ? 'top-[124px]' : 'top-[88px]'}`
       }
     >
       {tool === 'FRM' && (
         <>
           <Section title="Frame">
             <div className="grid grid-cols-4 gap-1">
-              {FRAMES.map((frame) => (
-                <Tile
-                  key={frame.value}
-                  active={settings.frame === frame.value}
-                  onClick={() => onChange({ frame: frame.value })}
-                  className="h-11 font-mono text-[9px]"
-                >
-                  {frame.label}
-                </Tile>
-              ))}
+              {FRAMES.map((frame) => {
+                const Icon = FRAME_ICON[frame.value]
+                return (
+                  <Tile
+                    key={frame.value}
+                    active={settings.frame === frame.value}
+                    onClick={() => onChange({ frame: frame.value })}
+                    className="h-12 font-mono text-[9px]"
+                  >
+                    <Icon />
+                    {frame.label}
+                  </Tile>
+                )
+              })}
             </div>
           </Section>
 
@@ -180,10 +185,11 @@ export default function Inspector({
               ))}
               <DashedTile
                 onClick={onPickBackgroundImage}
-                className={`size-10 font-mono text-[9px] ${settings.background === 'image' ? 'ring-selected' : ''}`}
+                className={`size-10 ${settings.background === 'image' ? 'ring-selected' : ''}`}
                 title="Use an image as background"
+                aria-label="Use an image as background"
               >
-                img
+                <ImageIcon />
               </DashedTile>
             </div>
 
@@ -192,9 +198,10 @@ export default function Inspector({
               <button
                 type="button"
                 onClick={() => onChange({ seed: settings.seed + 1 })}
-                className="t-ui-small text-accent hover:underline"
+                className="t-ui-small flex items-center gap-1 text-accent hover:underline"
               >
-                ↻ shuffle
+                <ShuffleIcon />
+                shuffle
               </button>
             </div>
 
@@ -213,6 +220,25 @@ export default function Inspector({
                 />
               ))}
             </div>
+
+            <Slider
+              label="Saturation"
+              value={settings.saturation}
+              display={`${Math.round(settings.saturation * 100)} %`}
+              min={0}
+              max={2}
+              step={0.05}
+              onInput={(saturation) => onChange({ saturation })}
+            />
+            <Slider
+              label="Contrast"
+              value={settings.contrast}
+              display={`${Math.round(settings.contrast * 100)} %`}
+              min={0}
+              max={2}
+              step={0.05}
+              onInput={(contrast) => onChange({ contrast })}
+            />
           </Section>
 
           <Section title="Shapes">
@@ -275,17 +301,20 @@ export default function Inspector({
 
           <Section title="Layout">
             <div className="grid grid-cols-2 gap-1.5">
-              {LAYOUTS.map((item) => (
-                <Tile
-                  key={item.value}
-                  active={composition.layout === item.value}
-                  onClick={() => onCompose({ layout: item.value })}
-                  className="h-[62px] gap-1.5"
-                >
-                  <LayoutIcon kind={item.value} />
-                  <span className="text-[10px]">{item.label}</span>
-                </Tile>
-              ))}
+              {LAYOUTS.map((item) => {
+                const Icon = LAYOUT_ICON[item.value]
+                return (
+                  <Tile
+                    key={item.value}
+                    active={composition.layout === item.value}
+                    onClick={() => onCompose({ layout: item.value })}
+                    className="h-16 gap-1.5"
+                  >
+                    <Icon className="size-5" />
+                    <span className="text-[10px]">{item.label}</span>
+                  </Tile>
+                )
+              })}
             </div>
             <Slider
               label="Spread"
@@ -335,7 +364,7 @@ export default function Inspector({
             placeholder="exemple.com"
             spellCheck={false}
             aria-label="URL shown in the title bar"
-            className="w-full rounded-[9px] border border-hairline bg-sunken px-3 py-2 font-mono text-[11px] text-ink placeholder:text-dim"
+            className="w-full rounded-md border border-hairline bg-sunken px-3 py-2 font-mono text-[11px] text-ink placeholder:text-dim"
           />
           <Segmented
             className="w-full"

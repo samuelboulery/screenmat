@@ -1,3 +1,4 @@
+import { hexToRgb, luminance, withLuminance, type Rgb } from './color.ts'
 import type { Palette } from '../types.ts'
 
 /** 64×64 : assez fin pour attraper un accent minoritaire (un bouton, un lien),
@@ -129,6 +130,70 @@ export function quantize(pixels: Uint8ClampedArray | readonly number[]): Palette
     base: dominant ? toHex(...average(dominant)) : FALLBACK_BASE,
     accents: accents.map((color) => toHex(...color)),
   }
+}
+
+/** Ce qu'un lot met en commun : l'intensité, jamais la teinte. */
+type Intensity = { saturation: number; luminance: number }
+
+/**
+ * Ramène une couleur à une saturation cible en gardant sa teinte : le canal le
+ * plus fort ne bouge pas, les deux autres se rapprochent ou s'écartent de lui.
+ * La teinte ne dépend que du rapport des écarts entre canaux, que ce facteur
+ * unique préserve.
+ */
+export function withSaturation(color: Rgb, target: number): Rgb {
+  const current = saturation(...color)
+  // Un gris n'a pas de teinte à préserver : le saturer inventerait une couleur.
+  if (current === 0) return color
+
+  const max = Math.max(...color)
+  const factor = target / current
+  return [
+    Math.max(0, max - (max - color[0]) * factor),
+    Math.max(0, max - (max - color[1]) * factor),
+    Math.max(0, max - (max - color[2]) * factor),
+  ]
+}
+
+function meanIntensity(colors: readonly Rgb[]): Intensity | null {
+  if (colors.length === 0) return null
+  const total = colors.reduce(
+    (sum, color) => ({
+      saturation: sum.saturation + saturation(...color),
+      luminance: sum.luminance + luminance(color),
+    }),
+    { saturation: 0, luminance: 0 },
+  )
+  return {
+    saturation: total.saturation / colors.length,
+    luminance: total.luminance / colors.length,
+  }
+}
+
+function align(hex: string, target: Intensity | null): string {
+  if (!target) return hex
+  // Saturation d'abord : `withLuminance` est une mise à l'échelle des trois
+  // canaux, elle laisse la saturation HSV où elle est.
+  return toHex(...withLuminance(withSaturation(hexToRgb(hex), target.saturation), target.luminance))
+}
+
+/**
+ * Aligne un lot de palettes sur la saturation et la luminance moyennes du lot,
+ * chaque couleur gardant sa teinte. Deux captures d'un même produit — l'une
+ * pâle, l'autre très colorée — donnent alors des fonds de même intensité au lieu
+ * de deux ambiances étrangères l'une à l'autre.
+ *
+ * `base` et `accents` ont leur propre cible : moyenner un fond de page avec un
+ * bouton vif tirerait les deux vers un entre-deux terne.
+ */
+export function harmonizePalettes(palettes: readonly Palette[]): Palette[] {
+  const base = meanIntensity(palettes.map((palette) => hexToRgb(palette.base)))
+  const accent = meanIntensity(palettes.flatMap((palette) => palette.accents.map(hexToRgb)))
+
+  return palettes.map((palette) => ({
+    base: align(palette.base, base),
+    accents: palette.accents.map((color) => align(color, accent)),
+  }))
 }
 
 /**

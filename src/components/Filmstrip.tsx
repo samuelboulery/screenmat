@@ -1,4 +1,5 @@
 import { useRef } from 'react'
+import { AddIcon } from './icons.tsx'
 import { DashedTile, Panel } from './ui.tsx'
 import type { Shot } from '../types.ts'
 
@@ -36,8 +37,8 @@ export default function Filmstrip({
     <Panel
       className={
         docked
-          ? 'absolute right-[328px] bottom-6 left-24 z-10 flex items-center gap-3 rounded-[14px] px-3.5 py-2.5'
-          : 'absolute bottom-[22px] left-1/2 z-10 flex -translate-x-1/2 items-center gap-3 px-3 py-[9px]'
+          ? 'absolute right-[328px] bottom-6 left-24 z-10 flex items-center gap-3 rounded-lg px-3.5 py-2.5'
+          : 'absolute bottom-[22px] left-1/2 z-10 flex -translate-x-1/2 items-center gap-3 px-3 py-2.5'
       }
     >
       <div className="flex min-w-0 items-center gap-2 overflow-x-auto">
@@ -61,7 +62,7 @@ export default function Filmstrip({
                 dragged.current = null
               }}
               onClick={(event) => onSelect(shot.id, event.metaKey || event.shiftKey)}
-              className={`shrink-0 overflow-hidden rounded-[7px] border border-hairline bg-sunken ${size} ${
+              className={`shrink-0 overflow-hidden rounded-sm border border-hairline bg-sunken ${size} ${
                 included ? 'ring-selected' : ''
               }`}
             >
@@ -70,8 +71,13 @@ export default function Filmstrip({
           )
         })}
 
-        <DashedTile onClick={onAdd} className={`shrink-0 ${size}`} title="Add a shot">
-          +
+        <DashedTile
+          onClick={onAdd}
+          className={`shrink-0 ${size}`}
+          title="Add a shot"
+          aria-label="Add a shot"
+        >
+          <AddIcon />
         </DashedTile>
       </div>
 

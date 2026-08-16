@@ -11,7 +11,14 @@ export type BackgroundKind = 'mesh' | 'gradient' | 'solid' | 'image'
 /** Disposition multi-shot. `single` n'affiche que le shot actif. */
 export type LayoutKind = 'single' | 'stack' | 'side' | 'tilt3d'
 
-export type AnnotationKind = 'text' | 'arrow' | 'box' | 'redaction'
+export type AnnotationKind =
+  | 'text'
+  | 'badge'
+  | 'arrow'
+  | 'line'
+  | 'box'
+  | 'ellipse'
+  | 'redaction'
 
 export type RedactionMode = 'blur' | 'pixel' | 'solid'
 
@@ -41,6 +48,13 @@ export type Settings = {
   blur: number
   shapes: number
   shapeOpacity: number
+  /** Multiplicateur de la saturation des couleurs de fond. 1 ⇒ celle du
+   *  screenshot, 0 ⇒ un fond neutre, 2 ⇒ franchement coloré. La teinte, elle, ne
+   *  bouge jamais. */
+  saturation: number
+  /** Écartement des taches par rapport à l'aplat, qui lui ne bouge pas.
+   *  1 ⇒ rendu d'origine, 0 ⇒ fond plat, 2 ⇒ creusé. */
+  contrast: number
   grain: number
   /** Graine du PRNG : même graine ⇒ même fond, en preview comme à l'export. */
   seed: number
@@ -64,8 +78,13 @@ export type Palette = {
   accents: string[]
 }
 
-/** Rectangle en fractions de la largeur du canvas (l'origine aussi : `y` est
- *  divisé par la largeur, pas par la hauteur, pour rester homothétique). */
+/** Rectangle en fractions de la largeur de la FENÊTRE qu'il annote, origine au
+ *  coin haut-gauche de cette fenêtre (`y` est divisé par la largeur, pas par la
+ *  hauteur, pour rester homothétique). Une annotation appartient à son
+ *  screenshot : elle le suit quand le padding, le ratio ou le layout changent.
+ *
+ *  `w` et `h` peuvent être négatifs — une flèche tracée vers le haut-gauche en
+ *  dépend. Passer par `bounds()` pour obtenir un rectangle normalisé. */
 export type FractionRect = {
   x: number
   y: number
@@ -77,21 +96,62 @@ export type Annotation = {
   id: string
   kind: AnnotationKind
   rect: FractionRect
-  /** Texte du callout. Ignoré pour `box` et `redaction`. */
+  /** Nom affiché dans la pile. Vide ⇒ dérivé du texte, puis du type. */
+  name: string
+  /** Retiré du rendu — donc aussi de l'export — et du hit-test. */
+  hidden: boolean
+  /** Plus attrapable au clic ni au rectangle de sélection ; le panneau, lui,
+   *  le sélectionne toujours. */
+  locked: boolean
+  /** Texte du callout. Ignoré hors `text`. */
   text: string
   labelStyle: LabelStyle
-  /** Taille de police, en fraction de la largeur du canvas. */
+  /** Inverse le contraste d'un label ou d'un badge : la pastille prend la
+   *  couleur du calque, le texte l'encre lisible dessus. Ignoré sur `plain`. */
+  invert: boolean
+  /** Taille de police, en fraction de la largeur de la fenêtre. */
   size: number
   /** Mode de floutage. Ignoré hors `redaction`. */
   redaction: RedactionMode
+  /** Couleur du trait et du texte, en hexadécimal. */
+  color: string
+  /** Épaisseur du trait, en fraction de la largeur de la fenêtre. */
+  strokeWidth: number
+  /** Rayon des coins d'un `box`, en fraction de la largeur de la fenêtre. */
+  radius: number
+  /** Taille de la tête d'une `arrow`, en fraction de la largeur de la fenêtre. */
+  arrowHead: number
+  /** Opacité du remplissage d'un `box` ou d'une `ellipse`. 0 ⇒ contour seul. */
+  fill: number
+  /** Opacité du calque entier. */
+  opacity: number
 }
+
+/** Regroupement de calques. `kind` discrimine un groupe d'une annotation dans
+ *  un `LayerNode` — un groupe n'a pas de géométrie propre, il n'existe que dans
+ *  la pile. */
+export type LayerGroup = {
+  id: string
+  kind: 'group'
+  name: string
+  collapsed: boolean
+  /** Masque ou verrouille tout le sous-arbre : un enfant hérite du plus
+   *  restrictif de ses ancêtres. */
+  hidden: boolean
+  locked: boolean
+  children: LayerNode[]
+}
+
+export type LayerNode = Annotation | LayerGroup
 
 export type Shot = {
   id: string
   name: string
   image: HTMLImageElement
   palette: Palette
-  annotations: Annotation[]
+  /** Pile de calques, du fond vers l'avant. `flatten` (`lib/tree.ts`) en tire
+   *  la liste plate que le rendu et le hit-test consomment. */
+  layers: LayerNode[]
 }
 
 export type Composition = {
@@ -135,6 +195,12 @@ export type Scene = {
   /** Image de fond décodée, requise si `settings.background === 'image'`. */
   backgroundImage?: HTMLImageElement
   watermark?: { image: HTMLImageElement; mark: Watermark }
+  /** Saisie de texte en cours : le caret est dessiné par le moteur, seule façon
+   *  qu'il tombe au bon pixel quelle que soit l'échelle et la rotation. `blink`
+   *  porte la phase du clignotement — la pastille, elle, reste affichée même
+   *  vide, sinon elle disparaîtrait une fois sur deux. Absent de la scène
+   *  d'export : un caret n'a rien à faire dans le fichier. */
+  editing?: { id: string; caret: number; blink: boolean }
 }
 
 export type QueueStatus = 'queued' | 'rendering' | 'done' | 'skipped' | 'error'
@@ -175,6 +241,8 @@ export const DEFAULT_SETTINGS: Settings = {
   blur: 8,
   shapes: 4,
   shapeOpacity: 0.75,
+  saturation: 1,
+  contrast: 1,
   grain: 0.35,
   seed: 1,
   format: 'png',

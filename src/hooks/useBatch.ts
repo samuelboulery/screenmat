@@ -10,6 +10,8 @@ export type Batch = {
   error: string | null
   start: (jobs: readonly BatchJob[], shotIds: readonly string[]) => Promise<void>
   cancel: () => void
+  /** Vide la file : ses `shotId` ne désignent plus rien après un changement de session. */
+  reset: () => void
 }
 
 const ZIP_NAME = 'shotframe-batch.zip'
@@ -75,5 +77,13 @@ export function useBatch(): Batch {
     cancelled.current = true
   }, [])
 
-  return { queue, running, rendered, total, error, start, cancel }
+  const reset = useCallback(() => {
+    cancelled.current = true
+    setQueue([])
+    setRendered(0)
+    setTotal(0)
+    setError(null)
+  }, [])
+
+  return { queue, running, rendered, total, error, start, cancel, reset }
 }

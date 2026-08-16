@@ -1,153 +1,141 @@
-import { Badge, Panel, Row, Section, Slider, Tile } from './ui.tsx'
-import type { Annotation, LabelStyle, RedactionMode } from '../types.ts'
+import AnnotationStyle from './AnnotationStyle.tsx'
+import LayersPanel from './LayersPanel.tsx'
+import {
+  BackwardIcon,
+  DeleteIcon,
+  ForwardIcon,
+  GroupIcon,
+  KIND_ICON,
+  MultipleIcon,
+  UngroupIcon,
+} from './icons.tsx'
+import { Badge, IconButton, Panel, Section } from './ui.tsx'
+import { findNode, isGroup } from '../lib/tree.ts'
+import type { NodePatch } from '../hooks/useShots.ts'
+import type { Annotation, AnnotationKind, Shot } from '../types.ts'
 
-const LABEL_STYLES: Array<{ value: LabelStyle; label: string }> = [
-  { value: 'pill', label: 'pill' },
-  { value: 'plain', label: 'plain' },
-  { value: 'badge', label: 'badge' },
-]
-
-const REDACTIONS: Array<{ value: RedactionMode; label: string }> = [
-  { value: 'blur', label: 'blur' },
-  { value: 'pixel', label: 'pixel' },
-  { value: 'solid', label: 'solid' },
-]
-
-const KIND_LABEL: Record<Annotation['kind'], string> = {
-  text: 'TXT',
-  arrow: 'ARR',
-  box: 'BOX',
-  redaction: 'RDC',
+/** Le badge nomme le type du calque sélectionné. Il porte l'icône de l'outil
+ *  qui l'a créé et le mot en entier : l'abréviation mono n'avait de sens que
+ *  tant que le rail parlait le même dialecte. */
+const KIND_LABEL: Record<AnnotationKind, string> = {
+  text: 'Label',
+  badge: 'Badge',
+  arrow: 'Arrow',
+  line: 'Line',
+  box: 'Box',
+  ellipse: 'Ellipse',
+  redaction: 'Redact',
 }
 
 type AnnotateInspectorProps = {
-  annotations: readonly Annotation[]
-  selectedId: string | null
-  onSelect: (id: string) => void
-  onPatch: (id: string, patch: Partial<Annotation>) => void
-  onDelete: (id: string) => void
+  shot: Shot | null
+  selectedIds: readonly string[]
+  onSelect: (ids: string[], additive: boolean, range: boolean) => void
+  onPatch: (shotId: string, id: string, patch: Partial<Annotation>) => void
+  onPatchNode: (shotId: string, id: string, patch: NodePatch) => void
+  onDelete: (shotId: string, ids: readonly string[]) => void
+  onMove: (shotId: string, id: string, direction: 'up' | 'down') => void
+  onMoveTo: (shotId: string, ids: readonly string[], parentId: string | null, index: number) => void
+  onGroup: (shotId: string, ids: readonly string[]) => void
+  onUngroup: (shotId: string, groupId: string) => void
   /** Descendu sous le bouton de la feuille rétractable, en mode étroit. */
   offset?: boolean
 }
 
 export default function AnnotateInspector({
-  annotations,
-  selectedId,
+  shot,
+  selectedIds,
   onSelect,
   onPatch,
+  onPatchNode,
   onDelete,
+  onMove,
+  onMoveTo,
+  onGroup,
+  onUngroup,
   offset = false,
 }: AnnotateInspectorProps) {
-  const selected = annotations.find((annotation) => annotation.id === selectedId) ?? null
+  const found = shot && selectedIds.length === 1 ? findNode(shot.layers, selectedIds[0]) : null
+  const node = found?.node ?? null
+  const annotation = node && !isGroup(node) ? node : null
+  const siblings = found ? (found.parent?.children ?? shot?.layers ?? []) : []
+  const KindMark = annotation ? KIND_ICON[annotation.kind] : node ? GroupIcon : MultipleIcon
 
   return (
     <Panel
-      className={`absolute right-5 z-10 max-h-[calc(100%-190px)] w-72 space-y-4 overflow-y-auto p-[18px] ${offset ? 'top-[124px]' : 'top-[88px]'}`}
+      className={`absolute right-5 z-10 max-h-[calc(100%-190px)] w-72 space-y-4 overflow-y-auto p-4 ${offset ? 'top-[124px]' : 'top-[88px]'}`}
     >
-      <Section title="Layers">
-        <div className="space-y-[3px]">
-          {annotations.length === 0 && (
-            <p className="t-ui-small text-dim">No layer yet — pick a tool and drag on the shot.</p>
-          )}
-          {annotations.map((annotation) => (
-            <Row
-              key={annotation.id}
-              active={annotation.id === selectedId}
-              onClick={() => onSelect(annotation.id)}
-            >
-              <span
-                className={`font-mono text-[9px] ${
-                  annotation.id === selectedId
-                    ? 'text-accent-ink'
-                    : annotation.kind === 'redaction'
-                      ? 'text-danger'
-                      : 'text-dim'
-                }`}
-              >
-                {KIND_LABEL[annotation.kind]}
-              </span>
-              <span className="t-ui truncate">
-                {annotation.text.trim() || labelFor(annotation.kind)}
-              </span>
-            </Row>
-          ))}
-        </div>
-      </Section>
+      <LayersPanel
+        shot={shot}
+        selectedIds={selectedIds}
+        onSelect={onSelect}
+        onPatch={(id, patch) => shot && onPatchNode(shot.id, id, patch)}
+        onMove={(ids, parentId, index) => shot && onMoveTo(shot.id, ids, parentId, index)}
+      />
 
-      {selected && selected.kind === 'text' && (
-        <Section title="Selected label">
-          <input
-            type="text"
-            value={selected.text}
-            onChange={(event) => onPatch(selected.id, { text: event.target.value })}
-            aria-label="Label text"
-            className="w-full rounded-[9px] border border-hairline bg-sunken px-3 py-2 text-[12px] text-ink placeholder:text-dim"
-          />
-          <div className="grid grid-cols-3 gap-1">
-            {LABEL_STYLES.map((style) => (
-              <Tile
-                key={style.value}
-                active={selected.labelStyle === style.value}
-                onClick={() => onPatch(selected.id, { labelStyle: style.value })}
-                className="h-[34px] rounded-lg font-mono text-[9px]"
-              >
-                {style.label}
-              </Tile>
-            ))}
-          </div>
-          <Slider
-            label="Size"
-            value={selected.size}
-            display={`${(selected.size * 100).toFixed(1)} %`}
-            min={0.005}
-            max={0.04}
-            step={0.001}
-            onInput={(size) => onPatch(selected.id, { size })}
-          />
-        </Section>
+      {annotation && shot && (
+        <AnnotationStyle
+          annotation={annotation}
+          palette={shot.palette}
+          onPatch={(patch) => onPatch(shot.id, annotation.id, patch)}
+        />
       )}
 
-      {selected && selected.kind === 'redaction' && (
-        <Section title="Redaction">
-          <div className="grid grid-cols-3 gap-1">
-            {REDACTIONS.map((mode) => (
-              <Tile
-                key={mode.value}
-                tone="danger"
-                active={selected.redaction === mode.value}
-                onClick={() => onPatch(selected.id, { redaction: mode.value })}
-                className="h-[34px] rounded-lg font-mono text-[9px]"
-              >
-                {mode.label}
-              </Tile>
-            ))}
-          </div>
-          <p className="t-ui-small text-dim">
-            Baked into the pixels at export — the original is never recoverable from the file.
-          </p>
-        </Section>
-      )}
-
-      {selected && (
-        <Section title="Layer">
+      {shot && selectedIds.length > 0 && (
+        <Section title={selectedIds.length > 1 ? `Layers — ${selectedIds.length}` : 'Layer'}>
           <div className="flex items-center justify-between">
-            <Badge tone={selected.kind === 'redaction' ? 'danger' : undefined}>
-              {KIND_LABEL[selected.kind]}
+            <Badge tone={annotation?.kind === 'redaction' ? 'danger' : undefined}>
+              <span className="flex items-center gap-1.5">
+                <KindMark className="size-3" />
+                {node && isGroup(node)
+                  ? 'Group'
+                  : annotation
+                    ? KIND_LABEL[annotation.kind]
+                    : `${selectedIds.length} layers`}
+              </span>
             </Badge>
-            <button
-              type="button"
-              onClick={() => onDelete(selected.id)}
-              className="t-ui-small text-danger hover:underline"
-            >
-              Delete ⌫
-            </button>
+            <div className="flex items-center gap-0.5">
+              {node && (
+                <>
+                  <IconButton
+                    icon={BackwardIcon}
+                    label="Send backward (⌘↓)"
+                    disabled={!found || found.index <= 0}
+                    onClick={() => onMove(shot.id, node.id, 'down')}
+                  />
+                  <IconButton
+                    icon={ForwardIcon}
+                    label="Bring forward (⌘↑)"
+                    disabled={!found || found.index >= siblings.length - 1}
+                    onClick={() => onMove(shot.id, node.id, 'up')}
+                  />
+                </>
+              )}
+              {node && isGroup(node) ? (
+                <IconButton
+                  icon={UngroupIcon}
+                  label="Ungroup (⇧⌘G)"
+                  onClick={() => onUngroup(shot.id, node.id)}
+                />
+              ) : (
+                selectedIds.length > 1 && (
+                  <IconButton
+                    icon={GroupIcon}
+                    label="Group (⌘G)"
+                    onClick={() => onGroup(shot.id, selectedIds)}
+                  />
+                )
+              )}
+              <IconButton
+                icon={DeleteIcon}
+                label="Delete ⌫"
+                tone="danger"
+                onClick={() => onDelete(shot.id, selectedIds)}
+              />
+            </div>
           </div>
         </Section>
       )}
     </Panel>
   )
-}
-
-function labelFor(kind: Annotation['kind']): string {
-  return { text: 'Label', arrow: 'Arrow', box: 'Box', redaction: 'Redacted area' }[kind]
 }

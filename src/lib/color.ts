@@ -30,6 +30,35 @@ export function withLuminance(color: Rgb, target: number): Rgb {
   ]
 }
 
+/**
+ * Luminance relative au sens WCAG — canaux linéarisés. Plus lourde que
+ * `luminance`, mais c'est la seule qui prédit un contraste lisible : un violet
+ * moyen paraît clair au calcul naïf et porte pourtant du texte sombre.
+ */
+export function relativeLuminance([r, g, b]: Rgb): number {
+  const channel = (value: number) => {
+    const c = value / 255
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
+  }
+  return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b)
+}
+
+/** Rapport de contraste WCAG entre deux couleurs, de 1 à 21. */
+export function contrastRatio(a: string, b: string): number {
+  const first = relativeLuminance(hexToRgb(a))
+  const second = relativeLuminance(hexToRgb(b))
+  return (Math.max(first, second) + 0.05) / (Math.min(first, second) + 0.05)
+}
+
+/**
+ * L'encre la plus lisible sur un aplat de cette couleur. Règle unique du
+ * produit : le badge, le label rempli et ce qui viendra ensuite s'y réfèrent,
+ * plutôt que de reposer chacun un seuil dans son coin.
+ */
+export function inkOn(hex: string, dark = '#07070A', light = '#FFFFFF'): string {
+  return contrastRatio(hex, dark) >= contrastRatio(hex, light) ? dark : light
+}
+
 export function mix(a: Rgb, b: Rgb, t: number): Rgb {
   return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t]
 }

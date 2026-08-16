@@ -1,8 +1,23 @@
-import { renderAnnotations, renderRedactions } from './annotate.ts'
+import { renderAnnotations, renderRedactions } from './layers.ts'
 import { renderBackground } from './background.ts'
 import { renderFrame, windowTransform } from './frame.ts'
 import { renderWatermark } from './watermark.ts'
-import { DEFAULT_COMPOSITION, type Composition, type Ratio, type Scene, type Settings } from '../types.ts'
+import { flatten } from './tree.ts'
+import {
+  DEFAULT_COMPOSITION,
+  type Annotation,
+  type Composition,
+  type Ratio,
+  type Scene,
+  type Settings,
+  type Shot,
+} from '../types.ts'
+
+/** Les calques d'un shot qui se dessinent. Un calque masqué disparaît du rendu,
+ *  donc du fichier exporté : c'est la même fonction pour la preview et l'export. */
+function visible(shot: Shot): Annotation[] {
+  return flatten(shot.layers, { skipHidden: true })
+}
 
 /** Largeur de référence à l'échelle 1. Les exports 2× et 3× la multiplient. */
 export const BASE_WIDTH = 1600
@@ -221,10 +236,14 @@ export function renderScene(
     ctx.restore()
     // Le floutage est cuit dans les pixels, sous le clip de la fenêtre : la
     // donnée masquée ne se retrouve jamais dans le fichier exporté.
-    renderRedactions(ctx, box, geometry, shot.annotations, settings)
+    renderRedactions(ctx, box, geometry, visible(shot), settings)
   }
 
-  renderAnnotations(ctx, geometry, first.annotations)
+  // Les calques non destructifs passent après toutes les fenêtres : en
+  // multi-shot, une annotation n'est jamais recouverte par la fenêtre voisine.
+  for (const box of geometry.windows) {
+    renderAnnotations(ctx, box, visible(shots[box.shot] ?? first), scene.editing)
+  }
 
   if (scene.watermark) {
     renderWatermark(ctx, geometry, scene.watermark.image, scene.watermark.mark)

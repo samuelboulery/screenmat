@@ -1,20 +1,61 @@
-import { frameRadius, windowPath, windowTransform } from './frame.ts'
-import type { Geometry, WindowBox } from './render.ts'
-import type { Annotation, AnnotationKind, FractionRect, LabelStyle, Settings } from '../types.ts'
+import type { WindowBox } from './render.ts'
+import type { Annotation, AnnotationKind, FractionRect } from '../types.ts'
 
-const MONO = 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace'
+/* Modèle et géométrie des calques. Le dessin vit dans `layers.ts` : ici, rien
+   qui touche à un contexte canvas — tout est testable sans navigateur. */
 
-const ACCENT = '#7DE2FF'
-const ACCENT_INK = '#CFE9FF'
-const STAGE = 'rgba(7, 7, 10, 0.78)'
+/** Accent de la DA, couleur par défaut d'un calque. */
+export const ANNOTATION_ACCENT = '#7DE2FF'
 
-/** Nombre de blocs sur la largeur d'une zone floutée. Constant, donc le flou est
- *  visuellement identique à l'échelle 1 et à l'échelle 3. */
-const REDACTION_BLOCKS = 14
-const PIXEL_BLOCKS = 8
-
-/** Taille de police par défaut d'un callout, en fraction de la largeur du canvas. */
+/** Taille de police par défaut d'un callout, en fraction de la largeur de la
+ *  fenêtre. */
 export const DEFAULT_LABEL_SIZE = 0.011
+
+/** Avance d'un caractère en police monospace, en fraction de la taille de
+ *  police. Sert à estimer la largeur d'un label sans contexte canvas.
+ *
+ *  ponytail: le dessin, lui, mesure exactement (`ctx.measureText`) — cette
+ *  estimation ne sert qu'au hit-test et au cadre de sélection, où quelques
+ *  pixels d'écart ne se voient pas. Remonter la mesure du rendu si ça devient
+ *  gênant. */
+const MONO_ADVANCE = 0.6
+
+/** Valeurs de départ d'un calque. Toutes les tailles sont des fractions de la
+ *  largeur de la fenêtre. */
+export const ANNOTATION_DEFAULTS = {
+  name: '',
+  hidden: false,
+  locked: false,
+  invert: false,
+  color: ANNOTATION_ACCENT,
+  strokeWidth: 0.0022,
+  radius: 0.006,
+  arrowHead: 0.012,
+  fill: 0,
+  opacity: 1,
+} as const
+
+/** Bornes des réglages, partagées par l'inspecteur et les tests. */
+export const ANNOTATION_LIMITS = {
+  size: { min: 0.005, max: 0.04, step: 0.001 },
+  strokeWidth: { min: 0.0005, max: 0.012, step: 0.0005 },
+  radius: { min: 0, max: 0.06, step: 0.002 },
+  arrowHead: { min: 0.004, max: 0.04, step: 0.001 },
+  fill: { min: 0, max: 1, step: 0.05 },
+  opacity: { min: 0.1, max: 1, step: 0.05 },
+} as const
+
+/** Formes qui se tracent d'un point à un autre : leur rect garde son signe. */
+export function isSegment(kind: AnnotationKind): boolean {
+  return kind === 'arrow' || kind === 'line'
+}
+
+/** Formes posées d'un clic, sans glisser : leur taille vient de `size`, leur
+ *  rect ne porte que leur ancre. Un label en fait partie — `bounds()` le mesure
+ *  depuis son texte, glisser une boîte autour n'aurait rien changé. */
+export function isPoint(kind: AnnotationKind): boolean {
+  return kind === 'badge' || kind === 'text'
+}
 
 let counter = 0
 
@@ -30,210 +71,189 @@ export function createAnnotation(kind: AnnotationKind, rect: FractionRect): Anno
     id: nextId(kind),
     kind,
     rect,
-    text: kind === 'text' ? 'Label' : '',
+    // Vide : la saisie s'ouvre dans la foulée, un texte par défaut n'aurait
+    // qu'à être effacé.
+    text: '',
     labelStyle: 'pill',
     size: DEFAULT_LABEL_SIZE,
     redaction: 'blur',
+    ...ANNOTATION_DEFAULTS,
   }
 }
 
-/** Rectangle en pixels du canvas. Toutes les coordonnées sont des fractions de
- *  la LARGEUR du canvas — `y` compris — pour rester homothétique à l'export. */
-export function toPixels(rect: FractionRect, geometry: Geometry) {
+export type Rect = { x: number; y: number; w: number; h: number }
+
+/** Rectangle en pixels du canvas, avant la rotation de la fenêtre. Les
+ *  coordonnées sont relatives à la fenêtre : `x = 0` est son bord gauche. */
+export function toPixels(rect: FractionRect, box: WindowBox): Rect {
   return {
-    x: rect.x * geometry.width,
-    y: rect.y * geometry.width,
-    w: rect.w * geometry.width,
-    h: rect.h * geometry.width,
+    x: box.x + rect.x * box.width,
+    y: box.y + rect.y * box.width,
+    w: rect.w * box.width,
+    h: rect.h * box.width,
   }
 }
 
-/** Rectangle en fractions à partir de pixels du canvas. */
-export function toFractions(
-  rect: { x: number; y: number; w: number; h: number },
-  geometry: Geometry,
-): FractionRect {
+/** Rectangle en fractions de la largeur de la fenêtre, à partir de pixels. */
+export function toFractions(rect: Rect, box: WindowBox): FractionRect {
   return {
-    x: rect.x / geometry.width,
-    y: rect.y / geometry.width,
-    w: rect.w / geometry.width,
-    h: rect.h / geometry.width,
+    x: (rect.x - box.x) / box.width,
+    y: (rect.y - box.y) / box.width,
+    w: rect.w / box.width,
+    h: rect.h / box.width,
   }
 }
 
-/** L'annotation dont le rectangle contient ce point, la plus récente d'abord. */
+/** Longueur en pixels d'une fraction de la largeur de la fenêtre. */
+export function toLength(fraction: number, box: WindowBox): number {
+  return fraction * box.width
+}
+
+/** Rectangle à `w`/`h` positifs, quel que soit le sens du tracé. */
+export function normalizeRect(rect: Rect): Rect {
+  return {
+    x: rect.w < 0 ? rect.x + rect.w : rect.x,
+    y: rect.h < 0 ? rect.y + rect.h : rect.y,
+    w: Math.abs(rect.w),
+    h: Math.abs(rect.h),
+  }
+}
+
+/** Rectangle normalisé couvrant deux points — le rectangle de sélection. */
+export function rectFromPoints(a: { x: number; y: number }, b: { x: number; y: number }): Rect {
+  return {
+    x: Math.min(a.x, b.x),
+    y: Math.min(a.y, b.y),
+    w: Math.abs(b.x - a.x),
+    h: Math.abs(b.y - a.y),
+  }
+}
+
+/** Vrai si les deux rectangles se touchent. Le rectangle de sélection prend ce
+ *  qu'il effleure, pas seulement ce qu'il contient : un trait long dépasse
+ *  presque toujours du geste. */
+export function overlaps(a: Rect, b: Rect): boolean {
+  return a.x <= b.x + b.w && b.x <= a.x + a.w && a.y <= b.y + b.h && b.y <= a.y + a.h
+}
+
+/** Numéro affiché par chaque badge : son rang parmi les badges du shot.
+ *  Rien n'est stocké, donc supprimer le badge 2 renumérote les suivants. */
+export function badgeNumbers(annotations: readonly Annotation[]): Map<string, number> {
+  const numbers = new Map<string, number>()
+  let rank = 0
+  for (const annotation of annotations) {
+    if (annotation.kind !== 'badge') continue
+    rank += 1
+    numbers.set(annotation.id, rank)
+  }
+  return numbers
+}
+
+/** Rayon d'un badge en pixels. Le rect ne porte que son ancre. */
+export function badgeRadius(annotation: Annotation, box: WindowBox): number {
+  return toLength(annotation.size, box) * 1.05
+}
+
+/** Dimensions de la pastille d'un label, en pixels. */
+export function labelSize(annotation: Annotation, box: WindowBox): Rect {
+  const fontSize = toLength(annotation.size, box)
+  const padX = annotation.labelStyle === 'plain' ? 0 : fontSize * 0.8
+  const padY = annotation.labelStyle === 'plain' ? 0 : fontSize * 0.55
+  const text = annotation.text.trim()
+
+  return {
+    x: 0,
+    y: 0,
+    w: text.length * fontSize * MONO_ADVANCE + padX * 2,
+    h: fontSize + padY * 2,
+  }
+}
+
+/**
+ * Bornes réellement occupées par un calque, en pixels du canvas et avant la
+ * rotation de la fenêtre. Source unique : le hit-test et le cadre de sélection
+ * l'utilisent tous les deux, sinon on clique à côté de ce qu'on voit.
+ */
+export function bounds(annotation: Annotation, box: WindowBox): Rect {
+  const rect = toPixels(annotation.rect, box)
+
+  if (annotation.kind === 'badge') {
+    const radius = badgeRadius(annotation, box)
+    return { x: rect.x, y: rect.y, w: radius * 2, h: radius * 2 }
+  }
+
+  if (annotation.kind === 'text') {
+    const size = labelSize(annotation, box)
+    return { x: rect.x, y: rect.y, w: size.w, h: size.h }
+  }
+
+  const normalized = normalizeRect(rect)
+  if (!isSegment(annotation.kind)) return normalized
+
+  // Une flèche déborde de son segment par sa tête et son trait.
+  const margin =
+    Math.max(
+      toLength(annotation.strokeWidth, box),
+      annotation.kind === 'arrow' ? toLength(annotation.arrowHead, box) : 0,
+    ) / 2
+
+  return {
+    x: normalized.x - margin,
+    y: normalized.y - margin,
+    w: normalized.w + margin * 2,
+    h: normalized.h + margin * 2,
+  }
+}
+
+/** Distance d'un point au segment [a, b]. */
+function distanceToSegment(
+  point: { x: number; y: number },
+  a: { x: number; y: number },
+  b: { x: number; y: number },
+): number {
+  const dx = b.x - a.x
+  const dy = b.y - a.y
+  const lengthSquared = dx * dx + dy * dy
+  if (lengthSquared === 0) return Math.hypot(point.x - a.x, point.y - a.y)
+
+  const t = Math.max(0, Math.min(1, ((point.x - a.x) * dx + (point.y - a.y) * dy) / lengthSquared))
+  return Math.hypot(point.x - (a.x + t * dx), point.y - (a.y + t * dy))
+}
+
+/** Tolérance de clic autour d'un trait fin, en pixels du canvas. */
+const HIT_SLOP = 6
+
+export function hits(annotation: Annotation, point: { x: number; y: number }, box: WindowBox): boolean {
+  if (isSegment(annotation.kind)) {
+    // Une flèche diagonale a un AABB immense : viser le trait, pas la boîte.
+    const rect = toPixels(annotation.rect, box)
+    const reach = Math.max(HIT_SLOP, toLength(annotation.strokeWidth, box) * 2)
+    return (
+      distanceToSegment(
+        point,
+        { x: rect.x, y: rect.y },
+        { x: rect.x + rect.w, y: rect.y + rect.h },
+      ) <= reach
+    )
+  }
+
+  const area = bounds(annotation, box)
+  return (
+    point.x >= area.x &&
+    point.x <= area.x + area.w &&
+    point.y >= area.y &&
+    point.y <= area.y + area.h
+  )
+}
+
+/** Le calque sous ce point, le plus récent d'abord. */
 export function hitTest(
   annotations: readonly Annotation[],
   point: { x: number; y: number },
-  geometry: Geometry,
+  box: WindowBox,
 ): Annotation | null {
   for (let index = annotations.length - 1; index >= 0; index -= 1) {
-    const annotation = annotations[index]
-    const { x, y, w, h } = toPixels(annotation.rect, geometry)
-    if (point.x >= x && point.x <= x + w && point.y >= y && point.y <= y + h) return annotation
+    if (hits(annotations[index], point, box)) return annotations[index]
   }
   return null
-}
-
-/**
- * Cuit les zones floutées dans les pixels, sous le clip de la fenêtre. Jamais en
- * CSS : sinon l'export ne correspondrait plus à la preview et, pire, la donnée
- * masquée resterait lisible dans le fichier.
- *
- * ponytail: le clip suit la rotation de la fenêtre, mais la zone floutée est
- * échantillonnée en espace canvas. À ±16° l'écart est invisible ; passer par un
- * rendu hors écran de la fenêtre non tournée s'il devient gênant.
- */
-export function renderRedactions(
-  ctx: CanvasRenderingContext2D,
-  box: WindowBox,
-  geometry: Geometry,
-  annotations: readonly Annotation[],
-  settings: Settings,
-): void {
-  const zones = annotations.filter((annotation) => annotation.kind === 'redaction')
-  if (zones.length === 0) return
-
-  ctx.save()
-  windowTransform(ctx, box)
-  windowPath(ctx, box, frameRadius(box, geometry, settings))
-  ctx.clip()
-  // Le chemin de clip est figé en espace écran : on redessine sans transformation.
-  ctx.setTransform(1, 0, 0, 1, 0, 0)
-
-  for (const zone of zones) {
-    const { x, y, w, h } = toPixels(zone.rect, geometry)
-    if (w < 1 || h < 1) continue
-
-    if (zone.redaction === 'solid') {
-      ctx.fillStyle = '#0B0B0F'
-      ctx.fillRect(x, y, w, h)
-    } else {
-      downsample(ctx, x, y, w, h, zone.redaction === 'pixel' ? PIXEL_BLOCKS : REDACTION_BLOCKS)
-    }
-  }
-
-  ctx.restore()
-}
-
-/** Réduit puis réagrandit la zone : flou (lissé) ou mosaïque (non lissé). */
-function downsample(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  blocks: number,
-): void {
-  const small = document.createElement('canvas')
-  small.width = Math.max(1, Math.round(blocks))
-  small.height = Math.max(1, Math.round((blocks * h) / w))
-
-  const layer = small.getContext('2d')
-  if (!layer) return
-
-  layer.imageSmoothingEnabled = blocks > PIXEL_BLOCKS
-  layer.drawImage(ctx.canvas, x, y, w, h, 0, 0, small.width, small.height)
-
-  ctx.save()
-  ctx.imageSmoothingEnabled = blocks > PIXEL_BLOCKS
-  ctx.drawImage(small, 0, 0, small.width, small.height, x, y, w, h)
-  ctx.restore()
-}
-
-/**
- * Dessine les calques non destructifs (texte, flèche, cadre) par-dessus les
- * fenêtres. Appelée par `renderScene` après `renderFrame`.
- */
-export function renderAnnotations(
-  ctx: CanvasRenderingContext2D,
-  geometry: Geometry,
-  annotations: readonly Annotation[],
-): void {
-  ctx.save()
-  ctx.setTransform(1, 0, 0, 1, 0, 0)
-
-  for (const annotation of annotations) {
-    const rect = toPixels(annotation.rect, geometry)
-    if (annotation.kind === 'box') drawBox(ctx, rect, geometry)
-    else if (annotation.kind === 'arrow') drawArrow(ctx, rect, geometry)
-    else if (annotation.kind === 'text') {
-      drawLabel(ctx, rect, annotation.text, annotation.labelStyle, annotation.size * geometry.width)
-    }
-  }
-
-  ctx.restore()
-}
-
-type Rect = { x: number; y: number; w: number; h: number }
-
-function drawBox(ctx: CanvasRenderingContext2D, rect: Rect, geometry: Geometry): void {
-  ctx.strokeStyle = ACCENT
-  ctx.lineWidth = 0.0018 * geometry.width
-  ctx.beginPath()
-  ctx.roundRect(rect.x, rect.y, rect.w, rect.h, 0.006 * geometry.width)
-  ctx.stroke()
-}
-
-function drawArrow(ctx: CanvasRenderingContext2D, rect: Rect, geometry: Geometry): void {
-  const head = 0.012 * geometry.width
-  const angle = Math.atan2(rect.h, rect.w)
-  const tip = { x: rect.x + rect.w, y: rect.y + rect.h }
-
-  ctx.strokeStyle = ACCENT
-  ctx.fillStyle = ACCENT
-  ctx.lineWidth = 0.0022 * geometry.width
-  ctx.lineCap = 'round'
-
-  ctx.beginPath()
-  ctx.moveTo(rect.x, rect.y)
-  ctx.lineTo(tip.x - Math.cos(angle) * head * 0.7, tip.y - Math.sin(angle) * head * 0.7)
-  ctx.stroke()
-
-  ctx.beginPath()
-  ctx.moveTo(tip.x, tip.y)
-  ctx.lineTo(
-    tip.x - Math.cos(angle - 0.4) * head,
-    tip.y - Math.sin(angle - 0.4) * head,
-  )
-  ctx.lineTo(
-    tip.x - Math.cos(angle + 0.4) * head,
-    tip.y - Math.sin(angle + 0.4) * head,
-  )
-  ctx.closePath()
-  ctx.fill()
-}
-
-function drawLabel(
-  ctx: CanvasRenderingContext2D,
-  rect: Rect,
-  text: string,
-  style: LabelStyle,
-  fontSize: number,
-): void {
-  const label = text.trim()
-  if (!label) return
-
-  ctx.font = `${fontSize}px ${MONO}`
-  ctx.textAlign = 'left'
-  ctx.textBaseline = 'middle'
-
-  const padX = style === 'plain' ? 0 : fontSize * 0.8
-  const padY = style === 'plain' ? 0 : fontSize * 0.55
-  const width = ctx.measureText(label).width + padX * 2
-  const height = fontSize + padY * 2
-  const middle = rect.y + height / 2
-
-  if (style !== 'plain') {
-    ctx.fillStyle = STAGE
-    ctx.beginPath()
-    ctx.roundRect(rect.x, rect.y, width, height, style === 'pill' ? height / 2 : fontSize * 0.35)
-    ctx.fill()
-    ctx.strokeStyle = ACCENT
-    ctx.lineWidth = Math.max(1, fontSize * 0.09)
-    ctx.stroke()
-  }
-
-  ctx.fillStyle = style === 'plain' ? ACCENT : ACCENT_INK
-  ctx.fillText(label, rect.x + padX, middle)
 }

@@ -6,7 +6,8 @@ Ces règles s'appliquent à chaque session Claude sur ce projet. Sans exception.
 
 - Introduire un second chemin de rendu (preview DOM/CSS d'un côté, export canvas
   de l'autre). `renderScene()` est le seul moteur — la fidélité export/preview en
-  dépend.
+  dépend. **Vaut aussi côté Node** : le CLI et le serveur MCP passent par le même
+  `renderScene()`, jamais par un rendu réimplémenté.
 - Écrire une dimension en pixels absolus dans le rendu : tout est relatif à la
   largeur du canvas, sinon l'export 3× diverge de la preview.
 - Ajouter un appel réseau, quel qu'il soit. L'app doit tourner hors ligne.
@@ -23,7 +24,15 @@ Ces règles s'appliquent à chaque session Claude sur ce projet. Sans exception.
 - `src/components/` — composants React en PascalCase, un par fichier.
 - `src/hooks/` — hooks `use*`.
 - `src/types.ts` — tous les types partagés (`Settings`, `Palette`, `Scene`).
-- Tests dans `src/lib/__tests__/*.test.ts`, sur la logique pure uniquement.
+- `cli/` — la porte machine. `api.ts` porte toute la logique ; `main.ts` et
+  `mcp.ts` sont des enveloppes qui l'appellent, et rien d'autre. Ne jamais y
+  importer React, ni y remettre une règle de rendu.
+- **`cli/dom-shim.ts` est le seul endroit où une globale du navigateur se
+  polyfille.** Il jette sur toute propriété DOM qu'il ne connaît pas : si un
+  crash le nomme, la réponse est de l'ajouter là, jamais de contourner dans
+  `src/lib/`.
+- Tests dans `src/lib/__tests__/*.test.ts` (logique pure) et
+  `cli/__tests__/*.test.ts` (rendu headless).
 
 ## Style de code
 

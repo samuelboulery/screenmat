@@ -72,11 +72,20 @@ src/
     useShortcuts.ts       ← raccourcis globaux + point de rupture 1100 px
   components/             ← TopBar · ToolRail · Inspector · LayersPanel ·
                             TextInput · Filmstrip · écrans
+cli/                      ← la porte machine, voir « Pilotage par une machine »
+  dom-shim.ts             ← globales Canvas pour Node — le seul polyfill
+  api.ts                  ← render(spec) · inspect(input) — LE CŒUR
+  main.ts                 ← CLI
+  mcp.ts                  ← serveur MCP stdio
+  styles-dir.ts           ← ~/.shotframe/styles/
 ```
 
 **Tech stack :** React 19 · TypeScript strict · Vite 8 · Tailwind CSS 4 (config
 CSS-first) · Vitest. Deux dépendances runtime seulement : React et
 `lucide-react` (icônes, tree-shakées, bundlées — rien n'est chargé en ligne).
+`cli/` en ajoute trois, en `optionalDependencies` et jamais importées par
+`src/` : `@napi-rs/canvas`, `@modelcontextprotocol/sdk`, `zod`. Le bundle web
+n'en embarque aucune.
 
 ## Écrans
 
@@ -97,13 +106,45 @@ Sous 1100 px : le rail passe en barre horizontale, l'inspecteur devient une
 feuille rétractable. Pas de version mobile — l'outil vit à côté d'un screenshot
 pris sur desktop.
 
+## Pilotage par une machine
+
+Une seconde porte d'entrée sur le **même** moteur, pour un script de build, un
+générateur de docs ou une IA dans un autre projet. Détail complet et format de
+scène : `cli/README.md`.
+
+```
+render(spec) → Buffer          cli/api.ts        ← LE CŒUR
+  ▲ CLI (cli/main.ts)   ▲ MCP (cli/mcp.ts)   ▲ import direct
+```
+
+Les trois façades sont des enveloppes sans logique. Ce qui rend la chose
+possible sans porter le moteur : `cli/dom-shim.ts` installe `document`,
+`DOMMatrix` et consorts depuis `@napi-rs/canvas`, et `src/lib/` tourne tel quel.
+C'est le même `renderScene()` qui dessine en preview, à l'export web et ici.
+
+- **`src/lib/spec.ts`** décrit une scène sérialisable : réglages, composition,
+  et les calques de chaque shot. `layers` est optionnel — une scène sans calques
+  est l'usage « embellir sans annoter ». `parseScene` valide comme `parseStyle`,
+  champ par champ : un JSON produit par un modèle est une donnée externe.
+- **Les calques se placent en fractions de la largeur de leur fenêtre**, `y`
+  compris. `inspect()` renvoie où le screenshot atterrit dans cette fenêtre :
+  sans lui, une position calculée en pixels tombe trop haut de la hauteur de la
+  barre de titre.
+- **Un style se règle dans l'app**, s'exporte en `.json`, se dépose dans
+  `~/.shotframe/styles/` et se rappelle par son nom. Aucun réglage n'est
+  dupliqué entre l'app et le CLI.
+
+Node ≥ 24 exécute le TypeScript tel quel : `cli/` n'a pas d'étape de build.
+
 ## Key Commands
 
 ```bash
 pnpm dev                # serveur de dev
 pnpm build              # tsc -b && vite build
-pnpm test               # Vitest (logique pure : palette, géométrie, zip, styles)
-pnpm exec tsc -b        # vérification TypeScript
+pnpm test               # Vitest (logique pure + rendu headless du CLI)
+pnpm exec tsc -b        # vérification TypeScript (app + node + cli)
+pnpm cli <image>        # rendu en ligne de commande
+pnpm mcp                # serveur MCP sur stdio
 ```
 
 `tsc --noEmit` ne vérifie **rien** ici : `tsconfig.json` est un fichier solution

@@ -9,7 +9,7 @@
   "tags": ["api"],
   "cree": "2026-08-16",
   "maj": "2026-08-16",
-  "plan": null
+  "plan": "2026-08-16-shotframe-pilotable-par-une-machine.md"
 }
 ---
 

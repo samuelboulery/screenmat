@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { hue, quantize, saturation, toHex } from '../palette.ts'
+import { harmonizePalettes, hue, quantize, saturation, toHex } from '../palette.ts'
+import { hexToRgb, luminance } from '../color.ts'
 
 type Rgba = [number, number, number, number]
 
@@ -117,5 +118,61 @@ describe('quantize', () => {
 
   it('supporte un buffer vide', () => {
     expect(quantize([])).toEqual({ base: '#16191c', accents: [] })
+  })
+})
+
+describe('harmonizePalettes', () => {
+  const measure = (hex: string) => {
+    const rgb = hexToRgb(hex)
+    return { saturation: saturation(...rgb), luminance: luminance(rgb), hue: hue(...rgb) }
+  }
+
+  it('aligne saturation et luminance du lot en gardant chaque teinte', () => {
+    // Un bleu pâle et un orange très saturé et sombre : deux ambiances
+    // étrangères, qui doivent sortir de même intensité.
+    const before = [{ base: '#c8d8f0', accents: [] }, { base: '#8a4a08', accents: [] }]
+    const after = harmonizePalettes(before)
+
+    const first = measure(after[0].base)
+    const second = measure(after[1].base)
+
+    expect(first.saturation).toBeCloseTo(second.saturation, 2)
+    expect(first.luminance).toBeCloseTo(second.luminance, 2)
+    expect(first.hue).toBeCloseTo(measure(before[0].base).hue, 0)
+    expect(second.hue).toBeCloseTo(measure(before[1].base).hue, 0)
+  })
+
+  it('donne aux accents leur propre cible, distincte de celle des bases', () => {
+    const after = harmonizePalettes([
+      { base: '#f0f0f2', accents: ['#7c3aed'] },
+      { base: '#101014', accents: ['#e11d48'] },
+    ])
+
+    expect(measure(after[0].accents[0]).luminance).toBeCloseTo(
+      measure(after[1].accents[0]).luminance,
+      2,
+    )
+    expect(measure(after[0].accents[0]).luminance).not.toBeCloseTo(
+      measure(after[0].base).luminance,
+      2,
+    )
+  })
+
+  it('laisse un gris gris — pas de teinte à inventer, pas de division par zéro', () => {
+    const [grey] = harmonizePalettes([{ base: '#888888', accents: [] }])
+    const rgb = hexToRgb(grey.base)
+    expect(saturation(...rgb)).toBe(0)
+  })
+
+  it('laisse une palette seule inchangée', () => {
+    const only = { base: '#7c3aed', accents: ['#e11d48'] }
+    const [after] = harmonizePalettes([only])
+    expect(measure(after.base).hue).toBeCloseTo(measure(only.base).hue, 0)
+    expect(measure(after.base).luminance).toBeCloseTo(measure(only.base).luminance, 2)
+  })
+
+  it('supporte un lot vide et des palettes sans accent', () => {
+    expect(harmonizePalettes([])).toEqual([])
+    expect(harmonizePalettes([{ base: '#7c3aed', accents: [] }])[0].accents).toEqual([])
   })
 })

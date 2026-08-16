@@ -2,7 +2,7 @@
 {
   "id": "T-0015",
   "titre": "Mettre la doc à jour après l'arrivée de lucide",
-  "colonne": "revue",
+  "colonne": "fait",
   "priorite": "basse",
   "charge": "xs",
   "tags": [

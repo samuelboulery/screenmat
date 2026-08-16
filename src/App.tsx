@@ -45,6 +45,7 @@ export default function App() {
   const [failure, setFailure] = useState<string | null>(null)
   const [backgroundImage, setBackgroundImage] = useState<HTMLImageElement | null>(null)
   const [batchRatios, setBatchRatios] = useState<Ratio[]>(['16:9'])
+  const [harmonize, setHarmonize] = useState(false)
 
   const shots = useShots()
   const library = useLibrary()
@@ -184,12 +185,41 @@ export default function App() {
   const startBatch = useCallback(() => {
     if (!scene) return
     const picked = shots.shots.filter((shot) => shots.selection.includes(shot.id))
-    const jobs = buildBatchJobs(scene, picked, batchRatios, scale, activeStyle?.palette)
+    const jobs = buildBatchJobs(scene, picked, batchRatios, scale, activeStyle?.palette, harmonize)
     void batch.start(
       jobs,
       picked.map((shot) => shot.id),
     )
-  }, [scene, shots.shots, shots.selection, batchRatios, scale, activeStyle, batch])
+  }, [scene, shots.shots, shots.selection, batchRatios, scale, activeStyle, harmonize, batch])
+
+  /* --- Nouvelle session ------------------------------------------------- */
+
+  /**
+   * Repartir de zéro sans recharger la page. La bibliothèque — styles et
+   * historique persistés — survit : c'est justement ce qu'on veut retrouver au
+   * projet suivant.
+   */
+  const newSession = useCallback(() => {
+    // L'image de fond importée n'est pas dans le snapshot d'annulation : un ⌘Z
+    // ne la rendrait pas. D'où la confirmation, native.
+    if (
+      shots.shots.length > 0 &&
+      !window.confirm('Start a new session? The current shots and settings are cleared.')
+    ) {
+      return
+    }
+
+    shots.reset()
+    batch.reset()
+    setSettings(DEFAULT_SETTINGS)
+    setComposition(DEFAULT_COMPOSITION)
+    setBackgroundImage(null)
+    setBatchRatios(['16:9'])
+    setScale(2)
+    setView('editor')
+    setMode('compose')
+    setFailure(null)
+  }, [shots, batch])
 
   /* --- Rendu ------------------------------------------------------------ */
 
@@ -203,6 +233,7 @@ export default function App() {
         showModes={!empty}
         onView={setView}
         onMode={setMode}
+        onNewSession={newSession}
       >
         <TopBarActions
           view={view}
@@ -259,6 +290,7 @@ export default function App() {
           ratios={batchRatios}
           scale={scale}
           format={settings.format}
+          harmonize={harmonize}
           onToggleShot={(id) => shots.select(id, true)}
           onToggleRatio={(ratio) =>
             setBatchRatios((current) =>
@@ -269,6 +301,7 @@ export default function App() {
           }
           onScale={setScale}
           onFormat={(format: Format) => patch({ format })}
+          onHarmonize={setHarmonize}
           onAddShot={() => pick('shot')}
           onChangeStyle={() => setView('styles')}
         />

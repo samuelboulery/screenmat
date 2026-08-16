@@ -2,7 +2,7 @@
 {
   "id": "T-0014",
   "titre": "Passe de design : rayons, tailles, espacements",
-  "colonne": "revue",
+  "colonne": "fait",
   "priorite": "moyenne",
   "charge": "m",
   "tags": [

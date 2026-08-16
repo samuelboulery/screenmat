@@ -40,9 +40,10 @@ src/
   index.css               ← tokens @theme, polices locales, échelle typo
   types.ts                ← Settings, Shot, Annotation, Style, Composition…
   lib/
-    palette.ts            ← couleurs dominantes (porté de img-creator)
+    palette.ts            ← couleurs dominantes + harmonisation d'un lot
     noise.ts              ← tuile de grain, générée une fois
-    background.ts         ← presets de fond : mesh · gradient · solid · image
+    background.ts         ← presets de fond : mesh · gradient · solid · image,
+                            + saturation et contraste du fond
     frame.ts              ← cadres browser/macbook/iphone/none + rotation Y
     annotate.ts           ← modèle et géométrie des calques, hit-test, bornes
     tree.ts               ← arbre de calques : groupes, aplatissement, déplacement
@@ -89,7 +90,7 @@ Annotate / Batch**), vues de gestion à droite (**Editor / Styles / History**).
 | Annotate | calques et floutage, un jeu par shot, sur la composition en cours |
 | Layouts | compositions multi-shot (single/stack/side/tilt3d), filmstrip docké |
 | Styles | nommer et réutiliser un réglage complet, partage par `.json` |
-| Batch | appliquer un style à N shots, sortir un zip |
+| Batch | appliquer un style à N shots, sortir un zip ; « Harmonize backgrounds » aligne l'intensité des fonds du lot sans toucher aux teintes |
 | History | retrouver un export passé et le réouvrir avec ses réglages |
 
 Sous 1100 px : le rail passe en barre horizontale, l'inspecteur devient une

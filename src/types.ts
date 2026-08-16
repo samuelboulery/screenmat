@@ -48,6 +48,13 @@ export type Settings = {
   blur: number
   shapes: number
   shapeOpacity: number
+  /** Multiplicateur de la saturation des couleurs de fond. 1 ⇒ celle du
+   *  screenshot, 0 ⇒ un fond neutre, 2 ⇒ franchement coloré. La teinte, elle, ne
+   *  bouge jamais. */
+  saturation: number
+  /** Écartement des taches par rapport à l'aplat, qui lui ne bouge pas.
+   *  1 ⇒ rendu d'origine, 0 ⇒ fond plat, 2 ⇒ creusé. */
+  contrast: number
   grain: number
   /** Graine du PRNG : même graine ⇒ même fond, en preview comme à l'export. */
   seed: number
@@ -234,6 +241,8 @@ export const DEFAULT_SETTINGS: Settings = {
   blur: 8,
   shapes: 4,
   shapeOpacity: 0.75,
+  saturation: 1,
+  contrast: 1,
   grain: 0.35,
   seed: 1,
   format: 'png',

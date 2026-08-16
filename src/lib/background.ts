@@ -1,5 +1,6 @@
 import { css, hexToRgb, luminance, withLuminance, type Rgb } from './color.ts'
 import { applyGrain } from './noise.ts'
+import { saturation, withSaturation } from './palette.ts'
 import { mulberry32 } from './random.ts'
 import type { Palette, Settings } from '../types.ts'
 import type { Geometry } from './render.ts'
@@ -23,8 +24,14 @@ export type BackgroundColors = {
  * Traduit une palette extraite en couleurs de fond. C'est ici qu'on décide que
  * c'est l'accent qui colore le fond, pas la couleur dominante : sur une page
  * blanche avec un bouton violet, le fond doit être violet.
+ *
+ * `settings.saturation` et `settings.contrast` corrigent ce que la palette
+ * impose, sans jamais toucher aux teintes : la première multiplie la saturation
+ * de chaque couleur, le second écarte les taches de l'aplat — qui, lui, reste à
+ * sa luminance cible, sans quoi régler le contraste reviendrait à régler la
+ * clarté du fond.
  */
-export function backgroundColors(palette: Palette): BackgroundColors {
+export function backgroundColors(palette: Palette, settings: Settings): BackgroundColors {
   const base = hexToRgb(palette.base)
   const light = luminance(base) > LIGHT_THRESHOLD
   const target = light ? FILL_TARGET_LIGHT : FILL_TARGET_DARK
@@ -32,17 +39,28 @@ export function backgroundColors(palette: Palette): BackgroundColors {
   const accents = palette.accents.map(hexToRgb)
   const seed = accents[0] ?? base
 
+  /**
+   * Saturation d'abord, luminance ensuite : `withLuminance` met les trois canaux
+   * à l'échelle, ce qui laisse la saturation HSV où elle est — l'inverse ne
+   * serait pas vrai.
+   */
+  const grade = (color: Rgb, level: number): Rgb =>
+    withLuminance(
+      withSaturation(color, saturation(...color) * settings.saturation),
+      Math.min(1, Math.max(0, target + (level - target) * settings.contrast)),
+    )
+
   const blobs = (accents.length > 0 ? accents : [base]).map((color) =>
-    withLuminance(color, target * 1.9),
+    grade(color, target * 1.9),
   )
 
   // Une tache neutre reprise du screenshot : c'est le halo clair qu'on voit dans
   // un coin sur les captures de référence.
-  blobs.push(withLuminance(base, light ? 0.55 : 0.3))
+  blobs.push(grade(base, light ? 0.55 : 0.3))
   // Et une tache sombre pour creuser le fond.
-  blobs.push(withLuminance(seed, target * 0.45))
+  blobs.push(grade(seed, target * 0.45))
 
-  return { fill: withLuminance(seed, target), blobs }
+  return { fill: grade(seed, target), blobs }
 }
 
 /**
@@ -58,7 +76,7 @@ export function renderBackground(
   image?: HTMLImageElement,
 ): void {
   const { width, height } = geometry
-  const colors = backgroundColors(palette)
+  const colors = backgroundColors(palette, settings)
 
   ctx.fillStyle = css(colors.fill)
   ctx.fillRect(0, 0, width, height)

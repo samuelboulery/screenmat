@@ -220,6 +220,25 @@ export default function Inspector({
                 />
               ))}
             </div>
+
+            <Slider
+              label="Saturation"
+              value={settings.saturation}
+              display={`${Math.round(settings.saturation * 100)} %`}
+              min={0}
+              max={2}
+              step={0.05}
+              onInput={(saturation) => onChange({ saturation })}
+            />
+            <Slider
+              label="Contrast"
+              value={settings.contrast}
+              display={`${Math.round(settings.contrast * 100)} %`}
+              min={0}
+              max={2}
+              step={0.05}
+              onInput={(contrast) => onChange({ contrast })}
+            />
           </Section>
 
           <Section title="Shapes">

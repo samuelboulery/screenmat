@@ -3,7 +3,7 @@
   "id": "T-0009",
   "type": "epic",
   "titre": "Système d'icônes unifié et passe de design",
-  "colonne": "revue",
+  "colonne": "fait",
   "priorite": "haute",
   "charge": "xl",
   "tags": [

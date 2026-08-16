@@ -2,7 +2,7 @@
 {
   "id": "T-0011",
   "titre": "Icônes du rail d'outils et de la barre haute",
-  "colonne": "revue",
+  "colonne": "fait",
   "priorite": "haute",
   "charge": "m",
   "tags": [

@@ -1,8 +1,40 @@
+import type { ReactNode } from 'react'
 import { AddIcon, CheckIcon, LocalIcon, WarningIcon } from './icons.tsx'
 import { Badge, DashedTile, MonoLabel, Panel, Section, Segmented } from './ui.tsx'
 import type { Format, QueueItem, Ratio, Shot, Style } from '../types.ts'
 
 const RATIOS: Ratio[] = ['16:9', '4:3', '1:1', '9:16']
+
+/** Ligne à cocher du panneau : un ratio, une option. */
+function CheckRow({
+  checked,
+  onToggle,
+  children,
+}: {
+  checked: boolean
+  onToggle: () => void
+  children: ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-pressed={checked}
+      className={`flex w-full items-center gap-2.5 rounded-md border px-2.5 py-2 text-left transition-colors duration-140 ${
+        checked ? 'border-accent/30 bg-accent/10' : 'border-transparent hover:bg-white/[.03]'
+      }`}
+    >
+      <span
+        className={`flex size-[15px] shrink-0 items-center justify-center rounded-xs ${
+          checked ? 'bg-accent text-stage' : 'border-[1.5px] border-white/20'
+        }`}
+      >
+        {checked && <CheckIcon className="size-2.5" />}
+      </span>
+      {children}
+    </button>
+  )
+}
 
 const STATUS_LABEL: Record<QueueItem['status'], string> = {
   queued: 'queued',
@@ -22,10 +54,12 @@ type BatchScreenProps = {
   ratios: readonly Ratio[]
   scale: number
   format: Format
+  harmonize: boolean
   onToggleShot: (id: string) => void
   onToggleRatio: (ratio: Ratio) => void
   onScale: (scale: number) => void
   onFormat: (format: Format) => void
+  onHarmonize: (harmonize: boolean) => void
   onAddShot: () => void
   onChangeStyle: () => void
 }
@@ -44,10 +78,12 @@ export default function BatchScreen({
   ratios,
   scale,
   format,
+  harmonize,
   onToggleShot,
   onToggleRatio,
   onScale,
   onFormat,
+  onHarmonize,
   onAddShot,
   onChangeStyle,
 }: BatchScreenProps) {
@@ -138,30 +174,25 @@ export default function BatchScreen({
 
         <Section title="Ratio set">
           <div className="space-y-1">
-            {RATIOS.map((ratio) => {
-              const checked = ratios.includes(ratio)
-              return (
-                <button
-                  key={ratio}
-                  type="button"
-                  onClick={() => onToggleRatio(ratio)}
-                  aria-pressed={checked}
-                  className={`flex w-full items-center gap-2.5 rounded-md border px-2.5 py-2 transition-colors duration-140 ${
-                    checked ? 'border-accent/30 bg-accent/10' : 'border-transparent hover:bg-white/[.03]'
-                  }`}
-                >
-                  <span
-                    className={`flex size-[15px] items-center justify-center rounded-xs ${
-                      checked ? 'bg-accent text-stage' : 'border-[1.5px] border-white/20'
-                    }`}
-                  >
-                    {checked && <CheckIcon className="size-2.5" />}
-                  </span>
-                  <span className="t-ui text-ink">{ratio}</span>
-                </button>
-              )
-            })}
+            {RATIOS.map((ratio) => (
+              <CheckRow
+                key={ratio}
+                checked={ratios.includes(ratio)}
+                onToggle={() => onToggleRatio(ratio)}
+              >
+                <span className="t-ui text-ink">{ratio}</span>
+              </CheckRow>
+            ))}
           </div>
+        </Section>
+
+        <Section title="Consistency">
+          <CheckRow checked={harmonize} onToggle={() => onHarmonize(!harmonize)}>
+            <span className="t-ui text-ink">Harmonize backgrounds</span>
+          </CheckRow>
+          <p className="px-2.5 font-mono text-[10px] leading-[1.5] text-dim">
+            Same saturation and contrast across the batch. Each shot keeps its own hue.
+          </p>
         </Section>
 
         <Section title="Output">

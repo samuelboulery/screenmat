@@ -2,7 +2,7 @@
 {
   "id": "T-0010",
   "titre": "Socle icônes : lucide, icons.tsx, IconButton",
-  "colonne": "revue",
+  "colonne": "fait",
   "priorite": "haute",
   "charge": "m",
   "tags": [

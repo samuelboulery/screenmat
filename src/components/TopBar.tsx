@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
-import { LocalIcon, ModeIcon, ViewIcon } from './icons.tsx'
-import { Badge, Segmented } from './ui.tsx'
+import { LocalIcon, ModeIcon, NewSessionIcon, ViewIcon } from './icons.tsx'
+import { Badge, IconButton, Segmented } from './ui.tsx'
 
 export type Mode = 'compose' | 'annotate' | 'batch'
 export type View = 'editor' | 'styles' | 'history'
@@ -57,6 +57,8 @@ type TopBarProps = {
   showModes?: boolean
   onView: (view: View) => void
   onMode: (mode: Mode) => void
+  /** Repartir de zéro sans recharger la page. Caché tant qu'il n'y a rien à vider. */
+  onNewSession: () => void
   children?: ReactNode
 }
 
@@ -70,6 +72,7 @@ export default function TopBar({
   showModes = true,
   onView,
   onMode,
+  onNewSession,
   children,
 }: TopBarProps) {
   return (
@@ -94,6 +97,9 @@ export default function TopBar({
       )}
 
       <div className="ml-auto flex items-center gap-4">
+        {showModes && (
+          <IconButton icon={NewSessionIcon} label="New session" onClick={onNewSession} />
+        )}
         <nav className="flex items-center gap-3.5">
           {VIEWS.map((item) => (
             <button

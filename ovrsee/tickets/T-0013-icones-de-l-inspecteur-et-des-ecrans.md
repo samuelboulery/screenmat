@@ -2,7 +2,7 @@
 {
   "id": "T-0013",
   "titre": "Icônes de l'inspecteur et des écrans",
-  "colonne": "revue",
+  "colonne": "fait",
   "priorite": "moyenne",
   "charge": "l",
   "tags": [

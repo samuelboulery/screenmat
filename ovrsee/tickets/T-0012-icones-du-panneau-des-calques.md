@@ -2,7 +2,7 @@
 {
   "id": "T-0012",
   "titre": "Icônes du panneau des calques",
-  "colonne": "revue",
+  "colonne": "fait",
   "priorite": "moyenne",
   "charge": "m",
   "tags": [

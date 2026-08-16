@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { normalizeStyle, parseStyle } from '../styles.ts'
+import {
+  MAX_PALETTE_ACCENTS,
+  normalizeStyle,
+  parseStyle,
+  withAccent,
+  withColor,
+  withoutAccent,
+} from '../styles.ts'
 import { DEFAULT_SETTINGS } from '../../types.ts'
 
 const wrap = (style: unknown) => JSON.stringify({ kind: 'shotframe-style', version: 1, style })
@@ -90,5 +97,31 @@ describe('normalizeStyle', () => {
     })
 
     expect(style.palette).toBeUndefined()
+  })
+})
+
+describe('édition d’une palette figée', () => {
+  const palette = { base: '#101010', accents: ['#ff0000', '#00ff00'] }
+
+  it('ajoute un accent, jusqu’au plafond', () => {
+    expect(withAccent(palette, '#0000ff').accents).toEqual(['#ff0000', '#00ff00', '#0000ff'])
+
+    const full = { base: '#101010', accents: Array(MAX_PALETTE_ACCENTS).fill('#ffffff') }
+    // Au-delà, un `.json` réimporté perdrait ce qu'on vient d'ajouter :
+    // `parsePalette` coupe au même plafond.
+    expect(withAccent(full, '#0000ff')).toBe(full)
+  })
+
+  it('retire un accent sans toucher à la base', () => {
+    const next = withoutAccent(palette, 0)
+    expect(next.accents).toEqual(['#00ff00'])
+    expect(next.base).toBe('#101010')
+  })
+
+  it('modifie un accent par son index, la base à -1', () => {
+    expect(withColor(palette, 1, '#0000ff').accents).toEqual(['#ff0000', '#0000ff'])
+    expect(withColor(palette, -1, '#0000ff').base).toBe('#0000ff')
+    // L'original n'a pas bougé.
+    expect(palette.accents).toEqual(['#ff0000', '#00ff00'])
   })
 })

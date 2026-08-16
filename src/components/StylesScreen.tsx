@@ -1,18 +1,9 @@
 import Preview from './Preview.tsx'
+import StylePalette from './StylePalette.tsx'
+import StyleWatermark from './StyleWatermark.tsx'
 import { FRAMES } from './Inspector.tsx'
-import { AddIcon, DeleteIcon, FRAME_ICON, ImageIcon, JsonIcon, POSITION_ICON } from './icons.tsx'
-import {
-  Button,
-  DashedTile,
-  MonoLabel,
-  Row,
-  Section,
-  Segmented,
-  Slider,
-  Tile,
-  Toggle,
-} from './ui.tsx'
-import { WATERMARK_POSITIONS } from '../lib/watermark.ts'
+import { DeleteIcon, FRAME_ICON, JsonIcon } from './icons.tsx'
+import { Button, DashedTile, MonoLabel, Row, Section, Segmented, Slider, Tile } from './ui.tsx'
 import type { Palette, Scene, Settings, Shot, Style, WatermarkPosition } from '../types.ts'
 
 type StylesScreenProps = {
@@ -27,7 +18,11 @@ type StylesScreenProps = {
   onPatchSettings: (patch: Partial<Settings>) => void
   onPatchWatermark: (position: WatermarkPosition) => void
   onPickWatermark: () => void
+  onRemoveWatermark: () => void
   onOverridePalette: (override: boolean) => void
+  onPatchColor: (index: number, color: string) => void
+  onAddColor: (color: string) => void
+  onRemoveColor: (index: number) => void
   onEditInEditor: (id: string) => void
   onDelete: (id: string) => void
   onImport: () => void
@@ -47,7 +42,11 @@ export default function StylesScreen({
   onPatchSettings,
   onPatchWatermark,
   onPickWatermark,
+  onRemoveWatermark,
   onOverridePalette,
+  onPatchColor,
+  onAddColor,
+  onRemoveColor,
   onEditInEditor,
   onDelete,
   onImport,
@@ -100,92 +99,21 @@ export default function StylesScreen({
               </Button>
             </div>
 
-            <Section title="Watermark">
-              <div className="flex items-start gap-4">
-                <DashedTile
-                  onClick={onPickWatermark}
-                  className="h-[86px] w-[122px] shrink-0 font-mono text-[10px]"
-                >
-                  {active.watermark ? (
-                    <img
-                      src={active.watermark.dataUrl}
-                      alt=""
-                      className="max-h-full max-w-full object-contain"
-                    />
-                  ) : (
-                    <span className="flex flex-col items-center gap-1.5">
-                      <ImageIcon />
-                      drop logo.svg
-                    </span>
-                  )}
-                </DashedTile>
+            <StyleWatermark
+              style={active}
+              onPick={onPickWatermark}
+              onPatchPosition={onPatchWatermark}
+              onRemove={onRemoveWatermark}
+            />
 
-                <div className="grid grid-cols-3 gap-1.5">
-                  {WATERMARK_POSITIONS.map((position) => {
-                    const Icon = POSITION_ICON[position]
-                    return (
-                      <button
-                        key={position}
-                        type="button"
-                        title={position}
-                        aria-label={position}
-                        aria-pressed={active.watermark?.position === position}
-                        // Sans logo, la position n'a rien à placer : le bouton
-                        // se voit mort plutôt que d'avaler le clic.
-                        disabled={!active.watermark}
-                        onClick={() => onPatchWatermark(position)}
-                        className={`flex h-8 w-11 items-center justify-center rounded-sm border transition-colors duration-140 disabled:opacity-40 ${
-                          active.watermark?.position === position
-                            ? 'border-accent/45 bg-accent/[.14] text-accent-ink'
-                            : 'border-transparent bg-sunken text-ink-soft hover:text-ink'
-                        }`}
-                      >
-                        <Icon />
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-            </Section>
-
-            <Section
-              title="Palette"
-              aside={
-                <span className="flex items-center gap-2.5">
-                  <span className="t-ui-small text-ink-soft">Override sampled colors</span>
-                  <Toggle
-                    checked={Boolean(active.palette)}
-                    onChange={onOverridePalette}
-                    label="Override sampled colors"
-                    // Figer une palette suppose qu'il y en ait une à figer.
-                    disabled={!sampled && !active.palette}
-                    title={
-                      !sampled && !active.palette ? 'Load a shot to sample colors first' : undefined
-                    }
-                  />
-                </span>
-              }
-            >
-              <div className="flex gap-1.5">
-                {palette &&
-                  [palette.base, ...palette.accents].map((color) => (
-                    <span
-                      key={color}
-                      title={color}
-                      style={{ background: color }}
-                      className="h-10 w-[54px] rounded-md border border-white/10"
-                    />
-                  ))}
-                <DashedTile
-                  className="h-10 w-[54px]"
-                  title="Add a color"
-                  aria-label="Add a color"
-                  disabled
-                >
-                  <AddIcon />
-                </DashedTile>
-              </div>
-            </Section>
+            <StylePalette
+              palette={palette}
+              frozen={Boolean(active.palette)}
+              onOverride={onOverridePalette}
+              onColor={onPatchColor}
+              onAdd={onAddColor}
+              onRemove={onRemoveColor}
+            />
 
             {/* Les quatre réglages qu'on change le plus souvent. Le reste se
                 règle dans l'éditeur et revient par « Update ». Aucun bouton

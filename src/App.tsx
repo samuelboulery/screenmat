@@ -21,7 +21,7 @@ import { loadImage } from './lib/image.ts'
 import { buildBatchJobs } from './lib/export.ts'
 import { computeGeometry } from './lib/render.ts'
 import { getHistoryBlobs } from './lib/store.ts'
-import { exportStyle } from './lib/styles.ts'
+import { exportStyle, parseSettings, withAccent, withColor, withoutAccent } from './lib/styles.ts'
 import {
   DEFAULT_COMPOSITION,
   DEFAULT_SETTINGS,
@@ -29,6 +29,7 @@ import {
   type Format,
   type Ratio,
   type Scene,
+  type Palette,
   type Settings,
   type WatermarkPosition,
 } from './types.ts'
@@ -174,7 +175,10 @@ export default function App() {
       if (!entry || !blobs) return
 
       shots.replaceAll([await loadImage(blobs.source)], [entry.name])
-      setSettings(entry.settings)
+      // Une entrée d'historique a pu être écrite par une version antérieure de
+      // l'app : un réglage ajouté depuis y manque, et l'`undefined` ressort en
+      // `rgba(NaN, …)` au rendu. IndexedDB est une frontière, comme un import.
+      setSettings(parseSettings(entry.settings))
       setView('editor')
       setMode('compose')
     },
@@ -223,6 +227,24 @@ export default function App() {
   }, [shots, batch])
 
   /* --- Rendu ------------------------------------------------------------ */
+
+  /* --- Palette d'un style ----------------------------------------------- */
+
+  /** Éditer une couleur d'une palette encore échantillonnée la fige dans le
+   *  style : une palette qui se recalcule à chaque screenshot n'est pas
+   *  éditable, et le toggle « Override » ne fait que refléter sa présence. */
+  const editPalette = (change: (palette: Palette) => Palette) => {
+    const current = activeStyle?.palette ?? shots.activeShot?.palette
+    if (!activeStyle || !current) return
+    styles.patch({ ...activeStyle, palette: change(current) })
+  }
+
+  const paletteEdits = {
+    onPatchColor: (index: number, color: string) =>
+      editPalette((palette) => withColor(palette, index, color)),
+    onAddColor: (color: string) => editPalette((palette) => withAccent(palette, color)),
+    onRemoveColor: (index: number) => editPalette((palette) => withoutAccent(palette, index)),
+  }
 
   const empty = shots.shots.length === 0
   const problem = failure ?? exporter.error ?? library.error ?? batch.error
@@ -373,6 +395,13 @@ export default function App() {
               }
             }}
             onPickWatermark={() => pick('watermark')}
+            onRemoveWatermark={() => {
+              if (!activeStyle) return
+              // Retirer la clé plutôt que d'y poser `undefined` : c'est un style
+              // sans filigrane qu'on persiste, pas un filigrane vide.
+              const { watermark: _dropped, ...rest } = activeStyle
+              styles.patch(rest)
+            }}
             onOverridePalette={(override) => {
               if (!activeStyle) return
               styles.patch({
@@ -380,6 +409,7 @@ export default function App() {
                 palette: override ? (shots.activeShot?.palette ?? undefined) : undefined,
               })
             }}
+            {...paletteEdits}
             onEditInEditor={(id) => {
               styles.apply(id)
               setView('editor')

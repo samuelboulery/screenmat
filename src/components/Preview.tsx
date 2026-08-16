@@ -119,7 +119,7 @@ export default function Preview({
     return withDraft(withCaret, drag.target.shotId, createAnnotation(drag.kind, toFractions(rect, box)))
   }, [scene, drag, editing, blink, inWindow])
 
-  const { canvasRef, boxRef, geometryRef, ratio } = useCanvasScene(painted, inset, onGeometry)
+  const { canvasRef, boxRef, geometryRef, ratio, error } = useCanvasScene(painted, inset, onGeometry)
   const geometry = geometryRef.current
 
   // Le canvas est la surface d'édition clavier : lui donner le focus dès qu'il
@@ -389,6 +389,17 @@ export default function Preview({
               onGrab={chosen.length === 1 ? onGrabHandle : undefined}
             />
           ))}
+
+        {/* Le rendu a jeté : le canvas garde la dernière image aboutie, ou
+            reste noir. Sans ce mot, l'écran ne dit rien de ce qui s'est passé. */}
+        {error && (
+          <p
+            role="alert"
+            className="pointer-events-none absolute inset-x-4 top-4 rounded-md bg-stage/85 px-3 py-2 text-center font-mono text-[11px] text-danger"
+          >
+            {error}
+          </p>
+        )}
 
         {editing && (
           <TextInput

@@ -104,8 +104,23 @@ pour le rendu headless. La logique non triviale laisse un test derrière elle :
 `screenRect()` sur les quatre cadres, l'invalidation du cache de fond.
 Pas de framework E2E : l'app est un canvas unique, Vitest suffit.
 
+## Le lot
+
+Le rendu d'un item est sérialisé et synchrone (36 ms à l'échelle 3) ; ce sont
+les **encodages qui se recouvrent**, trois de front. `canvas.toBlob` encode déjà
+hors du fil principal, et l'encodage pèse 97 % du temps d'un lot — 1 228 ms en
+PNG contre 36 ms de rendu.
+
+**Un Worker + `OffscreenCanvas` n'est pas la réponse**, et ce n'est plus un
+« reste à faire » : mesuré, un lot de 12 items en 3× ne produit *aucune* tâche
+longue. L'interface ne gèle pas, elle attend l'encodeur. Un worker déplacerait
+les 3 % qui ne sont pas déjà hors du fil principal, au prix du portage de
+`renderScene` et du transfert des images décodées.
+
+Le plafond de trois vient de la mémoire, pas du temps : chaque item en vol
+retient son canvas, 69 Mo à l'échelle 3. Monter ce nombre demande de mesurer la
+mémoire.
+
 ## Reste à faire
 
-- Rendu du lot dans un Worker + `OffscreenCanvas` (aujourd'hui séquentiel dans
-  le thread principal, avec rendu de la main entre chaque item).
 - Zip64 si un lot devait dépasser 4 Gio ou 65 535 fichiers.

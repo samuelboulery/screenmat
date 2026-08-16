@@ -7,6 +7,22 @@ export type Shortcuts = {
   onShuffle: () => void
   onScale: (scale: number) => void
   onDelete: () => void
+  onUndo: () => void
+  onRedo: () => void
+  onDuplicate: () => void
+  onEscape: () => void
+  /** Déplacement du calque sélectionné, en pas de grille (`large` = ⇧). */
+  onNudge: (dx: number, dy: number, large: boolean) => void
+  /** Ordre du calque dans la pile. */
+  onLayerMove: (direction: 'up' | 'down') => void
+}
+
+/** Direction de chaque flèche du clavier. */
+const ARROWS: Record<string, [number, number]> = {
+  ArrowLeft: [-1, 0],
+  ArrowRight: [1, 0],
+  ArrowUp: [0, -1],
+  ArrowDown: [0, 1],
 }
 
 /** Vrai quand la frappe appartient à un champ : on ne lui vole pas ses touches. */
@@ -43,9 +59,32 @@ export function useShortcuts(shortcuts: Shortcuts, enabled = true): void {
         current.current.onCopy()
         return
       }
+      if (meta && (event.key === 'z' || event.key === 'Z')) {
+        event.preventDefault()
+        if (event.shiftKey) current.current.onRedo()
+        else current.current.onUndo()
+        return
+      }
+      if (meta && (event.key === 'd' || event.key === 'D')) {
+        event.preventDefault()
+        current.current.onDuplicate()
+        return
+      }
+      if (meta && (event.key === 'ArrowUp' || event.key === 'ArrowDown')) {
+        event.preventDefault()
+        current.current.onLayerMove(event.key === 'ArrowUp' ? 'up' : 'down')
+        return
+      }
       if (meta) return
 
-      if (event.key === 'r' || event.key === 'R') {
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        current.current.onEscape()
+      } else if (ARROWS[event.key]) {
+        event.preventDefault()
+        const [dx, dy] = ARROWS[event.key]
+        current.current.onNudge(dx, dy, event.shiftKey)
+      } else if (event.key === 'r' || event.key === 'R') {
         event.preventDefault()
         current.current.onShuffle()
       } else if (event.key === '1' || event.key === '2' || event.key === '3') {

@@ -35,7 +35,10 @@ src/
     noise.ts              ← tuile de grain, générée une fois
     background.ts         ← presets de fond : mesh · gradient · solid · image
     frame.ts              ← cadres browser/macbook/iphone/none + rotation Y
-    annotate.ts           ← géométrie et rendu des calques, floutage cuit
+    annotate.ts           ← modèle et géométrie des calques, hit-test, bornes
+    layers.ts             ← rendu des calques, floutage cuit
+    handles.ts            ← poignées : redimensionnement, aimantation, nudge
+    history.ts            ← réducteur d'annulation, pur et sans React
     watermark.ts          ← logo utilisateur, dessiné en dernier
     render.ts             ← renderScene(ctx, scene, scale) — MOTEUR UNIQUE
     export.ts             ← blob, téléchargement, presse-papier, lots
@@ -47,6 +50,9 @@ src/
     useImageInput.ts      ← click + drag&drop + paste (⌘V) sur les shots
     useSideFile.ts        ← fond, watermark, import de style
     useShots.ts           ← shots, sélection, calques
+    useLayerActions.ts    ← actions clavier sur le calque sélectionné
+    useHistory.ts         ← pile d'annulation du document
+    useStyleActions.ts    ← appliquer, enregistrer un style, filigrane décodé
     useLibrary.ts         ← styles et historique persistés
     useExport.ts          ← export, copie, écriture dans l'historique
     useBatch.ts           ← file d'attente et zip
@@ -66,7 +72,7 @@ Annotate / Batch**), vues de gestion à droite (**Editor / Styles / History**).
 |---|---|
 | Import | premier écran, dropzone + exports récents |
 | Compose | éditeur principal : rail d'outils, inspecteur flottant, filmstrip |
-| Annotate | callouts et floutage, cuits dans les pixels à l'export |
+| Annotate | calques et floutage, un jeu par shot, sur la composition en cours |
 | Layouts | compositions multi-shot (single/stack/side/tilt3d), filmstrip docké |
 | Styles | nommer et réutiliser un réglage complet, partage par `.json` |
 | Batch | appliquer un style à N shots, sortir un zip |
@@ -82,8 +88,11 @@ pris sur desktop.
 pnpm dev                # serveur de dev
 pnpm build              # tsc -b && vite build
 pnpm test               # Vitest (logique pure : palette, géométrie, zip, styles)
-pnpm exec tsc --noEmit  # vérification TypeScript
+pnpm exec tsc -b        # vérification TypeScript
 ```
+
+`tsc --noEmit` ne vérifie **rien** ici : `tsconfig.json` est un fichier solution
+(`"files": []` + références). Seul `tsc -b` traverse les projets référencés.
 
 `pnpm` exclusivement — pas de `npm`, `yarn` ni `bun`.
 
@@ -95,8 +104,18 @@ pnpm exec tsc --noEmit  # vérification TypeScript
   preview par construction, pas par vigilance. Seules les poignées de sélection
   sont en DOM — elles ne sont pas dans le visuel exporté.
 - **Toutes les dimensions sont relatives à la largeur du canvas**, jamais en px
-  absolus, sinon l'export 3× ne ressemble plus à la preview. Les rectangles
-  d'annotation aussi : `y` est divisé par la largeur, pas par la hauteur.
+  absolus, sinon l'export 3× ne ressemble plus à la preview. `y` est divisé par
+  la largeur, pas par la hauteur.
+- **Les calques, eux, sont relatifs à la largeur de LEUR FENÊTRE**, origine à son
+  coin haut-gauche, et se dessinent sous `windowTransform` : une annotation
+  appartient à son screenshot, elle le suit quand le padding, le ratio ou le
+  layout changent, et s'incline avec lui. `windowMatrix` (`lib/frame.ts`) est la
+  seule description de cette rotation — la preview l'inverse pour retrouver le
+  point sous le curseur.
+- **Le rect d'un calque peut avoir un `w`/`h` négatif** : c'est ce qui permet à
+  une flèche de pointer dans les quatre quadrants. Passer par `bounds()`
+  (`lib/annotate.ts`) pour un rectangle normalisé — c'est la source unique du
+  hit-test et du cadre de sélection.
 - **Le fond est déterministe** : PRNG `mulberry32` seedé par `settings.seed`.
 - Le flou du fond se fait par downscale/upscale d'un canvas offscreen, pas par
   `ctx.filter = 'blur()'` (support inégal, et c'est plus lent).
@@ -125,7 +144,12 @@ pnpm exec tsc --noEmit  # vérification TypeScript
 ## Raccourcis
 
 `⌘V` coller · `⌘E` exporter · `⌘C` copier · `R` régénérer le fond ·
-`1/2/3` échelle d'export · `Delete` supprimer le calque sélectionné.
+`1/2/3` échelle d'export · `⌘Z` annuler · `⇧⌘Z` refaire.
+
+Sur le calque sélectionné : `Delete` supprimer · `⌘D` dupliquer · `Escape`
+désélectionner · `←↑→↓` déplacer (`⇧` = pas ×5) · `⌘↑`/`⌘↓` ordre dans la pile.
+En tirant une poignée, `⇧` conserve les proportions d'une surface et aimante une
+flèche aux multiples de 45°.
 
 ## Références visuelles
 
@@ -139,4 +163,5 @@ sous forme de constantes relatives.
 - Rendu du lot dans un Worker + `OffscreenCanvas` (aujourd'hui séquentiel dans
   le thread principal, avec rendu de la main entre chaque item).
 - Zip64 si un lot devait dépasser 4 Gio ou 65 535 fichiers.
-- Redimensionnement d'un calque par ses poignées (le déplacement fonctionne).
+- La zone floutée est échantillonnée sans la rotation de la fenêtre : à ±16°
+  l'écart ne se voit pas, au-delà il faudrait un rendu hors écran.

@@ -16,8 +16,11 @@ const NARROW_INSET = { left: 20, right: 20, top: 72, bottom: 110 }
 const ANNOTATION_KIND: Record<AnnotateTool, AnnotationKind | 'select'> = {
   SEL: 'select',
   TXT: 'text',
+  NUM: 'badge',
   ARR: 'arrow',
+  LIN: 'line',
   BOX: 'box',
+  ELL: 'ellipse',
   RDC: 'redaction',
 }
 
@@ -40,10 +43,11 @@ export type EditorScreenProps = {
   onApplyStyle: (id: string) => void
   onSaveStyle: () => void
   onPickBackgroundImage: () => void
-  onCreateAnnotation: (kind: AnnotationKind, rect: FractionRect) => void
-  onPatchAnnotation: (id: string, patch: Partial<Annotation>) => void
-  onDeleteAnnotation: (id: string) => void
-  onSelectAnnotation: (id: string | null) => void
+  onCreateAnnotation: (shotId: string, kind: AnnotationKind, rect: FractionRect) => void
+  onPatchAnnotation: (shotId: string, id: string, patch: Partial<Annotation>) => void
+  onDeleteAnnotation: (shotId: string, id: string) => void
+  onMoveAnnotation: (shotId: string, id: string, direction: 'up' | 'down') => void
+  onSelectAnnotation: (shotId: string | null, id: string | null) => void
 }
 
 export default function EditorScreen(props: EditorScreenProps) {
@@ -60,6 +64,8 @@ export default function EditorScreen(props: EditorScreenProps) {
   // afficher l'élévation en pixels plutôt qu'en fraction abstraite.
   const windowWidth = useMemo(() => scene.shots[0]?.image.naturalWidth ?? 0, [scene.shots])
 
+  const activeShot = shots.find((shot) => shot.id === props.activeShotId) ?? shots[0] ?? null
+
   return (
     <div className="stage-glow absolute inset-x-0 top-[58px] bottom-0">
       <Preview
@@ -69,9 +75,10 @@ export default function EditorScreen(props: EditorScreenProps) {
         // Les poignées n'appartiennent qu'au mode annotation : en compose, le
         // canvas doit montrer exactement ce que l'export produira.
         selectedId={annotating ? props.selectedAnnotationId : null}
+        selectedShotId={props.activeShotId}
         onCreate={props.onCreateAnnotation}
         onSelect={props.onSelectAnnotation}
-        onMove={(id, rect) => props.onPatchAnnotation(id, { rect })}
+        onUpdate={(shotId, id, rect) => props.onPatchAnnotation(shotId, id, { rect })}
       />
 
       {annotating ? (
@@ -106,11 +113,12 @@ export default function EditorScreen(props: EditorScreenProps) {
       {(!narrow || sheetOpen) &&
         (annotating ? (
           <AnnotateInspector
-            annotations={scene.shots[0]?.annotations ?? []}
+            shot={activeShot}
             selectedId={props.selectedAnnotationId}
-            onSelect={props.onSelectAnnotation}
+            onSelect={(id) => props.onSelectAnnotation(activeShot?.id ?? null, id)}
             onPatch={props.onPatchAnnotation}
             onDelete={props.onDeleteAnnotation}
+            onMove={props.onMoveAnnotation}
             offset={narrow}
           />
         ) : (

@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import { createAnnotation, nextId } from '../lib/annotate.ts'
+import { DUPLICATE_OFFSET } from '../lib/handles.ts'
 import { extractPalette } from '../lib/palette.ts'
 import type { Annotation, AnnotationKind, FractionRect, Shot } from '../types.ts'
 
@@ -12,11 +13,17 @@ export type ShotsState = {
   add: (images: HTMLImageElement[], names: string[]) => void
   replaceAll: (images: HTMLImageElement[], names: string[]) => void
   select: (id: string, additive: boolean) => void
+  /** Rend un shot actif sans toucher à la sélection de calque. */
+  focusShot: (id: string) => void
   reorder: (from: number, to: number) => void
-  createAnnotation: (kind: AnnotationKind, rect: FractionRect) => void
-  patchAnnotation: (id: string, patch: Partial<Annotation>) => void
-  deleteAnnotation: (id: string) => void
+  createAnnotation: (shotId: string, kind: AnnotationKind, rect: FractionRect) => void
+  patchAnnotation: (shotId: string, id: string, patch: Partial<Annotation>) => void
+  deleteAnnotation: (shotId: string, id: string) => void
+  duplicateAnnotation: (shotId: string, id: string) => void
+  moveAnnotation: (shotId: string, id: string, direction: 'up' | 'down') => void
   selectAnnotation: (id: string | null) => void
+  /** Réinjecte un état complet — utilisé par l'annulation. */
+  restore: (shots: Shot[]) => void
   reset: () => void
 }
 
@@ -64,6 +71,8 @@ export function useShots(): ShotsState {
     })
   }, [])
 
+  const focusShot = useCallback((id: string) => setActiveShotId(id), [])
+
   const reorder = useCallback((from: number, to: number) => {
     setShots((current) => {
       if (from === to || from < 0 || to < 0 || from >= current.length || to >= current.length) {
@@ -80,45 +89,96 @@ export function useShots(): ShotsState {
     setShots((current) => current.map((shot) => (shot.id === id ? patch(shot) : shot)))
   }, [])
 
+  const patchLayers = useCallback(
+    (shotId: string, patch: (annotations: Annotation[]) => Annotation[]) => {
+      patchShot(shotId, (shot) => ({ ...shot, annotations: patch(shot.annotations) }))
+    },
+    [patchShot],
+  )
+
   const create = useCallback(
-    (kind: AnnotationKind, rect: FractionRect) => {
+    (shotId: string, kind: AnnotationKind, rect: FractionRect) => {
       const annotation = createAnnotation(kind, rect)
-      patchShot(activeShotId, (shot) => ({
-        ...shot,
-        annotations: [...shot.annotations, annotation],
-      }))
+      patchLayers(shotId, (annotations) => [...annotations, annotation])
+      setActiveShotId(shotId)
       setSelectedAnnotationId(annotation.id)
     },
-    [activeShotId, patchShot],
+    [patchLayers],
   )
 
   const patchAnnotation = useCallback(
-    (id: string, patch: Partial<Annotation>) => {
-      patchShot(activeShotId, (shot) => ({
-        ...shot,
-        annotations: shot.annotations.map((annotation) =>
+    (shotId: string, id: string, patch: Partial<Annotation>) => {
+      patchLayers(shotId, (annotations) =>
+        annotations.map((annotation) =>
           annotation.id === id ? { ...annotation, ...patch } : annotation,
         ),
-      }))
+      )
     },
-    [activeShotId, patchShot],
+    [patchLayers],
   )
 
   const deleteAnnotation = useCallback(
-    (id: string) => {
-      patchShot(activeShotId, (shot) => ({
-        ...shot,
-        annotations: shot.annotations.filter((annotation) => annotation.id !== id),
-      }))
+    (shotId: string, id: string) => {
+      patchLayers(shotId, (annotations) =>
+        annotations.filter((annotation) => annotation.id !== id),
+      )
       setSelectedAnnotationId((current) => (current === id ? null : current))
     },
-    [activeShotId, patchShot],
+    [patchLayers],
+  )
+
+  const duplicateAnnotation = useCallback(
+    (shotId: string, id: string) => {
+      // L'identifiant est tiré avant la mise à jour : un updater React doit
+      // rester pur, et on en a besoin tout de suite pour sélectionner la copie.
+      const copyId = nextId('copy')
+      patchLayers(shotId, (annotations) => {
+        const source = annotations.find((annotation) => annotation.id === id)
+        if (!source) return annotations
+        const copy: Annotation = {
+          ...source,
+          id: copyId,
+          rect: {
+            ...source.rect,
+            x: source.rect.x + DUPLICATE_OFFSET,
+            y: source.rect.y + DUPLICATE_OFFSET,
+          },
+        }
+        return [...annotations, copy]
+      })
+      setSelectedAnnotationId(copyId)
+    },
+    [patchLayers],
+  )
+
+  const moveAnnotation = useCallback(
+    (shotId: string, id: string, direction: 'up' | 'down') => {
+      patchLayers(shotId, (annotations) => {
+        const index = annotations.findIndex((annotation) => annotation.id === id)
+        const target = direction === 'up' ? index + 1 : index - 1
+        if (index < 0 || target < 0 || target >= annotations.length) return annotations
+        const next = [...annotations]
+        next[index] = annotations[target]
+        next[target] = annotations[index]
+        return next
+      })
+    },
+    [patchLayers],
   )
 
   const activeShot = useMemo(
     () => shots.find((shot) => shot.id === activeShotId) ?? shots[0] ?? null,
     [shots, activeShotId],
   )
+
+  const restore = useCallback((next: Shot[]) => {
+    setShots(next)
+    setSelectedAnnotationId((current) =>
+      next.some((shot) => shot.annotations.some((annotation) => annotation.id === current))
+        ? current
+        : null,
+    )
+  }, [])
 
   const reset = useCallback(() => {
     setShots([])
@@ -136,11 +196,15 @@ export function useShots(): ShotsState {
     add,
     replaceAll,
     select,
+    focusShot,
     reorder,
     createAnnotation: create,
     patchAnnotation,
     deleteAnnotation,
+    duplicateAnnotation,
+    moveAnnotation,
     selectAnnotation: setSelectedAnnotationId,
+    restore,
     reset,
   }
 }

@@ -1,55 +1,65 @@
-import { Badge, Panel, Row, Section, Slider, Tile } from './ui.tsx'
-import type { Annotation, LabelStyle, RedactionMode } from '../types.ts'
+import AnnotationStyle from './AnnotationStyle.tsx'
+import { Badge, Panel, Row, Section } from './ui.tsx'
+import { badgeNumbers } from '../lib/annotate.ts'
+import type { Annotation, AnnotationKind, Shot } from '../types.ts'
 
-const LABEL_STYLES: Array<{ value: LabelStyle; label: string }> = [
-  { value: 'pill', label: 'pill' },
-  { value: 'plain', label: 'plain' },
-  { value: 'badge', label: 'badge' },
-]
-
-const REDACTIONS: Array<{ value: RedactionMode; label: string }> = [
-  { value: 'blur', label: 'blur' },
-  { value: 'pixel', label: 'pixel' },
-  { value: 'solid', label: 'solid' },
-]
-
-const KIND_LABEL: Record<Annotation['kind'], string> = {
+const KIND_LABEL: Record<AnnotationKind, string> = {
   text: 'TXT',
+  badge: 'NUM',
   arrow: 'ARR',
+  line: 'LIN',
   box: 'BOX',
+  ellipse: 'ELL',
   redaction: 'RDC',
 }
 
+const KIND_NAME: Record<AnnotationKind, string> = {
+  text: 'Label',
+  badge: 'Badge',
+  arrow: 'Arrow',
+  line: 'Line',
+  box: 'Box',
+  ellipse: 'Ellipse',
+  redaction: 'Redacted area',
+}
+
 type AnnotateInspectorProps = {
-  annotations: readonly Annotation[]
+  shot: Shot | null
   selectedId: string | null
   onSelect: (id: string) => void
-  onPatch: (id: string, patch: Partial<Annotation>) => void
-  onDelete: (id: string) => void
+  onPatch: (shotId: string, id: string, patch: Partial<Annotation>) => void
+  onDelete: (shotId: string, id: string) => void
+  onMove: (shotId: string, id: string, direction: 'up' | 'down') => void
   /** Descendu sous le bouton de la feuille rétractable, en mode étroit. */
   offset?: boolean
 }
 
 export default function AnnotateInspector({
-  annotations,
+  shot,
   selectedId,
   onSelect,
   onPatch,
   onDelete,
+  onMove,
   offset = false,
 }: AnnotateInspectorProps) {
+  const annotations = shot?.annotations ?? []
   const selected = annotations.find((annotation) => annotation.id === selectedId) ?? null
+  const numbers = badgeNumbers(annotations)
+  const index = selected ? annotations.indexOf(selected) : -1
 
   return (
     <Panel
       className={`absolute right-5 z-10 max-h-[calc(100%-190px)] w-72 space-y-4 overflow-y-auto p-[18px] ${offset ? 'top-[124px]' : 'top-[88px]'}`}
     >
-      <Section title="Layers">
+      <Section title={shot ? `Layers — ${shot.name}` : 'Layers'}>
         <div className="space-y-[3px]">
           {annotations.length === 0 && (
             <p className="t-ui-small text-dim">No layer yet — pick a tool and drag on the shot.</p>
           )}
-          {annotations.map((annotation) => (
+          {/* La pile se lit de haut en bas comme elle se dessine : le dernier
+              calque créé passe au-dessus, il apparaît donc en tête. */}
+          {[...annotations].reverse().map((annotation) => (
             <Row
               key={annotation.id}
               active={annotation.id === selectedId}
@@ -67,87 +77,59 @@ export default function AnnotateInspector({
                 {KIND_LABEL[annotation.kind]}
               </span>
               <span className="t-ui truncate">
-                {annotation.text.trim() || labelFor(annotation.kind)}
+                {annotation.kind === 'badge'
+                  ? `Badge ${numbers.get(annotation.id) ?? 1}`
+                  : annotation.text.trim() || KIND_NAME[annotation.kind]}
               </span>
             </Row>
           ))}
         </div>
       </Section>
 
-      {selected && selected.kind === 'text' && (
-        <Section title="Selected label">
-          <input
-            type="text"
-            value={selected.text}
-            onChange={(event) => onPatch(selected.id, { text: event.target.value })}
-            aria-label="Label text"
-            className="w-full rounded-[9px] border border-hairline bg-sunken px-3 py-2 text-[12px] text-ink placeholder:text-dim"
-          />
-          <div className="grid grid-cols-3 gap-1">
-            {LABEL_STYLES.map((style) => (
-              <Tile
-                key={style.value}
-                active={selected.labelStyle === style.value}
-                onClick={() => onPatch(selected.id, { labelStyle: style.value })}
-                className="h-[34px] rounded-lg font-mono text-[9px]"
-              >
-                {style.label}
-              </Tile>
-            ))}
-          </div>
-          <Slider
-            label="Size"
-            value={selected.size}
-            display={`${(selected.size * 100).toFixed(1)} %`}
-            min={0.005}
-            max={0.04}
-            step={0.001}
-            onInput={(size) => onPatch(selected.id, { size })}
-          />
-        </Section>
+      {selected && shot && (
+        <AnnotationStyle
+          annotation={selected}
+          palette={shot.palette}
+          onPatch={(patch) => onPatch(shot.id, selected.id, patch)}
+        />
       )}
 
-      {selected && selected.kind === 'redaction' && (
-        <Section title="Redaction">
-          <div className="grid grid-cols-3 gap-1">
-            {REDACTIONS.map((mode) => (
-              <Tile
-                key={mode.value}
-                tone="danger"
-                active={selected.redaction === mode.value}
-                onClick={() => onPatch(selected.id, { redaction: mode.value })}
-                className="h-[34px] rounded-lg font-mono text-[9px]"
-              >
-                {mode.label}
-              </Tile>
-            ))}
-          </div>
-          <p className="t-ui-small text-dim">
-            Baked into the pixels at export — the original is never recoverable from the file.
-          </p>
-        </Section>
-      )}
-
-      {selected && (
+      {selected && shot && (
         <Section title="Layer">
           <div className="flex items-center justify-between">
             <Badge tone={selected.kind === 'redaction' ? 'danger' : undefined}>
               {KIND_LABEL[selected.kind]}
             </Badge>
-            <button
-              type="button"
-              onClick={() => onDelete(selected.id)}
-              className="t-ui-small text-danger hover:underline"
-            >
-              Delete ⌫
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                title="Send backward (⌘↓)"
+                disabled={index <= 0}
+                onClick={() => onMove(shot.id, selected.id, 'down')}
+                className="t-ui-small text-ink-soft hover:text-ink disabled:opacity-30"
+              >
+                ↓
+              </button>
+              <button
+                type="button"
+                title="Bring forward (⌘↑)"
+                disabled={index < 0 || index >= annotations.length - 1}
+                onClick={() => onMove(shot.id, selected.id, 'up')}
+                className="t-ui-small text-ink-soft hover:text-ink disabled:opacity-30"
+              >
+                ↑
+              </button>
+              <button
+                type="button"
+                onClick={() => onDelete(shot.id, selected.id)}
+                className="t-ui-small text-danger hover:underline"
+              >
+                Delete ⌫
+              </button>
+            </div>
           </div>
         </Section>
       )}
     </Panel>
   )
-}
-
-function labelFor(kind: Annotation['kind']): string {
-  return { text: 'Label', arrow: 'Arrow', box: 'Box', redaction: 'Redacted area' }[kind]
 }

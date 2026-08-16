@@ -24,6 +24,10 @@ type TopBarActionsProps = {
   onExportStyle: (style: Style) => void
   onSaveStyle: () => void
   onNewShot: () => void
+  canUndo: boolean
+  canRedo: boolean
+  onUndo: () => void
+  onRedo: () => void
 }
 
 const META = 'font-mono text-[11px] text-[#6F7386]'
@@ -39,6 +43,12 @@ export default function TopBarActions(props: TopBarActionsProps) {
         <span className={META}>
           {props.output.width} × {props.output.height} · {props.output.format}
         </span>
+        <Button variant="ghost" title="Undo ⌘Z" disabled={!props.canUndo} onClick={props.onUndo}>
+          ↺
+        </Button>
+        <Button variant="ghost" title="Redo ⇧⌘Z" disabled={!props.canRedo} onClick={props.onRedo}>
+          ↻
+        </Button>
         <Button onClick={props.onCopy}>{props.copied ? 'Copied' : 'Copy'}</Button>
         <Button variant="primary" onClick={props.onExport}>
           Export

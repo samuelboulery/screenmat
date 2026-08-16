@@ -70,23 +70,62 @@ export function frameRadius(box: WindowBox, geometry: Geometry, settings: Settin
  *  `render.ts`, qui l'utilise pour calculer l'encombrement. */
 const SKEW = 0.3
 
+/** Matrice affine 2D `[a, b, c, d, e, f]`, dans l'ordre de `ctx.transform`. */
+export type Matrix = readonly [number, number, number, number, number, number]
+
+export type Point = { x: number; y: number }
+
+export const IDENTITY: Matrix = [1, 0, 0, 1, 0, 0]
+
 /**
- * Applique la rotation Y d'une fenêtre au contexte. Approximation affine —
+ * Rotation Y d'une fenêtre, sous forme de matrice. Approximation affine —
  * compression horizontale plus cisaillement vertical — plutôt qu'un vrai
  * mapping projectif : aux angles utilisés (±16°) l'illusion tient, et une
  * matrice reste homothétique à l'export, ce qu'un découpage en bandes ne
  * garantirait pas.
+ *
+ * Seule description de cette rotation : `windowTransform` l'applique au
+ * contexte, la preview l'inverse pour retrouver le point sous le curseur.
  */
-export function windowTransform(ctx: CanvasRenderingContext2D, box: WindowBox): void {
-  if (box.rotateY === 0) return
+export function windowMatrix(box: WindowBox): Matrix {
+  if (box.rotateY === 0) return IDENTITY
 
   const radians = (box.rotateY * Math.PI) / 180
   const cx = box.x + box.width / 2
-  const cy = box.y + box.height / 2
+  const a = Math.cos(radians)
+  const b = Math.sin(radians) * SKEW
 
-  ctx.translate(cx, cy)
-  ctx.transform(Math.cos(radians), Math.sin(radians) * SKEW, 0, 1, 0, 0)
-  ctx.translate(-cx, -cy)
+  // translate(cx, cy) · [a b 0 1 0 0] · translate(-cx, -cy)
+  return [a, b, 0, 1, cx - a * cx, -b * cx]
+}
+
+export function applyMatrix(m: Matrix, point: Point): Point {
+  return {
+    x: m[0] * point.x + m[2] * point.y + m[4],
+    y: m[1] * point.x + m[3] * point.y + m[5],
+  }
+}
+
+/** Inverse d'une matrice affine. `det` ne s'annule pas : `a = cos(±16°)`. */
+export function invertMatrix(m: Matrix): Matrix {
+  const det = m[0] * m[3] - m[1] * m[2]
+  if (Math.abs(det) < 1e-12) return IDENTITY
+
+  return [
+    m[3] / det,
+    -m[1] / det,
+    -m[2] / det,
+    m[0] / det,
+    (m[2] * m[5] - m[3] * m[4]) / det,
+    (m[1] * m[4] - m[0] * m[5]) / det,
+  ]
+}
+
+/** Applique la rotation Y d'une fenêtre au contexte. */
+export function windowTransform(ctx: CanvasRenderingContext2D, box: WindowBox): void {
+  if (box.rotateY === 0) return
+  const m = windowMatrix(box)
+  ctx.transform(m[0], m[1], m[2], m[3], m[4], m[5])
 }
 
 /** Chemin de la fenêtre. Exporté : la redaction en a besoin pour se clipper. */

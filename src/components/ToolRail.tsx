@@ -3,11 +3,20 @@ import { Panel } from './ui.tsx'
 /** Les libellés sont volontairement textuels et mono : ce que la machine
  *  produit s'écrit en mono. Un jeu d'icônes les remplacerait toutes ou aucune. */
 export type ComposeTool = 'FRM' | 'BG' | '3D' | 'TXT' | 'BLUR'
-export type AnnotateTool = 'SEL' | 'TXT' | 'ARR' | 'BOX' | 'RDC'
+export type AnnotateTool = 'SEL' | 'TXT' | 'NUM' | 'ARR' | 'LIN' | 'BOX' | 'ELL' | 'RDC'
 export type Tool = ComposeTool | AnnotateTool
 
 export const COMPOSE_TOOLS: ComposeTool[] = ['FRM', 'BG', '3D', 'TXT', 'BLUR']
-export const ANNOTATE_TOOLS: AnnotateTool[] = ['SEL', 'TXT', 'ARR', 'BOX', 'RDC']
+export const ANNOTATE_TOOLS: AnnotateTool[] = [
+  'SEL',
+  'TXT',
+  'NUM',
+  'ARR',
+  'LIN',
+  'BOX',
+  'ELL',
+  'RDC',
+]
 
 const TITLES: Record<Tool, string> = {
   FRM: 'Frame & canvas',
@@ -17,7 +26,10 @@ const TITLES: Record<Tool, string> = {
   BLUR: 'Blur & grain',
   SEL: 'Select',
   ARR: 'Arrow',
+  LIN: 'Line',
   BOX: 'Box',
+  ELL: 'Ellipse',
+  NUM: 'Numbered badge',
   RDC: 'Redact',
 }
 

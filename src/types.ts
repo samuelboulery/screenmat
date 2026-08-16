@@ -11,7 +11,14 @@ export type BackgroundKind = 'mesh' | 'gradient' | 'solid' | 'image'
 /** Disposition multi-shot. `single` n'affiche que le shot actif. */
 export type LayoutKind = 'single' | 'stack' | 'side' | 'tilt3d'
 
-export type AnnotationKind = 'text' | 'arrow' | 'box' | 'redaction'
+export type AnnotationKind =
+  | 'text'
+  | 'badge'
+  | 'arrow'
+  | 'line'
+  | 'box'
+  | 'ellipse'
+  | 'redaction'
 
 export type RedactionMode = 'blur' | 'pixel' | 'solid'
 
@@ -64,8 +71,13 @@ export type Palette = {
   accents: string[]
 }
 
-/** Rectangle en fractions de la largeur du canvas (l'origine aussi : `y` est
- *  divisé par la largeur, pas par la hauteur, pour rester homothétique). */
+/** Rectangle en fractions de la largeur de la FENÊTRE qu'il annote, origine au
+ *  coin haut-gauche de cette fenêtre (`y` est divisé par la largeur, pas par la
+ *  hauteur, pour rester homothétique). Une annotation appartient à son
+ *  screenshot : elle le suit quand le padding, le ratio ou le layout changent.
+ *
+ *  `w` et `h` peuvent être négatifs — une flèche tracée vers le haut-gauche en
+ *  dépend. Passer par `bounds()` pour obtenir un rectangle normalisé. */
 export type FractionRect = {
   x: number
   y: number
@@ -77,13 +89,25 @@ export type Annotation = {
   id: string
   kind: AnnotationKind
   rect: FractionRect
-  /** Texte du callout. Ignoré pour `box` et `redaction`. */
+  /** Texte du callout. Ignoré hors `text`. */
   text: string
   labelStyle: LabelStyle
-  /** Taille de police, en fraction de la largeur du canvas. */
+  /** Taille de police, en fraction de la largeur de la fenêtre. */
   size: number
   /** Mode de floutage. Ignoré hors `redaction`. */
   redaction: RedactionMode
+  /** Couleur du trait et du texte, en hexadécimal. */
+  color: string
+  /** Épaisseur du trait, en fraction de la largeur de la fenêtre. */
+  strokeWidth: number
+  /** Rayon des coins d'un `box`, en fraction de la largeur de la fenêtre. */
+  radius: number
+  /** Taille de la tête d'une `arrow`, en fraction de la largeur de la fenêtre. */
+  arrowHead: number
+  /** Opacité du remplissage d'un `box` ou d'une `ellipse`. 0 ⇒ contour seul. */
+  fill: number
+  /** Opacité du calque entier. */
+  opacity: number
 }
 
 export type Shot = {

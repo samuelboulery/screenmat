@@ -1,4 +1,4 @@
-import { renderAnnotations, renderRedactions } from './annotate.ts'
+import { renderAnnotations, renderRedactions } from './layers.ts'
 import { renderBackground } from './background.ts'
 import { renderFrame, windowTransform } from './frame.ts'
 import { renderWatermark } from './watermark.ts'
@@ -224,7 +224,11 @@ export function renderScene(
     renderRedactions(ctx, box, geometry, shot.annotations, settings)
   }
 
-  renderAnnotations(ctx, geometry, first.annotations)
+  // Les calques non destructifs passent après toutes les fenêtres : en
+  // multi-shot, une annotation n'est jamais recouverte par la fenêtre voisine.
+  for (const box of geometry.windows) {
+    renderAnnotations(ctx, box, (shots[box.shot] ?? first).annotations)
+  }
 
   if (scene.watermark) {
     renderWatermark(ctx, geometry, scene.watermark.image, scene.watermark.mark)

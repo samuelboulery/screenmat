@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import BatchScreen from './components/BatchScreen.tsx'
 import EditorScreen from './components/EditorScreen.tsx'
 import HistoryScreen from './components/HistoryScreen.tsx'
@@ -10,15 +10,18 @@ import { ErrorNote } from './components/ui.tsx'
 import { useBatch } from './hooks/useBatch.ts'
 import { useExport } from './hooks/useExport.ts'
 import { useImageInput } from './hooks/useImageInput.ts'
+import { useDocumentHistory } from './hooks/useHistory.ts'
+import { useLayerActions } from './hooks/useLayerActions.ts'
 import { useLibrary } from './hooks/useLibrary.ts'
+import { useStyleActions } from './hooks/useStyleActions.ts'
 import { useShots } from './hooks/useShots.ts'
 import { useSideFile, type SideTarget } from './hooks/useSideFile.ts'
 import { useNarrow, useShortcuts } from './hooks/useShortcuts.ts'
-import { loadDataUrl, loadImage } from './lib/image.ts'
+import { loadImage } from './lib/image.ts'
 import { buildBatchJobs } from './lib/export.ts'
 import { computeGeometry } from './lib/render.ts'
 import { getHistoryBlobs } from './lib/store.ts'
-import { createStyle, exportStyle } from './lib/styles.ts'
+import { exportStyle } from './lib/styles.ts'
 import {
   DEFAULT_COMPOSITION,
   DEFAULT_SETTINGS,
@@ -27,7 +30,6 @@ import {
   type Ratio,
   type Scene,
   type Settings,
-  type Style,
   type WatermarkPosition,
 } from './types.ts'
 
@@ -42,7 +44,6 @@ export default function App() {
   const [scale, setScale] = useState(2)
   const [failure, setFailure] = useState<string | null>(null)
   const [backgroundImage, setBackgroundImage] = useState<HTMLImageElement | null>(null)
-  const [watermarkImage, setWatermarkImage] = useState<HTMLImageElement | null>(null)
   const [batchRatios, setBatchRatios] = useState<Ratio[]>(['16:9'])
 
   const shots = useShots()
@@ -67,28 +68,24 @@ export default function App() {
   const compose = (next: Partial<Composition>) =>
     setComposition((current) => ({ ...current, ...next }))
 
-  const activeStyle = useMemo(
-    () => library.styles.find((style) => style.id === library.activeStyleId) ?? null,
-    [library.styles, library.activeStyleId],
+  const styles = useStyleActions(
+    library,
+    settings,
+    setSettings,
+    useCallback(() => setView('styles'), []),
   )
+  const { activeStyle, watermarkImage } = styles
 
   /* --- Scène ------------------------------------------------------------ */
 
-  // On annote un shot, pas une composition : les calques d'un seul shot sur une
-  // scène qui en montre trois n'aurait aucun sens à la souris comme à l'export.
-  const effective = useMemo<Composition>(
-    () => (mode === 'annotate' ? { ...composition, layout: 'single' } : composition),
-    [composition, mode],
-  )
-
   const composed = useMemo(() => {
     if (shots.shots.length === 0) return []
-    if (effective.layout === 'single') {
+    if (composition.layout === 'single') {
       return shots.activeShot ? [shots.activeShot] : []
     }
     const picked = shots.shots.filter((shot) => shots.selection.includes(shot.id))
     return picked.length > 0 ? picked : shots.shots.slice(0, 1)
-  }, [shots.shots, shots.activeShot, shots.selection, effective.layout])
+  }, [shots.shots, shots.activeShot, shots.selection, composition.layout])
 
   const scene = useMemo<Scene | null>(() => {
     if (composed.length === 0) return null
@@ -96,14 +93,14 @@ export default function App() {
       shots: composed,
       palette: activeStyle?.palette ?? composed[0].palette,
       settings,
-      composition: effective,
+      composition,
       backgroundImage: backgroundImage ?? undefined,
       watermark:
         watermarkImage && activeStyle?.watermark
           ? { image: watermarkImage, mark: activeStyle.watermark }
           : undefined,
     }
-  }, [composed, settings, effective, activeStyle, backgroundImage, watermarkImage])
+  }, [composed, settings, composition, activeStyle, backgroundImage, watermarkImage])
 
   const geometry = useMemo(() => {
     const first = composed[0]
@@ -113,10 +110,10 @@ export default function App() {
       first.image.naturalHeight,
       settings,
       1,
-      effective,
+      composition,
       composed.length,
     )
-  }, [composed, settings, effective])
+  }, [composed, settings, composition])
 
   /* --- Export ----------------------------------------------------------- */
 
@@ -130,57 +127,24 @@ export default function App() {
     if (scene) void exporter.copyScene(scene, scale)
   }, [scene, scale, exporter])
 
+  /* --- Annulation et raccourcis ----------------------------------------- */
+
+  const history = useDocumentHistory(shots, settings, setSettings, composition, setComposition)
+  const layers = useLayerActions(shots)
+
   useShortcuts(
     {
+      ...layers,
       onExport,
       onCopy,
       onShuffle: () => patch({ seed: settings.seed + 1 }),
       onScale: setScale,
-      onDelete: () =>
-        shots.selectedAnnotationId && shots.deleteAnnotation(shots.selectedAnnotationId),
+      onUndo: history.undo,
+      onRedo: history.redo,
     },
     shots.shots.length > 0,
   )
 
-  /* --- Styles ----------------------------------------------------------- */
-
-  const applyStyle = useCallback(
-    (id: string) => {
-      const style = library.styles.find((item) => item.id === id)
-      if (!style) return
-      setSettings(style.settings)
-      library.setActiveStyleId(id)
-    },
-    [library],
-  )
-
-  useEffect(() => {
-    const mark = activeStyle?.watermark
-    if (!mark) {
-      setWatermarkImage(null)
-      return
-    }
-    let alive = true
-    loadDataUrl(mark.dataUrl)
-      .then((image) => alive && setWatermarkImage(image))
-      .catch(() => alive && setWatermarkImage(null))
-    return () => {
-      alive = false
-    }
-  }, [activeStyle?.watermark])
-
-  const saveStyle = useCallback(() => {
-    const style = createStyle(`Style ${library.styles.length + 1}`, settings)
-    void library.saveStyle(style).then(() => library.setActiveStyleId(style.id))
-    setView('styles')
-  }, [library, settings])
-
-  const patchStyle = useCallback(
-    (next: Style) => {
-      void library.saveStyle(next)
-    },
-    [library],
-  )
 
   /* --- Sélecteur de fichiers secondaire --------------------------------- */
 
@@ -265,7 +229,11 @@ export default function App() {
           onCancelBatch={batch.cancel}
           onExportBatch={startBatch}
           onExportStyle={exportStyle}
-          onSaveStyle={saveStyle}
+          onSaveStyle={styles.save}
+          canUndo={history.canUndo}
+          canRedo={history.canRedo}
+          onUndo={history.undo}
+          onRedo={history.redo}
           onNewShot={() => pick('shot')}
         />
       </TopBar>
@@ -277,7 +245,7 @@ export default function App() {
           hasLastStyle={Boolean(library.activeStyleId)}
           recents={library.history.slice(0, 4)}
           onPick={() => pick('shot')}
-          onUseLastStyle={() => library.activeStyleId && applyStyle(library.activeStyleId)}
+          onUseLastStyle={() => library.activeStyleId && styles.apply(library.activeStyleId)}
           onOpenRecent={(id) => void reopen(id)}
         />
       ) : view === 'editor' && mode === 'batch' ? (
@@ -320,13 +288,17 @@ export default function App() {
           onSelectShot={shots.select}
           onReorderShots={shots.reorder}
           onAddShot={() => pick('shot')}
-          onApplyStyle={applyStyle}
-          onSaveStyle={saveStyle}
+          onApplyStyle={styles.apply}
+          onSaveStyle={styles.save}
           onPickBackgroundImage={() => pick('background')}
           onCreateAnnotation={shots.createAnnotation}
           onPatchAnnotation={shots.patchAnnotation}
           onDeleteAnnotation={shots.deleteAnnotation}
-          onSelectAnnotation={shots.selectAnnotation}
+          onMoveAnnotation={shots.moveAnnotation}
+          onSelectAnnotation={(shotId, id) => {
+            if (shotId) shots.focusShot(shotId)
+            shots.selectAnnotation(id)
+          }}
         />
       ) : view === 'styles' ? (
         <StylesScreen
@@ -335,14 +307,14 @@ export default function App() {
           preview={scene}
           shots={shots.shots}
           sampled={shots.activeShot?.palette ?? null}
-          onSelect={applyStyle}
+          onSelect={styles.apply}
           onRename={(id, name) => {
             const style = library.styles.find((item) => item.id === id)
-            if (style) patchStyle({ ...style, name })
+            if (style) styles.patch({ ...style, name })
           }}
           onPatchWatermark={(position: WatermarkPosition) => {
             if (activeStyle?.watermark) {
-              patchStyle({
+              styles.patch({
                 ...activeStyle,
                 watermark: { ...activeStyle.watermark, position },
               })
@@ -351,7 +323,7 @@ export default function App() {
           onPickWatermark={() => pick('watermark')}
           onOverridePalette={(override) => {
             if (!activeStyle) return
-            patchStyle({
+            styles.patch({
               ...activeStyle,
               palette: override ? (shots.activeShot?.palette ?? undefined) : undefined,
             })

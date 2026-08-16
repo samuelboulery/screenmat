@@ -58,13 +58,13 @@ export default function TopBarActions(props: TopBarActionsProps) {
         </span>
         <IconButton
           icon={UndoIcon}
-          label="Undo ⌘Z"
+          label="Undo (⌘Z)"
           disabled={!props.canUndo}
           onClick={props.onUndo}
         />
         <IconButton
           icon={RedoIcon}
-          label="Redo ⇧⌘Z"
+          label="Redo (⇧⌘Z)"
           disabled={!props.canRedo}
           onClick={props.onRedo}
         />

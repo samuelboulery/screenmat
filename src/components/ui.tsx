@@ -79,6 +79,12 @@ export function MonoLabel({ children, className = '' }: { children: ReactNode; c
   return <div className={`t-mono-label ${className}`}>{children}</div>
 }
 
+/**
+ * Une section de panneau, avec son titre. Le titre est un vrai `<h2>` : c'est la
+ * seule structure de parcours d'un outil qui compte six écrans et une dizaine de
+ * panneaux. `MonoLabel` reste un `div` — il sert aussi d'étiquette simple, et un
+ * seed n'est pas un titre.
+ */
 export function Section({
   title,
   aside,
@@ -91,7 +97,7 @@ export function Section({
   return (
     <section className="space-y-3 border-t border-hairline pt-4 first:border-0 first:pt-0">
       <div className="flex items-center justify-between">
-        <MonoLabel>{title}</MonoLabel>
+        <h2 className="t-mono-label">{title}</h2>
         {aside}
       </div>
       {children}
@@ -177,10 +183,14 @@ export function Toggle({
   checked,
   onChange,
   label,
+  disabled,
+  title,
 }: {
   checked: boolean
   onChange: (checked: boolean) => void
   label: string
+  disabled?: boolean
+  title?: string
 }) {
   return (
     <button
@@ -188,8 +198,10 @@ export function Toggle({
       role="switch"
       aria-checked={checked}
       aria-label={label}
+      disabled={disabled}
+      title={title}
       onClick={() => onChange(!checked)}
-      className={`relative h-5 w-[34px] shrink-0 rounded-full transition-colors duration-140 ${
+      className={`relative h-5 w-[34px] shrink-0 rounded-full transition-colors duration-140 disabled:opacity-40 ${
         checked ? 'bg-accent/35' : 'bg-white/[.09]'
       }`}
     >

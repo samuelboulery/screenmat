@@ -21,7 +21,7 @@ import { loadImage } from './lib/image.ts'
 import { buildBatchJobs } from './lib/export.ts'
 import { computeGeometry } from './lib/render.ts'
 import { getHistoryBlobs } from './lib/store.ts'
-import { exportStyle } from './lib/styles.ts'
+import { exportStyle, parseSettings, withAccent, withColor, withoutAccent } from './lib/styles.ts'
 import {
   DEFAULT_COMPOSITION,
   DEFAULT_SETTINGS,
@@ -29,6 +29,7 @@ import {
   type Format,
   type Ratio,
   type Scene,
+  type Palette,
   type Settings,
   type WatermarkPosition,
 } from './types.ts'
@@ -133,7 +134,9 @@ export default function App() {
   const history = useDocumentHistory(shots, settings, setSettings, composition, setComposition)
   const layers = useLayerActions(shots)
 
-  useShortcuts(
+  // Les combinaisons à modificateur partent sur `window` ; les touches nues
+  // reviennent ici sous forme de handler, à poser sur le canvas.
+  const onCanvasKeys = useShortcuts(
     {
       ...layers,
       onExport,
@@ -145,7 +148,6 @@ export default function App() {
     },
     shots.shots.length > 0,
   )
-
 
   /* --- Sélecteur de fichiers secondaire --------------------------------- */
 
@@ -173,7 +175,10 @@ export default function App() {
       if (!entry || !blobs) return
 
       shots.replaceAll([await loadImage(blobs.source)], [entry.name])
-      setSettings(entry.settings)
+      // Une entrée d'historique a pu être écrite par une version antérieure de
+      // l'app : un réglage ajouté depuis y manque, et l'`undefined` ressort en
+      // `rgba(NaN, …)` au rendu. IndexedDB est une frontière, comme un import.
+      setSettings(parseSettings(entry.settings))
       setView('editor')
       setMode('compose')
     },
@@ -223,7 +228,26 @@ export default function App() {
 
   /* --- Rendu ------------------------------------------------------------ */
 
+  /* --- Palette d'un style ----------------------------------------------- */
+
+  /** Éditer une couleur d'une palette encore échantillonnée la fige dans le
+   *  style : une palette qui se recalcule à chaque screenshot n'est pas
+   *  éditable, et le toggle « Override » ne fait que refléter sa présence. */
+  const editPalette = (change: (palette: Palette) => Palette) => {
+    const current = activeStyle?.palette ?? shots.activeShot?.palette
+    if (!activeStyle || !current) return
+    styles.patch({ ...activeStyle, palette: change(current) })
+  }
+
+  const paletteEdits = {
+    onPatchColor: (index: number, color: string) =>
+      editPalette((palette) => withColor(palette, index, color)),
+    onAddColor: (color: string) => editPalette((palette) => withAccent(palette, color)),
+    onRemoveColor: (index: number) => editPalette((palette) => withoutAccent(palette, index)),
+  }
+
   const empty = shots.shots.length === 0
+  const problem = failure ?? exporter.error ?? library.error ?? batch.error
 
   return (
     <div className="stage-glow relative h-full" {...input.dropHandlers}>
@@ -269,141 +293,179 @@ export default function App() {
         />
       </TopBar>
 
-      {empty && view === 'editor' ? (
-        <ImportScreen
-          dragging={input.dragging}
-          error={input.error}
-          hasLastStyle={Boolean(library.activeStyleId)}
-          recents={library.history.slice(0, 4)}
-          onPick={() => pick('shot')}
-          onUseLastStyle={() => library.activeStyleId && styles.apply(library.activeStyleId)}
-          onOpenRecent={(id) => void reopen(id)}
-        />
-      ) : view === 'editor' && mode === 'batch' ? (
-        <BatchScreen
-          shots={shots.shots}
-          selection={shots.selection}
-          queue={batch.queue}
-          rendered={batch.rendered}
-          total={batch.total}
-          style={activeStyle}
-          ratios={batchRatios}
-          scale={scale}
-          format={settings.format}
-          harmonize={harmonize}
-          onToggleShot={(id) => shots.select(id, true)}
-          onToggleRatio={(ratio) =>
-            setBatchRatios((current) =>
-              current.includes(ratio)
-                ? current.filter((item) => item !== ratio)
-                : [...current, ratio],
-            )
-          }
-          onScale={setScale}
-          onFormat={(format: Format) => patch({ format })}
-          onHarmonize={setHarmonize}
-          onAddShot={() => pick('shot')}
-          onChangeStyle={() => setView('styles')}
-        />
-      ) : view === 'editor' && scene ? (
-        <EditorScreen
-          mode={mode === 'annotate' ? 'annotate' : 'compose'}
-          scene={scene}
-          shots={shots.shots}
-          activeShotId={shots.activeShotId}
-          selection={shots.selection}
-          styles={library.styles}
-          activeStyleId={library.activeStyleId}
-          selectedLayerIds={shots.selectedLayerIds}
-          narrow={narrow}
-          onChange={patch}
-          onCompose={compose}
-          onSelectShot={shots.select}
-          onReorderShots={shots.reorder}
-          onAddShot={() => pick('shot')}
-          onApplyStyle={styles.apply}
-          onSaveStyle={styles.save}
-          onPickBackgroundImage={() => pick('background')}
-          onCreateAnnotation={shots.createAnnotation}
-          onPatchAnnotation={shots.patchAnnotation}
-          onPatchNode={shots.patchNode}
-          onTranslateLayers={shots.translateLayers}
-          onDeleteLayers={shots.deleteLayers}
-          onMoveLayer={shots.moveLayer}
-          onMoveLayers={shots.moveLayers}
-          onGroupLayers={shots.groupLayers}
-          onUngroupLayer={shots.ungroupLayer}
-          onSelectLayers={(shotId, ids, additive) => {
-            if (shotId) shots.focusShot(shotId)
-            shots.selectLayers(ids, additive ? 'toggle' : 'replace')
-          }}
-        />
-      ) : view === 'styles' ? (
-        <StylesScreen
-          styles={library.styles}
-          activeId={library.activeStyleId}
-          preview={scene}
-          shots={shots.shots}
-          sampled={shots.activeShot?.palette ?? null}
-          onSelect={styles.apply}
-          onRename={(id, name) => {
-            const style = library.styles.find((item) => item.id === id)
-            if (style) styles.patch({ ...style, name })
-          }}
-          onPatchWatermark={(position: WatermarkPosition) => {
-            if (activeStyle?.watermark) {
+      <main>
+        {empty && view === 'editor' ? (
+          <ImportScreen
+            dragging={input.dragging}
+            error={input.error}
+            hasLastStyle={Boolean(library.activeStyleId)}
+            recents={library.history.slice(0, 4)}
+            onPick={() => pick('shot')}
+            onUseLastStyle={() => library.activeStyleId && styles.apply(library.activeStyleId)}
+            onOpenRecent={(id) => void reopen(id)}
+          />
+        ) : view === 'editor' && mode === 'batch' ? (
+          <BatchScreen
+            shots={shots.shots}
+            selection={shots.selection}
+            queue={batch.queue}
+            rendered={batch.rendered}
+            total={batch.total}
+            style={activeStyle}
+            ratios={batchRatios}
+            scale={scale}
+            format={settings.format}
+            harmonize={harmonize}
+            onToggleShot={(id) => shots.select(id, true)}
+            onToggleRatio={(ratio) =>
+              setBatchRatios((current) =>
+                current.includes(ratio)
+                  ? current.filter((item) => item !== ratio)
+                  : [...current, ratio],
+              )
+            }
+            onScale={setScale}
+            onFormat={(format: Format) => patch({ format })}
+            onHarmonize={setHarmonize}
+            onAddShot={() => pick('shot')}
+            onChangeStyle={() => setView('styles')}
+            narrow={narrow}
+          />
+        ) : view === 'editor' && scene ? (
+          <EditorScreen
+            mode={mode === 'annotate' ? 'annotate' : 'compose'}
+            scene={scene}
+            shots={shots.shots}
+            activeShotId={shots.activeShotId}
+            selection={shots.selection}
+            styles={library.styles}
+            activeStyleId={library.activeStyleId}
+            selectedLayerIds={shots.selectedLayerIds}
+            narrow={narrow}
+            onKeys={onCanvasKeys}
+            onChange={patch}
+            onCompose={compose}
+            onSelectShot={shots.select}
+            onReorderShots={shots.reorder}
+            onAddShot={() => pick('shot')}
+            onApplyStyle={styles.apply}
+            onSaveStyle={styles.save}
+            onUpdateStyle={styles.update}
+            onPickBackgroundImage={() => pick('background')}
+            onCreateAnnotation={shots.createAnnotation}
+            onPatchAnnotation={shots.patchAnnotation}
+            onPatchNode={shots.patchNode}
+            onTranslateLayers={shots.translateLayers}
+            onDeleteLayers={shots.deleteLayers}
+            onMoveLayer={shots.moveLayer}
+            onMoveLayers={shots.moveLayers}
+            onGroupLayers={shots.groupLayers}
+            onUngroupLayer={shots.ungroupLayer}
+            onSelectLayers={(shotId, ids, additive) => {
+              if (shotId) shots.focusShot(shotId)
+              shots.selectLayers(ids, additive ? 'toggle' : 'replace')
+            }}
+          />
+        ) : view === 'styles' ? (
+          <StylesScreen
+            styles={library.styles}
+            activeId={library.activeStyleId}
+            preview={scene}
+            shots={shots.shots}
+            sampled={shots.activeShot?.palette ?? null}
+            onSelect={styles.apply}
+            onRename={(id, name) => {
+              const style = library.styles.find((item) => item.id === id)
+              if (style) styles.patch({ ...style, name })
+            }}
+            onPatchSettings={(next) => {
+              if (!activeStyle) return
+              styles.patch({ ...activeStyle, settings: { ...activeStyle.settings, ...next } })
+              // Le style affiché au centre est toujours le style appliqué : le
+              // pousser aussi dans l'éditeur garde l'aperçu de droite juste,
+              // sans second chemin de rendu.
+              patch(next)
+            }}
+            onPatchWatermark={(position: WatermarkPosition) => {
+              if (activeStyle?.watermark) {
+                styles.patch({
+                  ...activeStyle,
+                  watermark: { ...activeStyle.watermark, position },
+                })
+              }
+            }}
+            onPickWatermark={() => pick('watermark')}
+            onRemoveWatermark={() => {
+              if (!activeStyle) return
+              // Retirer la clé plutôt que d'y poser `undefined` : c'est un style
+              // sans filigrane qu'on persiste, pas un filigrane vide.
+              const { watermark: _dropped, ...rest } = activeStyle
+              styles.patch(rest)
+            }}
+            onOverridePalette={(override) => {
+              if (!activeStyle) return
               styles.patch({
                 ...activeStyle,
-                watermark: { ...activeStyle.watermark, position },
+                palette: override ? (shots.activeShot?.palette ?? undefined) : undefined,
               })
-            }
-          }}
-          onPickWatermark={() => pick('watermark')}
-          onOverridePalette={(override) => {
-            if (!activeStyle) return
-            styles.patch({
-              ...activeStyle,
-              palette: override ? (shots.activeShot?.palette ?? undefined) : undefined,
-            })
-          }}
-          onImport={() => pick('style')}
-        />
-      ) : (
-        <HistoryScreen
-          entries={library.history}
-          styles={library.styles}
-          bytes={library.bytes}
-          onOpen={(id) => void reopen(id)}
-          onAdd={() => pick('shot')}
-          onPurge={() => void library.purge()}
-        />
-      )}
+            }}
+            {...paletteEdits}
+            onEditInEditor={(id) => {
+              styles.apply(id)
+              setView('editor')
+            }}
+            onDelete={(id) => {
+              // Un style supprimé n'est pas dans la pile d'annulation : la
+              // confirmation native, comme pour la purge de l'historique.
+              if (window.confirm('Delete this style? This cannot be undone.')) {
+                void library.removeStyle(id)
+              }
+            }}
+            onImport={() => pick('style')}
+            narrow={narrow}
+          />
+        ) : (
+          <HistoryScreen
+            entries={library.history}
+            styles={library.styles}
+            bytes={library.bytes}
+            onOpen={(id) => void reopen(id)}
+            onAdd={() => pick('shot')}
+            onPurge={() => void library.purge()}
+            narrow={narrow}
+          />
+        )}
+      </main>
 
-      {(failure ?? exporter.error ?? library.error ?? batch.error) && (
-        <div className="absolute right-5 bottom-5 z-30">
-          <ErrorNote>{failure ?? exporter.error ?? library.error ?? batch.error}</ErrorNote>
-        </div>
-      )}
-      {exporter.status && !failure && !exporter.error && (
-        <p className="absolute right-5 bottom-5 z-30 font-mono text-[10px] text-dim">{exporter.status}</p>
-      )}
+      {/* Les deux régions sont montées en permanence, vides comprises : une
+          région insérée au moment de l'annonce n'est pas lue de façon fiable. */}
+      <div role="alert" className="absolute right-5 bottom-5 z-30">
+        {problem && <ErrorNote>{problem}</ErrorNote>}
+      </div>
+      <p role="status" className="absolute right-5 bottom-5 z-30 font-mono text-[10px] text-dim">
+        {!problem && (exporter.copied ? 'Copied to clipboard' : (exporter.status ?? ''))}
+      </p>
 
+      {/* Déclenchés par un bouton : les laisser dans l'ordre de tabulation
+          n'offrirait qu'un focus invisible sur 1 px. */}
       <input
         ref={input.inputRef}
         type="file"
         accept="image/*"
         multiple
+        tabIndex={-1}
         onChange={input.onInputChange}
         className="sr-only"
-        aria-label="Choisir un ou plusieurs screenshots"
+        aria-label="Choose one or more screenshots"
       />
       <input
         ref={side.inputRef}
         type="file"
         accept="image/*,application/json,.json"
+        tabIndex={-1}
         onChange={side.onChange}
         className="sr-only"
-        aria-label="Choisir un fichier"
+        aria-label="Choose a file"
       />
     </div>
   )

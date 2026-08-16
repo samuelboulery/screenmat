@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { NewShotIcon, SearchIcon, SortNewestIcon, SortOldestIcon } from './icons.tsx'
-import { DashedTile, Segmented } from './ui.tsx'
+import { Button, DashedTile, Segmented } from './ui.tsx'
 import { humanSize } from '../lib/export.ts'
 import { QUOTA_WARNING_BYTES, type HistoryMeta } from '../lib/store.ts'
 import type { Style } from '../types.ts'
@@ -14,6 +14,8 @@ type HistoryScreenProps = {
   onOpen: (id: string) => void
   onAdd: () => void
   onPurge: () => void
+  /** Sous 1100 px : la grille passe à deux colonnes. */
+  narrow?: boolean
 }
 
 /** Retrouver un export passé et le réouvrir avec ses réglages. */
@@ -24,6 +26,7 @@ export default function HistoryScreen({
   onOpen,
   onAdd,
   onPurge,
+  narrow = false,
 }: HistoryScreenProps) {
   const [filter, setFilter] = useState('all')
   const [query, setQuery] = useState('')
@@ -47,6 +50,15 @@ export default function HistoryScreen({
     return sort === 'newest' ? kept : [...kept].reverse()
   }, [entries, filter, query, sort])
 
+  /**
+   * Une purge ne se rattrape pas : l'historique est le seul exemplaire, et la
+   * phrase juste au-dessus vient de le dire. Confirmation native, comme pour
+   * « New session » — le projet n'a pas de modale et n'en a pas besoin ici.
+   */
+  const confirmPurge = () => {
+    if (window.confirm('Delete the oldest exports? They cannot be recovered.')) onPurge()
+  }
+
   return (
     <div className="stage-glow absolute inset-x-0 top-[58px] bottom-0 flex flex-col gap-4 overflow-y-auto p-7">
       <div className="flex items-center gap-4">
@@ -63,18 +75,34 @@ export default function HistoryScreen({
               className="w-[220px] rounded-md border border-hairline bg-sunken py-2 pr-3 pl-9 text-[12px] text-ink placeholder:text-dim"
             />
           </div>
+          {/* Le libellé dit ce qu'on regarde, pas un mot qui pourrait aussi se
+              lire comme l'action : « newest » seul laissait deviner si un clic
+              décrivait l'ordre courant ou le changeait. */}
           <button
             type="button"
             onClick={() => setSort(sort === 'newest' ? 'oldest' : 'newest')}
             className="flex items-center gap-1.5 font-mono text-[10px] tracking-[0.18em] text-dim uppercase hover:text-ink"
           >
             {sort === 'newest' ? <SortNewestIcon /> : <SortOldestIcon />}
-            {sort}
+            {sort === 'newest' ? 'Newest first' : 'Oldest first'}
           </button>
         </div>
       </div>
 
-      <div className="grid auto-rows-[208px] grid-cols-4 gap-4">
+      {entries.length === 0 ? (
+        <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
+          <p className="t-card-title">No exports yet</p>
+          <p className="t-body max-w-[46ch] text-ink-soft">
+            Every image you export lands here with the settings that made it. Reopen one to
+            pick up where you left off.
+          </p>
+          <Button variant="primary" onClick={onAdd}>
+            <NewShotIcon />
+            Add a screenshot
+          </Button>
+        </div>
+      ) : (
+      <div className={`grid auto-rows-[208px] gap-4 ${narrow ? 'grid-cols-2' : 'grid-cols-4'}`}>
         {visible.map((entry) => (
           <button
             key={entry.id}
@@ -101,20 +129,39 @@ export default function HistoryScreen({
           ⌘V to add
         </DashedTile>
       </div>
+      )}
 
-      <p className="t-ui text-dim">
-        {visible.length} of {entries.length} exports · {humanSize(bytes)} stored in this browser.
-        Clearing site data deletes them — there is no copy anywhere else.
-        {bytes > QUOTA_WARNING_BYTES && (
-          <>
-            {' '}
-            <button type="button" onClick={onPurge} className="text-danger hover:underline">
-              Purge the oldest
-            </button>{' '}
-            to get back under {humanSize(QUOTA_WARNING_BYTES)}.
-          </>
-        )}
-      </p>
+      {entries.length > 0 && visible.length === 0 && (
+        <p className="t-body text-ink-soft">
+          No exports match “{query}”.{' '}
+          <button
+            type="button"
+            onClick={() => {
+              setQuery('')
+              setFilter('all')
+            }}
+            className="text-accent hover:underline"
+          >
+            Clear the search
+          </button>
+        </p>
+      )}
+
+      {entries.length > 0 && (
+        <p className="t-ui text-dim">
+          {visible.length} of {entries.length} exports · {humanSize(bytes)} stored in this browser.
+          Clearing site data deletes them — there is no copy anywhere else.
+          {bytes > QUOTA_WARNING_BYTES && (
+            <>
+              {' '}
+              <button type="button" onClick={confirmPurge} className="text-danger hover:underline">
+                Delete the oldest exports
+              </button>{' '}
+              to get back under {humanSize(QUOTA_WARNING_BYTES)}.
+            </>
+          )}
+        </p>
+      )}
     </div>
   )
 }

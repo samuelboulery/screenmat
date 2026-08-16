@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { nextId } from '../lib/annotate.ts'
 import { copyScene, exportFilename, exportScene, humanSize } from '../lib/export.ts'
 import { makeThumbnail } from '../lib/image.ts'
@@ -29,6 +29,10 @@ export function useExport(
   const [status, setStatus] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+  // Deux copies rapprochées armaient deux minuteurs concurrents, et le dernier
+  // survivait au démontage.
+  const copiedTimer = useRef(0)
+  useEffect(() => () => window.clearTimeout(copiedTimer.current), [])
 
   const run = useCallback(
     async (scene: Scene, scale: number) => {
@@ -41,7 +45,11 @@ export function useExport(
         await archive(scene, scale, blob, styleId, remember)
       } catch (cause: unknown) {
         setStatus(null)
-        setError(cause instanceof Error ? cause.message : 'Export impossible')
+        setError(
+          cause instanceof Error
+            ? cause.message
+            : 'Export failed. Try a smaller scale or the PNG format.',
+        )
       }
     },
     [remember, styleId],
@@ -52,9 +60,14 @@ export function useExport(
     try {
       await copyScene(scene, scale)
       setCopied(true)
-      window.setTimeout(() => setCopied(false), COPIED_MS)
+      window.clearTimeout(copiedTimer.current)
+      copiedTimer.current = window.setTimeout(() => setCopied(false), COPIED_MS)
     } catch (cause: unknown) {
-      setError(cause instanceof Error ? cause.message : 'Copie impossible')
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : 'Copy failed. Export the file instead, or allow clipboard access.',
+      )
     }
   }, [])
 

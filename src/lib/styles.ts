@@ -28,6 +28,48 @@ export function exportStyle(style: Style): void {
   triggerDownload(new Blob([json], { type: 'application/json' }), styleFilename(style))
 }
 
+/**
+ * Un style relu d'IndexedDB a pu être écrit par une version antérieure de
+ * l'app : les champs ajoutés depuis (`saturation`, `contrast`…) y manquent. Un
+ * `undefined` qui traverse le rendu ressort en `rgba(NaN, NaN, NaN, …)`,
+ * `addColorStop` jette, et le canvas reste noir — appliquer un vieux style
+ * cassait l'écran. Le stockage local est une frontière comme une autre : ce qui
+ * en sort repasse par les mêmes bornes qu'un `.json` importé.
+ */
+export function normalizeStyle(style: Style): Style {
+  return {
+    ...style,
+    settings: parseSettings(style.settings),
+    palette: style.palette ? parsePalette(style.palette) : undefined,
+  }
+}
+
+/* --- Édition d'une palette figée ---------------------------------------- */
+
+/** Le rendu prend les couleurs en rotation ; huit suffisent largement, et
+ *  `parsePalette` coupe déjà là — au-delà, un `.json` réimporté perdrait ce
+ *  qu'on vient d'ajouter. */
+export const MAX_PALETTE_ACCENTS = 8
+
+export function withAccent(palette: Palette, color: string): Palette {
+  if (palette.accents.length >= MAX_PALETTE_ACCENTS) return palette
+  return { ...palette, accents: [...palette.accents, color] }
+}
+
+export function withoutAccent(palette: Palette, index: number): Palette {
+  return { ...palette, accents: palette.accents.filter((_, position) => position !== index) }
+}
+
+/** `index === -1` désigne la couleur de base, qui se change mais ne se retire
+ *  pas : le fond a besoin d'un aplat, toujours. */
+export function withColor(palette: Palette, index: number, color: string): Palette {
+  if (index < 0) return { ...palette, base: color }
+  return {
+    ...palette,
+    accents: palette.accents.map((current, position) => (position === index ? color : current)),
+  }
+}
+
 /* --- Import ------------------------------------------------------------- */
 
 /**
@@ -92,7 +134,7 @@ export function parsePalette(value: unknown): Palette | undefined {
   const accents = Array.isArray(value.accents)
     ? value.accents.filter((color): color is string => typeof color === 'string' && HEX.test(color))
     : []
-  return { base: value.base, accents: accents.slice(0, 8) }
+  return { base: value.base, accents: accents.slice(0, MAX_PALETTE_ACCENTS) }
 }
 
 function parseWatermark(value: unknown): Watermark | undefined {

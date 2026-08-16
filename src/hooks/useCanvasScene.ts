@@ -13,6 +13,9 @@ export type CanvasScene = {
   geometryRef: React.RefObject<Geometry | null>
   /** Rapport px CSS / px canvas, `0` tant que rien n'est rendu. */
   ratio: number
+  /** Message de la dernière exception de rendu, `null` si le dernier rendu a
+   *  abouti. Un canvas noir et muet ne dit rien de sa cause. */
+  error: string | null
 }
 
 /** Point du pointeur, en pixels du canvas de rendu. */
@@ -42,6 +45,7 @@ export function useCanvasScene(
   const geometryRef = useRef<Geometry | null>(null)
   const [cssWidth, setCssWidth] = useState(0)
   const [resized, setResized] = useState(0)
+  const [error, setError] = useState<string | null>(null)
 
   // Le redimensionnement du conteneur relance un rendu. L'observer vit dans son
   // propre effet, sinon il serait recréé à chaque mouvement de pointeur.
@@ -82,7 +86,18 @@ export function useCanvasScene(
       const width = Math.max(1, Math.min(fitted, BASE_WIDTH))
       const scale = (width * window.devicePixelRatio) / BASE_WIDTH
 
-      geometryRef.current = renderScene(context, scene, scale)
+      // Une exception ici tuait la frame en silence et laissait un canvas noir
+      // que rien ne distinguait d'un fond sombre. On la garde visible : à
+      // l'écran pour l'utilisateur, en console pour le diagnostic.
+      try {
+        geometryRef.current = renderScene(context, scene, scale)
+        setError(null)
+      } catch (cause: unknown) {
+        console.error('renderScene', cause)
+        setError(cause instanceof Error ? cause.message : 'Rendu impossible')
+        return
+      }
+
       canvas.style.width = `${width}px`
       canvas.style.height = `${width / aspect}px`
       setCssWidth(width)
@@ -99,5 +114,6 @@ export function useCanvasScene(
     boxRef,
     geometryRef,
     ratio: geometry && cssWidth > 0 ? cssWidth / geometry.width : 0,
+    error,
   }
 }

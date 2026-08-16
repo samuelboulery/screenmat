@@ -37,7 +37,7 @@ export function useImageInput(onImages: (images: HTMLImageElement[], files: File
 
   const accept = useCallback(async (files: File[]) => {
     if (files.length === 0) {
-      setError('Aucune image trouvée dans ce contenu')
+      setError('No image in there. Paste a screenshot, or drop a PNG, JPEG or WebP.')
       return
     }
     try {
@@ -45,7 +45,9 @@ export function useImageInput(onImages: (images: HTMLImageElement[], files: File
       setError(null)
       handler.current(images, files)
     } catch (cause: unknown) {
-      setError(cause instanceof Error ? cause.message : 'Import impossible')
+      setError(
+        cause instanceof Error ? cause.message : 'Couldn’t open that image. Try another file.',
+      )
     }
   }, [])
 

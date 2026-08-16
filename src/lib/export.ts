@@ -40,8 +40,16 @@ export function triggerDownload(blob: Blob, filename: string): void {
   link.href = url
   link.download = filename
   link.click()
-  URL.revokeObjectURL(url)
+  // Révoquer dans la foulée du clic coupe l'URL sous le téléchargement, qui la
+  // consomme de façon asynchrone : selon le navigateur, le fichier n'arrive
+  // jamais, et sans le moindre message.
+  // ponytail: délai fixe. Un `<iframe>` porteur du blob permettrait de révoquer
+  // sur son `load`, si un jour un export tarde plus que ça.
+  window.setTimeout(() => URL.revokeObjectURL(url), REVOKE_DELAY_MS)
 }
+
+/** De quoi laisser partir un gros export sur une machine chargée. */
+const REVOKE_DELAY_MS = 60_000
 
 /** `astonishing-lokum.netlify.app` → `astonishing-lokum-netlify-app`. */
 export function slug(url: string): string {

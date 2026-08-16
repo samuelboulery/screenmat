@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { parseStyle } from '../styles.ts'
+import {
+  MAX_PALETTE_ACCENTS,
+  normalizeStyle,
+  parseStyle,
+  withAccent,
+  withColor,
+  withoutAccent,
+} from '../styles.ts'
 import { DEFAULT_SETTINGS } from '../../types.ts'
 
 const wrap = (style: unknown) => JSON.stringify({ kind: 'shotframe-style', version: 1, style })
@@ -59,5 +66,62 @@ describe('parseStyle', () => {
       wrap({ name: 'x', watermark: { dataUrl: 'data:image/png;base64,AAAA', position: 'top-left' } }),
     )
     expect(ok.watermark?.position).toBe('top-left')
+  })
+})
+
+describe('normalizeStyle', () => {
+  it('complète un style écrit avant l’arrivée d’un réglage', () => {
+    // Tel qu'une version antérieure à `saturation`/`contrast` l'a persisté en
+    // IndexedDB. Sans complétion, `undefined` traverse le rendu et
+    // `addColorStop` reçoit `rgba(NaN, NaN, NaN, .75)` : canvas noir.
+    const { saturation: _s, contrast: _c, ...legacy } = DEFAULT_SETTINGS
+    const style = normalizeStyle({
+      id: 'legacy',
+      name: 'Legacy',
+      settings: legacy as typeof DEFAULT_SETTINGS,
+    })
+
+    expect(style.settings.saturation).toBe(DEFAULT_SETTINGS.saturation)
+    expect(style.settings.contrast).toBe(DEFAULT_SETTINGS.contrast)
+    expect(Number.isFinite(style.settings.saturation)).toBe(true)
+    expect(style.id).toBe('legacy')
+    expect(style.name).toBe('Legacy')
+  })
+
+  it('écarte une palette illisible plutôt que de la propager', () => {
+    const style = normalizeStyle({
+      id: 'x',
+      name: 'x',
+      settings: DEFAULT_SETTINGS,
+      palette: { base: 'not-a-color', accents: ['#ff0000'] },
+    })
+
+    expect(style.palette).toBeUndefined()
+  })
+})
+
+describe('édition d’une palette figée', () => {
+  const palette = { base: '#101010', accents: ['#ff0000', '#00ff00'] }
+
+  it('ajoute un accent, jusqu’au plafond', () => {
+    expect(withAccent(palette, '#0000ff').accents).toEqual(['#ff0000', '#00ff00', '#0000ff'])
+
+    const full = { base: '#101010', accents: Array(MAX_PALETTE_ACCENTS).fill('#ffffff') }
+    // Au-delà, un `.json` réimporté perdrait ce qu'on vient d'ajouter :
+    // `parsePalette` coupe au même plafond.
+    expect(withAccent(full, '#0000ff')).toBe(full)
+  })
+
+  it('retire un accent sans toucher à la base', () => {
+    const next = withoutAccent(palette, 0)
+    expect(next.accents).toEqual(['#00ff00'])
+    expect(next.base).toBe('#101010')
+  })
+
+  it('modifie un accent par son index, la base à -1', () => {
+    expect(withColor(palette, 1, '#0000ff').accents).toEqual(['#ff0000', '#0000ff'])
+    expect(withColor(palette, -1, '#0000ff').base).toBe('#0000ff')
+    // L'original n'a pas bougé.
+    expect(palette.accents).toEqual(['#ff0000', '#00ff00'])
   })
 })

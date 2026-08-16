@@ -173,7 +173,7 @@ function LayerRow({
         <input
           autoFocus
           defaultValue={node.name}
-          aria-label="Nom du calque"
+          aria-label="Layer name"
           className="t-ui min-w-0 flex-1 bg-transparent outline-none"
           onBlur={(event) => {
             onPatch(node.id, { name: event.target.value.trim() })

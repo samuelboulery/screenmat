@@ -56,7 +56,10 @@
   --color-hairline-strong: rgba(255, 255, 255, 0.1);
   --color-ink: #eceef2;
   --color-ink-soft: #9599a8;
-  --color-dim: #767a8c;
+  /* Mesuré, pas choisi à l'œil : #767a8c tombait à 4,45:1 sur `panel-solid` et
+     à 4,09:1 pour un placeholder sur `sunken`. #83879a est le plus petit pas
+     qui passe 4,5:1 sur tous ses fonds, repli opaque compris. */
+  --color-dim: #83879a;
   --color-accent: #7de2ff;
   --color-accent-2: #a378ff;
   --color-accent-ink: #cfe9ff;
@@ -161,8 +164,8 @@ body {
 }
 
 /* Échelle typographique. Deux familles : Space Grotesk pour ce qu'un humain
-   lit, JetBrains Mono pour ce qu'une machine a produit. Rien sous 10px, et
-   10px uniquement en mono majuscule espacé. */
+   lit, JetBrains Mono pour ce qu'une machine a produit. Rien sous 10px ; à
+   10px, mono seulement. */
 @utility t-display {
   font-size: 26px;
   font-weight: 600;
@@ -201,10 +204,12 @@ body {
   color: var(--color-dim);
 }
 
-/* Toléré uniquement en surimpression sur une vignette (métadonnée annexe). */
+/* Le pendant en casse naturelle de `t-mono-label` : une métadonnée qui garde
+   son nom de fichier tel quel ne s'écrit pas en majuscules. Même plancher de
+   10px — un nom de fichier posé sur une vignette se lit, il ne se devine pas. */
 @utility t-mono-micro {
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 10px;
 }
 
 /* Slider : piste 3px, remplissage en dégradé d'accent, poignée 11px pleine.

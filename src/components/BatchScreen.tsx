@@ -62,6 +62,8 @@ type BatchScreenProps = {
   onHarmonize: (harmonize: boolean) => void
   onAddShot: () => void
   onChangeStyle: () => void
+  /** Sous 1100 px : le panneau passe sous la grille au lieu d'être docké. */
+  narrow?: boolean
 }
 
 /**
@@ -86,16 +88,28 @@ export default function BatchScreen({
   onHarmonize,
   onAddShot,
   onChangeStyle,
+  narrow = false,
 }: BatchScreenProps) {
   const byShot = new Map(queue.map((item) => [item.shotId, item]))
   const progress = total > 0 ? (rendered / total) * 100 : 0
 
   return (
-    <div className="stage-glow absolute inset-x-0 top-[58px] bottom-0 flex overflow-hidden">
+    <div
+      className={`stage-glow absolute inset-x-0 top-[58px] bottom-0 flex overflow-hidden ${
+        narrow ? 'flex-col overflow-y-auto' : ''
+      }`}
+    >
       <div className="flex min-w-0 flex-1 flex-col gap-4 overflow-y-auto p-7">
         <div className="flex items-center gap-4">
           <MonoLabel>Queue</MonoLabel>
-          <div className="h-1 w-full max-w-[300px] overflow-hidden rounded-xs bg-white/[.09]">
+          <div
+            role="progressbar"
+            aria-label="Batch render progress"
+            aria-valuemin={0}
+            aria-valuemax={total}
+            aria-valuenow={rendered}
+            className="h-1 w-full max-w-[300px] overflow-hidden rounded-xs bg-white/[.09]"
+          >
             <div className="gradient-accent h-full" style={{ width: `${progress}%` }} />
           </div>
           <span className="font-mono text-[10px] text-dim">
@@ -103,7 +117,7 @@ export default function BatchScreen({
           </span>
         </div>
 
-        <div className="grid grid-cols-4 gap-4">
+        <div className={`grid gap-4 ${narrow ? 'grid-cols-2' : 'grid-cols-4'}`}>
           {shots.map((shot, index) => {
             const picked = selection.includes(shot.id)
             const item = byShot.get(shot.id)
@@ -116,21 +130,28 @@ export default function BatchScreen({
                 onClick={() => onToggleShot(shot.id)}
                 aria-pressed={picked}
                 className={`relative h-[148px] overflow-hidden rounded-lg border border-hairline text-left ${
-                  picked ? 'bg-sunken' : 'bg-white/[.04] opacity-60'
+                  picked ? 'bg-sunken' : 'bg-white/[.04]'
                 }`}
               >
-                <img src={shot.image.src} alt="" className="size-full object-cover" />
+                {/* L'atténuation ne porte que sur l'image : posée sur le bouton,
+                    elle emmenait le statut à 1,2:1 par-dessus un screenshot
+                    clair — soit le texte que cet écran existe pour donner. */}
+                <img
+                  src={shot.image.src}
+                  alt=""
+                  className={`size-full object-cover ${picked ? '' : 'opacity-50'}`}
+                />
 
                 <span
                   className={`absolute top-2.5 left-2.5 flex size-4 items-center justify-center rounded-xs ${
-                    picked ? 'bg-accent text-stage' : 'border-[1.5px] border-white/20'
+                    picked ? 'bg-accent text-stage' : 'border-[1.5px] border-white/40'
                   }`}
                 >
                   {picked && <CheckIcon className="size-3" />}
                 </span>
 
-                <span className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-stage/60 px-2.5 py-2 font-mono text-[9px]">
-                  <span className={picked ? 'text-ink' : 'text-dim'}>
+                <span className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-stage/85 px-2.5 py-2 font-mono text-[10px] text-ink">
+                  <span>
                     {String(index + 1).padStart(2, '0')} · {STATUS_LABEL[status]}
                   </span>
                   {item?.error && <WarningIcon className="size-3 text-danger" />}
@@ -164,7 +185,11 @@ export default function BatchScreen({
         </div>
       </div>
 
-      <Panel className="w-[316px] shrink-0 space-y-5 overflow-y-auto rounded-none border-0 border-l border-white/5 p-6">
+      <Panel
+        className={`space-y-5 overflow-y-auto rounded-none border-0 p-6 ${
+          narrow ? 'w-full border-t border-white/5' : 'w-[316px] shrink-0 border-l border-white/5'
+        }`}
+      >
         <Section title="Style applied" aside={<button type="button" onClick={onChangeStyle} className="t-ui-small text-accent hover:underline">Change</button>}>
           <div className="flex items-center gap-2.5">
             <span className="h-[22px] w-[30px] rounded-xs border border-hairline bg-sunken" />
@@ -209,8 +234,8 @@ export default function BatchScreen({
           <Segmented
             className="w-full"
             options={[
-              { value: 'webp', label: 'webp' },
-              { value: 'png', label: 'png' },
+              { value: 'webp', label: 'WebP' },
+              { value: 'png', label: 'PNG' },
             ]}
             value={format}
             onPick={onFormat}

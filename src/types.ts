@@ -237,7 +237,7 @@ export const DEFAULT_SETTINGS: Settings = {
   radius: 0.01,
   titleBar: true,
   theme: 'auto',
-  url: 'exemple.com',
+  url: 'example.com',
   blur: 8,
   shapes: 4,
   shapeOpacity: 0.75,

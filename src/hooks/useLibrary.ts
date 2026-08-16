@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import * as store from '../lib/store.ts'
-import { lastStyleId, rememberStyle } from '../lib/styles.ts'
+import { lastStyleId, normalizeStyle, rememberStyle } from '../lib/styles.ts'
 import type { HistoryEntry, Style } from '../types.ts'
 
 export type Library = {
@@ -40,7 +40,7 @@ export function useLibrary(): Library {
           store.historyBytes(),
         ])
         if (!alive) return
-        setStyles(saved)
+        setStyles(saved.map(normalizeStyle))
         setHistory(page)
         setBytes(total)
 

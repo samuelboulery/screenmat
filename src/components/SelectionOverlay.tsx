@@ -66,7 +66,10 @@ export default function SelectionOverlay({
             key={handle}
             role="presentation"
             onPointerDown={(event) => onGrab?.(handle, event)}
-            className="absolute size-[9px] -translate-x-1/2 -translate-y-1/2 rounded-xs border border-stage bg-accent"
+            // Le carré reste à 9 px — c'est la DA. La cible, elle, monte à 24 px
+            // par un pseudo-élément centré : en dessous, WCAG 2.5.8 n'est pas
+            // tenu et la poignée se rate à la souris comme au doigt.
+            className="absolute size-[9px] -translate-x-1/2 -translate-y-1/2 rounded-xs border border-stage bg-accent before:absolute before:-inset-[7.5px] before:content-['']"
             style={{
               left: point.x * ratio,
               top: point.y * ratio,

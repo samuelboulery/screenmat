@@ -13,7 +13,9 @@ import type {
   Style,
 } from '../types.ts'
 
-const FRAMES: Array<{ value: FrameStyle; label: string }> = [
+/** Exporté : l'écran Styles règle le même cadre, et la liste ne doit pas
+ *  exister en double. */
+export const FRAMES: Array<{ value: FrameStyle; label: string }> = [
   { value: 'browser', label: 'browser' },
   { value: 'macbook', label: 'mac' },
   { value: 'iphone', label: 'phone' },
@@ -58,6 +60,7 @@ type InspectorProps = {
   onCompose: (patch: Partial<Composition>) => void
   onApplyStyle: (id: string) => void
   onSaveStyle: () => void
+  onUpdateStyle: () => void
   onPickBackgroundImage: () => void
   /** Docké (écrans de gestion) plutôt que flottant au-dessus du canvas. */
   docked?: boolean
@@ -77,6 +80,7 @@ export default function Inspector({
   onCompose,
   onApplyStyle,
   onSaveStyle,
+  onUpdateStyle,
   onPickBackgroundImage,
   docked = false,
   offset = false,
@@ -116,7 +120,7 @@ export default function Inspector({
                     key={frame.value}
                     active={settings.frame === frame.value}
                     onClick={() => onChange({ frame: frame.value })}
-                    className="h-12 font-mono text-[9px]"
+                    className="h-12 font-mono text-[10px]"
                   >
                     <Icon />
                     {frame.label}
@@ -136,7 +140,7 @@ export default function Inspector({
                   tone="raised"
                   active={settings.ratio === ratio}
                   onClick={() => onChange({ ratio })}
-                  className="h-8 font-mono text-[9px]"
+                  className="h-8 font-mono text-[10px]"
                 >
                   {ratio}
                 </Tile>
@@ -166,6 +170,7 @@ export default function Inspector({
             activeStyleId={activeStyleId}
             onApplyStyle={onApplyStyle}
             onSaveStyle={onSaveStyle}
+            onUpdateStyle={onUpdateStyle}
           />
         </>
       )}
@@ -273,7 +278,7 @@ export default function Inspector({
                   key={item.value}
                   active={depth === item.value}
                   onClick={() => setDepth(item.value)}
-                  className="h-11 font-mono text-[9px]"
+                  className="h-11 font-mono text-[10px]"
                 >
                   {item.label}
                 </Tile>
@@ -361,7 +366,7 @@ export default function Inspector({
             type="text"
             value={settings.url}
             onChange={(event) => onChange({ url: event.target.value })}
-            placeholder="exemple.com"
+            placeholder="example.com"
             spellCheck={false}
             aria-label="URL shown in the title bar"
             className="w-full rounded-md border border-hairline bg-sunken px-3 py-2 font-mono text-[11px] text-ink placeholder:text-dim"

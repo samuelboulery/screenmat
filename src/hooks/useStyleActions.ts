@@ -10,6 +10,9 @@ export type StyleActions = {
   watermarkImage: HTMLImageElement | null
   apply: (id: string) => void
   save: () => void
+  /** Écrase le style actif avec les réglages courants. Sans lui, régler un
+   *  style dans l'éditeur ne mène nulle part : `save` crée toujours un doublon. */
+  update: () => void
   patch: (style: Style) => void
 }
 
@@ -57,7 +60,12 @@ export function useStyleActions(
     onSaved()
   }, [library, settings, onSaved])
 
+  const update = useCallback(() => {
+    if (!activeStyle) return
+    void library.saveStyle({ ...activeStyle, settings })
+  }, [activeStyle, library, settings])
+
   const patch = useCallback((next: Style) => void library.saveStyle(next), [library])
 
-  return { activeStyle, watermarkImage, apply, save, patch }
+  return { activeStyle, watermarkImage, apply, save, update, patch }
 }

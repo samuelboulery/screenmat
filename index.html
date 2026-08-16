@@ -4,6 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- Les deux polices du texte courant. Les sous-ensembles `-ext` attendent
+         d'être réclamés : les précharger retarderait ceux-ci. -->
+    <link rel="preload" as="font" type="font/woff2" href="/fonts/space-grotesk-latin.woff2" crossorigin />
+    <link rel="preload" as="font" type="font/woff2" href="/fonts/jetbrains-mono-latin.woff2" crossorigin />
     <title>shotframe</title>
     <meta name="description" content="Mise en scène de screenshots — frame navigateur et fond génératif, 100 % local." />
   </head>

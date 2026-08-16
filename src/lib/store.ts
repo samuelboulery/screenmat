@@ -122,7 +122,12 @@ export async function deleteHistory(id: string): Promise<void> {
   await run(BLOBS, 'readwrite', (store) => store.delete(id))
 }
 
-/** Poids cumulé déclaré des rendus. Suffisant pour l'avertissement de quota. */
+/** Poids cumulé déclaré des rendus. Suffisant pour l'avertissement de quota.
+ *
+ *  ponytail: `getAll()` désérialise aussi les vignettes, qui vivent dans la même
+ *  fiche — quelques mégaoctets de base64 pour faire une somme. IndexedDB ne sait
+ *  pas projeter un champ : sortir les vignettes vers `BLOBS` s'il faut y gagner,
+ *  ce qui est une migration de schéma, pas un réglage. */
 export async function historyBytes(): Promise<number> {
   const all = await run<HistoryMeta[]>(HISTORY, 'readonly', (store) => store.getAll())
   return all.reduce((total, entry) => total + entry.bytes, 0)

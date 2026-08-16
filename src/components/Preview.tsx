@@ -207,10 +207,52 @@ export default function Preview({
     })
   }
 
+  /**
+   * Un geste ne se traite qu'une fois par frame. Une souris à 1000 Hz émettait
+   * autant de `pointermove`, et chacun coûtait trois passes de rendu React —
+   * l'état du glissement, l'état du document, la pile d'annulation — pour un
+   * canvas qui, lui, ne se redessine que 60 fois par seconde.
+   *
+   * La frame en vol garde la fermeture du rendu où elle a été planifiée. C'est
+   * sans conséquence : tout ce qui bouge d'un `pointermove` à l'autre se lit
+   * dans une ref (`lastPoint`) ou se réécrit entièrement (`to`), et le reste du
+   * glissement — origine, cible, poignée — est fixé à sa saisie.
+   */
+  const pending = useRef<{ point: Point; shift: boolean } | null>(null)
+  const frame = useRef<number | null>(null)
+
+  const flushMove = () => {
+    if (frame.current !== null) {
+      cancelAnimationFrame(frame.current)
+      frame.current = null
+    }
+    const next = pending.current
+    pending.current = null
+    if (next) applyMove(next.point, next.shift)
+  }
+
+  useEffect(() => () => {
+    if (frame.current !== null) cancelAnimationFrame(frame.current)
+  }, [])
+
   const onPointerMove = (event: React.PointerEvent) => {
     if (!drag || !geometry) return
     const point = pointAt(event, canvasRef.current, geometry)
     if (!point) return
+
+    pending.current = { point, shift: event.shiftKey }
+    if (frame.current === null) {
+      frame.current = requestAnimationFrame(() => {
+        frame.current = null
+        const next = pending.current
+        pending.current = null
+        if (next) applyMove(next.point, next.shift)
+      })
+    }
+  }
+
+  const applyMove = (point: Point, shift: boolean) => {
+    if (!drag) return
 
     // La position courante vit dans une ref, pas seulement dans l'état : deux
     // `pointermove` dans la même frame liraient le même état React, et un geste
@@ -220,7 +262,7 @@ export default function Preview({
 
     if (drag.mode === 'draw') {
       // L'aimantation suit l'appui et le relâchement de ⇧ en cours de tracé.
-      setDrag({ ...drag, to: point, shift: event.shiftKey })
+      setDrag({ ...drag, to: point, shift })
       return
     }
     setDrag({ ...drag, to: point })
@@ -247,11 +289,15 @@ export default function Preview({
     onResize?.(
       drag.target.shotId,
       drag.id,
-      applyHandle(drag.origin, drag.handle, delta, event.shiftKey, drag.kind),
+      applyHandle(drag.origin, drag.handle, delta, shift, drag.kind),
     )
   }
 
   const onPointerUp = () => {
+    // Le dernier point ne doit pas mourir dans une frame jamais tirée : sans ça,
+    // un geste bref relâché avant la première frame se croirait long de zéro.
+    flushMove()
+
     const end = lastPoint.current
     lastPoint.current = null
     if (!drag) return

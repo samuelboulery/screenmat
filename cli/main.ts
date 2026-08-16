@@ -10,9 +10,14 @@
 import { parseArgs } from 'node:util'
 import { basename, extname, join } from 'node:path'
 import { readFile, writeFile } from 'node:fs/promises'
-import { inspect, render, type RenderResult } from './api.ts'
 import { STYLES_DIR, listStyles } from './styles-dir.ts'
+import type { RenderResult } from './api.ts'
 import type { Settings } from '../src/types.ts'
+
+/** `api.ts` tire `@napi-rs/canvas`, dont le chargement de l'addon natif coûte
+ *  une centaine de millisecondes. `--help` et `styles` n'en ont pas besoin :
+ *  l'import attend d'avoir une image à rendre. */
+const engine = () => import('./api.ts')
 
 const OPTIONS = {
   out: { type: 'string', short: 'o' },
@@ -111,6 +116,7 @@ function humanize(payload: Record<string, unknown>): string {
 }
 
 async function runSpec(specPath: string, flags: Flags): Promise<void> {
+  const { render } = await engine()
   const spec = JSON.parse(await readFile(specPath, 'utf8')) as Record<string, unknown>
   const result = await render({
     ...spec,
@@ -160,6 +166,7 @@ async function main(): Promise<void> {
   if (command === 'inspect') {
     const target = rest[0]
     if (!target) throw new Error('`inspect` attend le chemin d’une image')
+    const { inspect } = await engine()
     report(json, { ...(await inspect(target, settingsFromFlags(flags))), input: target })
     return
   }
@@ -169,6 +176,7 @@ async function main(): Promise<void> {
     return
   }
 
+  const { render } = await engine()
   for (const input of positionals) {
     const result = await render({
       input,

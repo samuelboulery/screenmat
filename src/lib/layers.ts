@@ -1,6 +1,6 @@
 import { badgeNumbers, badgeRadius, normalizeRect, toLength, toPixels, type Rect } from './annotate.ts'
 import { css, hexToRgb, inkOn } from './color.ts'
-import { frameRadius, windowPath, windowTransform } from './frame.ts'
+import { frameRadius, screenRect, windowPath, windowTransform, type ScreenRect } from './frame.ts'
 import type { Geometry, WindowBox } from './render.ts'
 import type { Annotation, LabelStyle, Settings } from '../types.ts'
 
@@ -16,69 +16,107 @@ const STAGE = 'rgba(7, 7, 10, 0.78)'
 const REDACTION_BLOCKS = 14
 const PIXEL_BLOCKS = 8
 
+/** Aplat des zones masquées, et de ce qui déborde du screenshot. */
+const REDACTED = '#0B0B0F'
+
 /**
  * Cuit les zones floutées dans les pixels, sous le clip de la fenêtre. Jamais en
  * CSS : sinon l'export ne correspondrait plus à la preview et, pire, la donnée
  * masquée resterait lisible dans le fichier.
  *
- * ponytail: le clip suit la rotation de la fenêtre, mais la zone floutée est
- * échantillonnée sans elle. À ±16° l'écart est invisible ; passer par un rendu
- * hors écran de la fenêtre non tournée s'il devient gênant.
+ * L'échantillon vient du **screenshot source**, jamais de `ctx.canvas` : relire
+ * le canvas de destination force le rasteriseur à vider toute la frame en cours,
+ * puis à en rasteriser la suite une seconde fois — une frame passait de 3 ms à
+ * 372 ms dès qu'une seule zone existait. Y échantillonner permet en prime de
+ * dessiner sous `windowTransform`, donc de suivre la rotation de la fenêtre.
  */
 export function renderRedactions(
   ctx: CanvasRenderingContext2D,
   box: WindowBox,
   geometry: Geometry,
+  image: HTMLImageElement,
   annotations: readonly Annotation[],
   settings: Settings,
 ): void {
   const zones = annotations.filter((annotation) => annotation.kind === 'redaction')
   if (zones.length === 0) return
 
+  const screen = screenRect(box, geometry, settings)
+
   ctx.save()
   windowTransform(ctx, box)
   windowPath(ctx, box, frameRadius(box, geometry, settings))
   ctx.clip()
-  // Le chemin de clip est figé en espace écran : on redessine sans transformation.
-  ctx.setTransform(1, 0, 0, 1, 0, 0)
 
   for (const zone of zones) {
-    const { x, y, w, h } = normalizeRect(toPixels(zone.rect, box))
-    if (w < 1 || h < 1) continue
+    const rect = normalizeRect(toPixels(zone.rect, box))
+    if (rect.w < 1 || rect.h < 1) continue
 
-    if (zone.redaction === 'solid') {
-      ctx.fillStyle = '#0B0B0F'
-      ctx.fillRect(x, y, w, h)
-    } else {
-      downsample(ctx, x, y, w, h, zone.redaction === 'pixel' ? PIXEL_BLOCKS : REDACTION_BLOCKS)
+    const inside = zone.redaction === 'solid' ? null : intersect(rect, screen)
+
+    // Hors du screenshot — barre de titre, bezel — il n'y a rien à
+    // échantillonner : cette part se couvre de l'aplat, comme le mode `solid`.
+    if (!inside || inside.w !== rect.w || inside.h !== rect.h) {
+      ctx.fillStyle = REDACTED
+      ctx.fillRect(rect.x, rect.y, rect.w, rect.h)
+    }
+
+    if (inside) {
+      downsample(
+        ctx,
+        image,
+        screen,
+        inside,
+        zone.redaction === 'pixel' ? PIXEL_BLOCKS : REDACTION_BLOCKS,
+      )
     }
   }
 
   ctx.restore()
 }
 
+/** Part de `rect` qui tombe dans le screenshot, `null` si elle est vide. */
+function intersect(rect: Rect, screen: ScreenRect): Rect | null {
+  const x = Math.max(rect.x, screen.x)
+  const y = Math.max(rect.y, screen.y)
+  const right = Math.min(rect.x + rect.w, screen.x + screen.width)
+  const bottom = Math.min(rect.y + rect.h, screen.y + screen.height)
+  if (right - x < 1 || bottom - y < 1) return null
+  return { x, y, w: right - x, h: bottom - y }
+}
+
 /** Réduit puis réagrandit la zone : flou (lissé) ou mosaïque (non lissé). */
 function downsample(
   ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
+  image: HTMLImageElement,
+  screen: ScreenRect,
+  rect: Rect,
   blocks: number,
 ): void {
+  // Le screenshot est posé dans `screen` : la zone s'y relit en proportion.
+  const scaleX = image.naturalWidth / screen.width
+  const scaleY = image.naturalHeight / screen.height
+  const source = {
+    x: (rect.x - screen.x) * scaleX,
+    y: (rect.y - screen.y) * scaleY,
+    w: rect.w * scaleX,
+    h: rect.h * scaleY,
+  }
+  if (source.w < 1 || source.h < 1) return
+
   const small = document.createElement('canvas')
   small.width = Math.max(1, Math.round(blocks))
-  small.height = Math.max(1, Math.round((blocks * h) / w))
+  small.height = Math.max(1, Math.round((blocks * rect.h) / rect.w))
 
   const layer = small.getContext('2d')
   if (!layer) return
 
   layer.imageSmoothingEnabled = blocks > PIXEL_BLOCKS
-  layer.drawImage(ctx.canvas, x, y, w, h, 0, 0, small.width, small.height)
+  layer.drawImage(image, source.x, source.y, source.w, source.h, 0, 0, small.width, small.height)
 
   ctx.save()
   ctx.imageSmoothingEnabled = blocks > PIXEL_BLOCKS
-  ctx.drawImage(small, 0, 0, small.width, small.height, x, y, w, h)
+  ctx.drawImage(small, 0, 0, small.width, small.height, rect.x, rect.y, rect.w, rect.h)
   ctx.restore()
 }
 

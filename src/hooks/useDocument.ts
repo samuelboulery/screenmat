@@ -1,5 +1,10 @@
 import { useCallback, useState } from 'react'
 import { DEFAULT_COMPOSITION, DEFAULT_SETTINGS, type Composition, type Settings } from '../types.ts'
+import { supportedDefaults } from '../lib/export.ts'
+
+/** Le défaut est WebP — dix fois plus léger à grain égal. Un navigateur sans
+ *  encodeur WebP repart en PNG plutôt que d'échouer à chaque export. */
+const defaults = (): Settings => supportedDefaults(DEFAULT_SETTINGS)
 
 /**
  * L'état du document en cours d'édition : ce qui se règle, par opposition à ce
@@ -10,7 +15,7 @@ import { DEFAULT_COMPOSITION, DEFAULT_SETTINGS, type Composition, type Settings 
  * `patch` partiel ne saurait pas retirer une clé.
  */
 export function useDocument() {
-  const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS)
+  const [settings, setSettings] = useState<Settings>(defaults)
   const [composition, setComposition] = useState<Composition>(DEFAULT_COMPOSITION)
   const [scale, setScale] = useState(2)
   const [backgroundImage, setBackgroundImage] = useState<HTMLImageElement | null>(null)
@@ -28,7 +33,7 @@ export function useDocument() {
   /** Repartir de zéro. L'image de fond part avec : elle n'est pas dans
    *  l'instantané d'annulation, c'est ce qui vaut sa confirmation à l'appelant. */
   const reset = useCallback(() => {
-    setSettings(DEFAULT_SETTINGS)
+    setSettings(defaults())
     setComposition(DEFAULT_COMPOSITION)
     setBackgroundImage(null)
     setScale(2)

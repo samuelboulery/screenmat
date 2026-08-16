@@ -66,8 +66,9 @@ export function toDataUrl(blob: Blob): Promise<string> {
 }
 
 /** Vignette JPEG légère pour l'historique : la grille en affiche des dizaines,
- *  il ne faut surtout pas y charger le rendu plein format. */
-export function makeThumbnail(source: CanvasImageSource, width = 320): string {
+ *  il ne faut surtout pas y charger le rendu plein format. 240 px couvre la
+ *  tuile de 208 px de la grille, y compris sur un écran dense. */
+export function makeThumbnail(source: CanvasImageSource, width = 240): string {
   const canvas = document.createElement('canvas')
   const ratio = sourceHeight(source) / sourceWidth(source)
   canvas.width = width

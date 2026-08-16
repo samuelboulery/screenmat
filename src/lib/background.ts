@@ -63,11 +63,99 @@ export function backgroundColors(palette: Palette, settings: Settings): Backgrou
   return { fill: grade(seed, target), blobs }
 }
 
+/** Identité d'une image de fond, sans dépendre d'un `src` lisible : le shim
+ *  Node n'en expose pas de comparable. */
+const imageIds = new WeakMap<object, number>()
+let nextImageId = 0
+
+function imageId(image?: HTMLImageElement): number {
+  if (!image) return 0
+  const known = imageIds.get(image)
+  if (known !== undefined) return known
+  nextImageId += 1
+  imageIds.set(image, nextImageId)
+  return nextImageId
+}
+
+/**
+ * Tout ce dont le fond dépend, et rien d'autre. Un champ oublié ici fige le
+ * fond : le réglage bouge, l'image ne suit pas. `background.test.ts` tient cette
+ * liste — toute entrée ajoutée à `Settings` qui touche au fond doit s'y voir.
+ */
+function backgroundKey(
+  geometry: Geometry,
+  palette: Palette,
+  settings: Settings,
+  scale: number,
+  image?: HTMLImageElement,
+): string {
+  return [
+    geometry.width,
+    geometry.height,
+    scale,
+    settings.background,
+    settings.blur,
+    settings.shapes,
+    settings.shapeOpacity,
+    settings.saturation,
+    settings.contrast,
+    settings.grain,
+    settings.seed,
+    palette.base,
+    palette.accents.join(','),
+    imageId(image),
+  ].join('|')
+}
+
+/** Dernier fond peint. Une seule entrée : pendant un geste, c'est toujours le
+ *  même fond qu'on redemande, et garder plus coûterait de la mémoire pour rien. */
+let cache: { key: string; canvas: HTMLCanvasElement } | null = null
+
+/**
+ * Le fond, mis en cache d'une frame à l'autre. Il ne dépend ni des fenêtres ni
+ * des calques : déplacer une annotation ou tirer une poignée ne le change pas,
+ * et le repeindre à chaque frame revenait à refaire l'aplat, les taches et le
+ * grain plein canvas pour rien.
+ */
+export function renderBackground(
+  ctx: CanvasRenderingContext2D,
+  geometry: Geometry,
+  palette: Palette,
+  settings: Settings,
+  scale: number,
+  image?: HTMLImageElement,
+): void {
+  const key = backgroundKey(geometry, palette, settings, scale, image)
+  if (cache?.key === key) {
+    ctx.drawImage(cache.canvas, 0, 0)
+    return
+  }
+
+  // Le canvas se réutilise tant que la taille tient : un lot enchaîne des fonds
+  // de mêmes dimensions, et réallouer à chaque item ne servirait à rien.
+  const canvas =
+    cache && cache.canvas.width === geometry.width && cache.canvas.height === geometry.height
+      ? cache.canvas
+      : document.createElement('canvas')
+  canvas.width = geometry.width
+  canvas.height = geometry.height
+
+  const layer = canvas.getContext('2d')
+  if (!layer) {
+    paintBackground(ctx, geometry, palette, settings, scale, image)
+    return
+  }
+
+  paintBackground(layer, geometry, palette, settings, scale, image)
+  cache = { key, canvas }
+  ctx.drawImage(canvas, 0, 0)
+}
+
 /**
  * Dessine le fond selon le preset choisi, puis le grain. Le grain est commun aux
  * quatre presets : c'est lui qui empêche un aplat de ressembler à du vide.
  */
-export function renderBackground(
+function paintBackground(
   ctx: CanvasRenderingContext2D,
   geometry: Geometry,
   palette: Palette,

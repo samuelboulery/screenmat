@@ -102,3 +102,54 @@ describe('inspect', () => {
     expect(result.screen.y).toBe(0)
   })
 })
+
+describe('render — cache du fond', () => {
+  /** Chaque réglage qui touche au fond doit invalider le cache. Un champ oublié
+   *  dans la clé fige le fond : le curseur bouge, l'image ne suit pas. */
+  const variantes = {
+    background: { background: 'gradient' },
+    blur: { blur: 3 },
+    shapes: { shapes: 9 },
+    shapeOpacity: { shapeOpacity: 0.3 },
+    saturation: { saturation: 0.4 },
+    contrast: { contrast: 1.6 },
+    grain: { grain: 0.9 },
+    seed: { seed: 42 },
+  } as const
+
+  const base = { seed: 5 } as const
+
+  it('rejoue le même fichier quand rien ne change', async () => {
+    const a = await render({ input: shot, settings: base, scale: 1 })
+    const b = await render({ input: shot, settings: base, scale: 1 })
+    expect(a.buffer.equals(b.buffer)).toBe(true)
+  })
+
+  for (const [nom, patch] of Object.entries(variantes)) {
+    it(`invalide le cache quand \`${nom}\` change`, async () => {
+      const plain = await render({ input: shot, settings: base, scale: 1 })
+      const changed = await render({ input: shot, settings: { ...base, ...patch }, scale: 1 })
+      expect(changed.buffer.equals(plain.buffer)).toBe(false)
+    })
+  }
+
+  it('ne rejoue pas le fond d’un autre screenshot', async () => {
+    // La palette entre dans la clé : deux images de couleurs différentes ne
+    // doivent pas partager leur fond.
+    const other = fixture(400, 300)
+    const green = createCanvas(400, 300)
+    const ctx = green.getContext('2d')
+    ctx.fillStyle = '#16a34a'
+    ctx.fillRect(0, 0, 400, 300)
+
+    const a = await render({ input: other, settings: base, scale: 1 })
+    const b = await render({ input: green.toBuffer('image/png'), settings: base, scale: 1 })
+    expect(a.buffer.equals(b.buffer)).toBe(false)
+  })
+
+  it('change de fond avec l’échelle, pas seulement de taille', async () => {
+    const one = await render({ input: shot, settings: base, scale: 1 })
+    const two = await render({ input: shot, settings: base, scale: 2 })
+    expect(two.width).toBe(one.width * 2)
+  })
+})

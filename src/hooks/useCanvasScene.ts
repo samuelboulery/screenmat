@@ -22,6 +22,35 @@ export type CanvasScene = {
   error: string | null
 }
 
+/** Deux géométries qui décrivent le même layout. Comparaison de valeurs et non
+ *  de références : `computeGeometry` est pure et rend un objet neuf à chaque
+ *  appel, même quand rien n'a changé. */
+function sameGeometry(a: Geometry | null, b: Geometry | null): boolean {
+  if (a === b) return true
+  if (!a || !b) return false
+  if (
+    a.width !== b.width ||
+    a.height !== b.height ||
+    a.radius !== b.radius ||
+    a.titleBar !== b.titleBar ||
+    a.windows.length !== b.windows.length
+  ) {
+    return false
+  }
+
+  return a.windows.every((box, index) => {
+    const other = b.windows[index]
+    return (
+      box.x === other.x &&
+      box.y === other.y &&
+      box.width === other.width &&
+      box.height === other.height &&
+      box.rotateY === other.rotateY &&
+      box.shot === other.shot
+    )
+  })
+}
+
 /** Point du pointeur, en pixels du canvas de rendu. */
 export function pointAt(
   event: React.PointerEvent,
@@ -106,7 +135,10 @@ export function useCanvasScene(
       canvas.style.width = `${width}px`
       canvas.style.height = `${width / aspect}px`
       setCssWidth(width)
-      setGeometry(geometryRef.current)
+      // `computeGeometry` rend un objet neuf à chaque dessin : le publier tel
+      // quel forçait un rendu React de plus par frame, y compris quand rien
+      // n'avait bougé.
+      setGeometry((current) => (sameGeometry(current, geometryRef.current) ? current : geometryRef.current))
       onGeometry?.(geometryRef.current)
     }
 

@@ -60,6 +60,41 @@ export function chromeColors(palette: Palette, theme: Settings['theme']): Chrome
       }
 }
 
+/** Rectangle occupé par le screenshot dans sa fenêtre, en pixels du canvas et
+ *  dans le repère non tourné de la fenêtre. */
+export type ScreenRect = { x: number; y: number; width: number; height: number }
+
+/**
+ * Où le screenshot atterrit dans sa fenêtre. Source unique : le cadre le
+ * dessine ici, le floutage y échantillonne, et `inspect()` le publie aux
+ * machines. Recalculer ce rectangle ailleurs, c'est le voir diverger — c'est
+ * exactement ce qui faisait ignorer le bezel à `inspect()`.
+ */
+export function screenRect(
+  box: WindowBox,
+  geometry: Geometry,
+  settings: Settings,
+): ScreenRect {
+  if (settings.frame === 'macbook' || settings.frame === 'iphone') {
+    const bezel = (settings.frame === 'macbook' ? MACBOOK_BEZEL : IPHONE_BEZEL) * box.width
+    return {
+      x: box.x + bezel,
+      y: box.y + bezel,
+      width: Math.max(1, box.width - 2 * bezel),
+      height: Math.max(1, box.height - 2 * bezel),
+    }
+  }
+
+  // `geometry.titleBar` vaut déjà 0 hors du cadre navigateur ou barre masquée.
+  const bar = geometry.titleBar
+  return {
+    x: box.x,
+    y: box.y + bar,
+    width: box.width,
+    height: Math.max(1, box.height - bar),
+  }
+}
+
 /** Rayon effectif d'une fenêtre : les cadres d'appareil imposent le leur. */
 export function frameRadius(box: WindowBox, geometry: Geometry, settings: Settings): number {
   if (settings.frame === 'macbook') return MACBOOK_RADIUS * box.width
@@ -170,12 +205,13 @@ export function renderFrame(
   windowPath(ctx, box, radius)
   ctx.clip()
 
-  if (settings.frame === 'macbook') drawDeviceShell(ctx, box, image, 'macbook')
-  else if (settings.frame === 'iphone') drawDeviceShell(ctx, box, image, 'iphone')
-  else {
-    const bar = settings.frame === 'browser' ? geometry.titleBar : 0
-    ctx.drawImage(image, box.x, box.y + bar, box.width, box.height - bar)
-    if (bar > 0) drawTitleBar(ctx, box, bar, chrome, settings.url)
+  const screen = screenRect(box, geometry, settings)
+
+  if (settings.frame === 'macbook' || settings.frame === 'iphone') {
+    drawDeviceShell(ctx, box, screen, image, settings.frame)
+  } else {
+    ctx.drawImage(image, screen.x, screen.y, screen.width, screen.height)
+    if (geometry.titleBar > 0) drawTitleBar(ctx, box, geometry.titleBar, chrome, settings.url)
   }
 
   ctx.restore()
@@ -188,16 +224,11 @@ export function renderFrame(
 function drawDeviceShell(
   ctx: CanvasRenderingContext2D,
   box: WindowBox,
+  screen: ScreenRect,
   image: HTMLImageElement,
   kind: 'macbook' | 'iphone',
 ): void {
   const bezel = (kind === 'macbook' ? MACBOOK_BEZEL : IPHONE_BEZEL) * box.width
-  const screen = {
-    x: box.x + bezel,
-    y: box.y + bezel,
-    width: Math.max(1, box.width - 2 * bezel),
-    height: Math.max(1, box.height - 2 * bezel),
-  }
 
   ctx.fillStyle = '#111114'
   ctx.fillRect(box.x, box.y, box.width, box.height)

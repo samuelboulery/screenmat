@@ -1,7 +1,7 @@
 import { harmonizePalettes } from './palette.ts'
 import { renderScene } from './render.ts'
 import { makeZip, type ZipEntry } from './zip.ts'
-import type { Format, Palette, Ratio, Scene, Shot } from '../types.ts'
+import type { Format, Palette, Ratio, Scene, Settings, Shot } from '../types.ts'
 
 const MIME: Record<Format, string> = {
   png: 'image/png',
@@ -10,6 +10,25 @@ const MIME: Record<Format, string> = {
 
 /** Assez haut pour qu'aucun artefact ne soit visible sur un aplat dégradé. */
 const WEBP_QUALITY = 0.92
+
+/** Ce navigateur sait-il encoder du WebP. Sondé une fois : un canvas de 1 px
+ *  qui ne sait pas répond en PNG. Sans ça, un défaut WebP casserait chaque
+ *  export là où l'encodeur manque, au lieu d'y peser dix fois moins. */
+let webp: boolean | null = null
+
+export function supportsWebp(): boolean {
+  if (webp !== null) return webp
+  const canvas = document.createElement('canvas')
+  canvas.width = 1
+  canvas.height = 1
+  webp = canvas.toDataURL(MIME.webp).startsWith(`data:${MIME.webp}`)
+  return webp
+}
+
+/** Les réglages par défaut tels que ce navigateur peut vraiment les tenir. */
+export function supportedDefaults(settings: Settings): Settings {
+  return settings.format === 'webp' && !supportsWebp() ? { ...settings, format: 'png' } : settings
+}
 
 export function canvasToBlob(canvas: HTMLCanvasElement, format: Format): Promise<Blob> {
   return new Promise((resolve, reject) => {
@@ -178,15 +197,29 @@ export type BatchProgress = {
 }
 
 /**
- * Rend une file d'attente séquentiellement et empaquette le résultat.
+ * Encodages menés de front. Mesuré à l'échelle 3 : le rendu d'un item coûte
+ * 36 ms, son encodage PNG 1 228 ms — soit 97 % du temps d'un lot, et
+ * `canvas.toBlob` l'exécute déjà hors du thread principal. Les enchaîner
+ * laissait donc le processeur inoccupé l'essentiel du temps.
  *
- * Le rendu reste dans le thread principal, mais rend la main entre chaque item
- * (`yieldToBrowser`) pour que l'UI ne gèle pas : 18 fichiers en 3× bloqueraient
- * plusieurs secondes d'affilée. `shouldCancel` est consulté avant chaque item.
+ * ponytail: trois de front, parce que chaque item en vol retient son canvas —
+ * 69 Mo à l'échelle 3. Monter ce nombre demande de mesurer la mémoire, pas
+ * seulement le temps.
+ */
+const CONCURRENT_ENCODES = 3
+
+/**
+ * Rend une file d'attente et empaquette le résultat.
  *
- * ponytail: un Worker + `OffscreenCanvas` supprimerait complètement les à-coups.
- * Il faudrait y transférer les images décodées et y porter `renderScene` ;
- * à faire si la file dépasse la centaine d'items.
+ * Le rendu de chaque item reste synchrone et dans le thread principal — 36 ms,
+ * et l'ordre garantit que le cache de fond sert quand deux items partagent leurs
+ * réglages. Ce sont les encodages qui se recouvrent. La main est rendue entre
+ * chaque item (`yieldToBrowser`) et `shouldCancel` consulté avant chacun.
+ *
+ * Un Worker + `OffscreenCanvas` n'est PAS la réponse : il déplacerait les 3 %
+ * qui ne sont pas déjà hors du fil principal, au prix du portage de
+ * `renderScene`. Mesuré, un lot de 12 items en 3× ne produit aucune tâche
+ * longue — l'UI ne gèle pas, elle attend l'encodeur.
  */
 export async function runBatch(
   jobs: readonly BatchJob[],
@@ -196,21 +229,44 @@ export async function runBatch(
     onItem?: (shotId: string, blob: Blob) => void
   } = {},
 ): Promise<Blob> {
-  const entries: ZipEntry[] = []
+  // Indexé plutôt qu'empilé : les encodages finissent dans le désordre, l'archive
+  // doit rester dans celui de la file.
+  const entries: (ZipEntry | undefined)[] = new Array(jobs.length)
+  const running = new Set<Promise<void>>()
+  // Une erreur ne doit ni se perdre ni se signaler deux fois : un `throw` depuis
+  // un encodage en vol n'a personne pour l'attendre au moment où il tombe.
+  let failure: unknown = null
 
   for (const [index, job] of jobs.entries()) {
-    if (options.shouldCancel?.()) break
+    if (options.shouldCancel?.() || failure) break
 
     options.onProgress?.({ index, total: jobs.length, shotId: job.shotId, name: job.name })
     await yieldToBrowser()
+    if (running.size >= CONCURRENT_ENCODES) await Promise.race(running)
 
-    const blob = await renderToBlob(job.scene, job.scale)
-    const filename = batchFilename(job.name, job.ratio, job.scale, job.scene.settings.format)
-    entries.push({ name: filename, data: new Uint8Array(await blob.arrayBuffer()) })
-    options.onItem?.(job.shotId, blob)
+    // Le corps s'exécute jusqu'au premier `await` : le rendu, lui, reste bien
+    // sérialisé ici, seul l'encodage part en parallèle.
+    const task = (async () => {
+      try {
+        const blob = await renderToBlob(job.scene, job.scale)
+        const filename = batchFilename(job.name, job.ratio, job.scale, job.scene.settings.format)
+        entries[index] = { name: filename, data: new Uint8Array(await blob.arrayBuffer()) }
+        options.onItem?.(job.shotId, blob)
+      } catch (cause: unknown) {
+        failure ??= cause
+      }
+    })()
+
+    running.add(task)
+    // Le corps rattrape tout : cette promesse ne rejette jamais, la retirer du
+    // lot suffit.
+    void task.then(() => running.delete(task))
   }
 
-  return makeZip(entries)
+  await Promise.all(running)
+  if (failure) throw failure
+
+  return makeZip(entries.filter((entry): entry is ZipEntry => entry !== undefined))
 }
 
 function yieldToBrowser(): Promise<void> {

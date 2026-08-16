@@ -2,7 +2,7 @@
 {
   "id": "T-0071",
   "titre": "Juger le worker de lot, et recouvrir les encodages",
-  "colonne": "en-cours",
+  "colonne": "fait",
   "priorite": "moyenne",
   "charge": "s",
   "tags": [
@@ -10,7 +10,7 @@
     "export"
   ],
   "cree": "2026-08-16",
-  "maj": "2026-08-16",
+  "maj": "2026-08-17",
   "epic": "T-0062",
   "plan": "2026-08-16-shotframe-audit-d-optimisation-et-plan-de-correction.md"
 }

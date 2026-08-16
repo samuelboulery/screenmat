@@ -2,7 +2,7 @@
 {
   "id": "T-0069",
   "titre": "Alléger le contexte résident : CLAUDE.md et skills",
-  "colonne": "en-cours",
+  "colonne": "fait",
   "priorite": "haute",
   "charge": "m",
   "tags": [
@@ -10,7 +10,7 @@
     "docs"
   ],
   "cree": "2026-08-16",
-  "maj": "2026-08-16",
+  "maj": "2026-08-17",
   "epic": "T-0062",
   "plan": "2026-08-16-shotframe-audit-d-optimisation-et-plan-de-correction.md"
 }

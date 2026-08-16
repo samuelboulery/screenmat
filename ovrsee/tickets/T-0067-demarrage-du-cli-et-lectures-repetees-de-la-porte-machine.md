@@ -2,7 +2,7 @@
 {
   "id": "T-0067",
   "titre": "Démarrage du CLI et lectures répétées de la porte machine",
-  "colonne": "en-cours",
+  "colonne": "fait",
   "priorite": "moyenne",
   "charge": "s",
   "tags": [
@@ -11,7 +11,7 @@
     "mcp"
   ],
   "cree": "2026-08-16",
-  "maj": "2026-08-16",
+  "maj": "2026-08-17",
   "epic": "T-0062",
   "plan": "2026-08-16-shotframe-audit-d-optimisation-et-plan-de-correction.md"
 }

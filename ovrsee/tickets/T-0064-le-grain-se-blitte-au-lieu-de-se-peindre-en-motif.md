@@ -2,7 +2,7 @@
 {
   "id": "T-0064",
   "titre": "Le grain se blitte au lieu de se peindre en motif",
-  "colonne": "en-cours",
+  "colonne": "fait",
   "priorite": "haute",
   "charge": "s",
   "tags": [
@@ -10,7 +10,7 @@
     "rendu"
   ],
   "cree": "2026-08-16",
-  "maj": "2026-08-16",
+  "maj": "2026-08-17",
   "epic": "T-0062",
   "plan": "2026-08-16-shotframe-audit-d-optimisation-et-plan-de-correction.md"
 }

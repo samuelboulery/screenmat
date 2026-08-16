@@ -2,7 +2,7 @@
 {
   "id": "T-0062",
   "titre": "Passe d'optimisation mesurée : rendu, machine et tokens",
-  "colonne": "en-cours",
+  "colonne": "fait",
   "priorite": "haute",
   "charge": "xl",
   "type": "epic",
@@ -11,7 +11,7 @@
     "audit"
   ],
   "cree": "2026-08-16",
-  "maj": "2026-08-16",
+  "maj": "2026-08-17",
   "plan": "2026-08-16-shotframe-audit-d-optimisation-et-plan-de-correction.md"
 }
 ---

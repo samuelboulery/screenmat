@@ -2,7 +2,7 @@
 {
   "id": "T-0072",
   "titre": "WebP par défaut, avec repli explicite",
-  "colonne": "en-cours",
+  "colonne": "fait",
   "priorite": "moyenne",
   "charge": "xs",
   "tags": [
@@ -10,7 +10,7 @@
     "produit"
   ],
   "cree": "2026-08-16",
-  "maj": "2026-08-16",
+  "maj": "2026-08-17",
   "epic": "T-0062",
   "plan": "2026-08-16-shotframe-audit-d-optimisation-et-plan-de-correction.md"
 }

@@ -7,13 +7,13 @@ import { basename, join } from 'node:path'
 import { parseStyle } from '../src/lib/styles.ts'
 import type { Style } from '../src/types.ts'
 
-export const STYLES_DIR = process.env.SHOTFRAME_STYLES ?? join(homedir(), '.shotframe', 'styles')
+export const STYLES_DIR = process.env.SCREENMAT_STYLES ?? join(homedir(), '.screenmat', 'styles')
 
 export type NamedStyle = { name: string; style: Style }
 
 /** Le nom sous lequel un style se rappelle : son fichier, sans extension. */
 function styleName(file: string): string {
-  return basename(file).replace(/\.shotframe\.json$/i, '').replace(/\.json$/i, '')
+  return basename(file).replace(/\.screenmat\.json$/i, '').replace(/\.json$/i, '')
 }
 
 /**

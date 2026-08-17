@@ -23,7 +23,7 @@ screenshot), origine à son coin haut-gauche. \`y\` est divisé par la largeur l
 aussi, jamais par la hauteur : un screenshot 16:9 occupe donc y de 0 à 0.5625.
 \`w\` et \`h\` sont signés — une flèche va de (x, y) vers (x+w, y+h), ce qui lui
 permet de pointer dans les quatre directions.
-Appeler d'abord shotframe_inspect : il renvoie \`screen\`, le rectangle qu'occupe
+Appeler d'abord screenmat_inspect : il renvoie \`screen\`, le rectangle qu'occupe
 le screenshot dans ce repère, décalé de la barre de titre. Pour convertir un
 point lu en pixels sur l'image : x = px / imageWidth, y = screen.y + py / imageWidth.`
 
@@ -57,7 +57,7 @@ const layer = z.object({
 })
 
 /** Ce qui déplace le screenshot dans sa fenêtre, et rien d'autre : c'est tout ce
- *  dont `shotframe_inspect` a besoin. Lui exposer le reste coûterait des tokens
+ *  dont `screenmat_inspect` a besoin. Lui exposer le reste coûterait des tokens
  *  à chaque tour et laisserait croire que la graine ou le grain changent sa
  *  réponse. */
 const geometrySettings = z.object({
@@ -81,10 +81,10 @@ const settings = geometrySettings
   })
   .optional()
 
-const server = new McpServer({ name: 'shotframe', version: '0.1.0' })
+const server = new McpServer({ name: 'screenmat', version: '0.1.0' })
 
 server.registerTool(
-  'shotframe_render',
+  'screenmat_render',
   {
     title: 'Embellir un screenshot',
     description: `Transforme un ou plusieurs screenshots en visuel prêt à partager : fenêtre
@@ -95,7 +95,7 @@ Appelé sans réglages, il produit déjà un bon résultat : ne rien passer est 
 nominal. N'ajouter des calques que si l'utilisateur a demandé de désigner ou de
 masquer quelque chose.
 
-Avant de placer un calque, appeler shotframe_inspect : sa description porte le
+Avant de placer un calque, appeler screenmat_inspect : sa description porte le
 repère de coordonnées, et sa réponse dit où le screenshot atterrit.`,
     inputSchema: {
       shots: z
@@ -107,8 +107,8 @@ repère de coordonnées, et sa réponse dit où le screenshot atterrit.`,
         )
         .min(1)
         .max(24),
-      output: z.string().optional().describe('Chemin du fichier à écrire. Défaut : <input>-shotframe.<format>.'),
-      style: z.string().optional().describe(`Nom d'un style enregistré (voir shotframe_list_styles).`),
+      output: z.string().optional().describe('Chemin du fichier à écrire. Défaut : <input>-screenmat.<format>.'),
+      style: z.string().optional().describe(`Nom d'un style enregistré (voir screenmat_list_styles).`),
       settings,
       composition: z
         .object({
@@ -124,7 +124,7 @@ repère de coordonnées, et sa réponse dit où le screenshot atterrit.`,
     const result = await render(args)
     const root = writeRoot(args.shots[0]!.input)
     // Sans `output`, le défaut se replie sur son seul nom de fichier : la
-    // racine décide déjà du dossier, y compris quand SHOTFRAME_OUT la déplace.
+    // racine décide déjà du dossier, y compris quand SCREENMAT_OUT la déplace.
     const wanted = args.output ?? basename(defaultOutput(args.shots[0]!.input, result.format))
     const output = await writeNew(resolveUnder(root, wanted), result.buffer)
 
@@ -136,7 +136,7 @@ repère de coordonnées, et sa réponse dit où le screenshot atterrit.`,
 )
 
 server.registerTool(
-  'shotframe_inspect',
+  'screenmat_inspect',
   {
     title: 'Repère de placement des calques',
     description: `Dit où le screenshot atterrit dans sa fenêtre. À appeler avant de placer une
@@ -153,11 +153,11 @@ ${REPERE}`,
 )
 
 server.registerTool(
-  'shotframe_list_styles',
+  'screenmat_list_styles',
   {
     title: 'Styles enregistrés',
-    description: `Liste les styles réglés à la main dans l'app shotframe et déposés dans
-${STYLES_DIR}. Un style se rappelle par son nom dans shotframe_render, et évite
+    description: `Liste les styles réglés à la main dans l'app screenmat et déposés dans
+${STYLES_DIR}. Un style se rappelle par son nom dans screenmat_render, et évite
 d'avoir à repasser une dizaine de réglages.`,
     inputSchema: {},
   },
@@ -177,7 +177,7 @@ d'avoir à repasser une dizaine de réglages.`,
 )
 
 function defaultOutput(input: string, format: string): string {
-  return input.replace(/\.[^./]+$/, '') + `-shotframe.${format}`
+  return input.replace(/\.[^./]+$/, '') + `-screenmat.${format}`
 }
 
 function json(payload: unknown) {

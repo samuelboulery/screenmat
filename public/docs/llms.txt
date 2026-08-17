@@ -1,4 +1,4 @@
-# shotframe
+# screenmat
 
 > A local-first tool that turns a raw screenshot into a shareable visual:
 > rounded window frame, generative background derived from the screenshot's own
@@ -18,8 +18,8 @@ concatenate all eight for the complete reference (roughly 2000 lines).
 - [CLI](/docs/cli.md): the four command forms, every flag with its default and
   bounds, output paths, the `--json` result shape, exit codes and error messages.
 - [MCP server](/docs/mcp.md): how to register the server, the write guard
-  (`SHOTFRAME_OUT`, never overwrites), and the three tools — `shotframe_render`,
-  `shotframe_inspect`, `shotframe_list_styles` — with their full parameters.
+  (`SCREENMAT_OUT`, never overwrites), and the three tools — `screenmat_render`,
+  `screenmat_inspect`, `screenmat_list_styles` — with their full parameters.
 - [Node API](/docs/api.md): `render(spec)` and `inspect(input, settings)`,
   their result types, and the errors they throw.
 - [Scene format](/docs/scene.md): the complete serialisable JSON — settings,
@@ -29,7 +29,7 @@ concatenate all eight for the complete reference (roughly 2000 lines).
   before placing any annotation: rects are fractions of the **window width**,
   `y` included, and `w`/`h` are signed.
 - [Styles](/docs/styles.md): tune once in the app, export a `.json`, drop it in
-  `~/.shotframe/styles/`, recall it by name. Precedence and caching.
+  `~/.screenmat/styles/`, recall it by name. Precedence and caching.
 - [Recipes](/docs/recipes.md): runnable examples — batch, device frames,
   deterministic backgrounds, redaction, annotations, compositions, Playwright —
   followed by a troubleshooting list.

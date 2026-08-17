@@ -1,17 +1,17 @@
 {
-  "name": "shotframe",
+  "name": "screenmat",
   "private": true,
   "version": "0.1.0",
   "description": "Turn a raw screenshot into a shareable visual — macOS-style window, generative background, annotations, redaction. Runs entirely in the browser.",
   "license": "MIT",
   "author": "Samuel Boulery",
-  "homepage": "https://github.com/samuelboulery/shotframe#readme",
+  "homepage": "https://github.com/samuelboulery/screenmat#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/samuelboulery/shotframe.git"
+    "url": "git+https://github.com/samuelboulery/screenmat.git"
   },
   "bugs": {
-    "url": "https://github.com/samuelboulery/shotframe/issues"
+    "url": "https://github.com/samuelboulery/screenmat/issues"
   },
   "keywords": [
     "screenshot",
@@ -31,7 +31,7 @@
     "node": ">=24"
   },
   "bin": {
-    "shotframe": "./cli/main.ts"
+    "screenmat": "./cli/main.ts"
   },
   "exports": {
     "./node": "./cli/api.ts"

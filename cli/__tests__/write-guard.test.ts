@@ -14,24 +14,24 @@ beforeAll(async () => {
   // `mkdtemp` sur macOS rend un chemin sous /var, lien symbolique vers
   // /private/var : on résout une fois pour que les comparaisons portent sur la
   // même forme que celle que `writeRoot` produira.
-  dir = resolve(await mkdtemp(join(tmpdir(), 'shotframe-guard-')))
+  dir = resolve(await mkdtemp(join(tmpdir(), 'screenmat-guard-')))
 })
 
 afterAll(async () => {
   await rm(dir, { recursive: true, force: true })
-  delete process.env.SHOTFRAME_OUT
+  delete process.env.SCREENMAT_OUT
 })
 
 describe('writeRoot', () => {
   it('prend le dossier du screenshot fourni', () => {
-    delete process.env.SHOTFRAME_OUT
+    delete process.env.SCREENMAT_OUT
     expect(writeRoot(join(dir, 'shot.png'))).toBe(dir)
   })
 
-  it('cède à SHOTFRAME_OUT quand il est posé', () => {
-    process.env.SHOTFRAME_OUT = join(dir, 'ailleurs')
+  it('cède à SCREENMAT_OUT quand il est posé', () => {
+    process.env.SCREENMAT_OUT = join(dir, 'ailleurs')
     expect(writeRoot(join(dir, 'shot.png'))).toBe(join(dir, 'ailleurs'))
-    delete process.env.SHOTFRAME_OUT
+    delete process.env.SCREENMAT_OUT
   })
 })
 
@@ -59,11 +59,11 @@ describe('resolveUnder', () => {
 
 describe('writeNew', () => {
   it('écrit, puis suffixe au lieu d’écraser', async () => {
-    const target = join(dir, 'shot-shotframe.png')
+    const target = join(dir, 'shot-screenmat.png')
 
     expect(await writeNew(target, Buffer.from('un'))).toBe(target)
-    expect(await writeNew(target, Buffer.from('deux'))).toBe(join(dir, 'shot-shotframe-2.png'))
-    expect(await writeNew(target, Buffer.from('trois'))).toBe(join(dir, 'shot-shotframe-3.png'))
+    expect(await writeNew(target, Buffer.from('deux'))).toBe(join(dir, 'shot-screenmat-2.png'))
+    expect(await writeNew(target, Buffer.from('trois'))).toBe(join(dir, 'shot-screenmat-3.png'))
 
     // Le premier fichier n'a pas bougé : c'est tout l'objet de la garde.
     expect(await readFile(target, 'utf8')).toBe('un')

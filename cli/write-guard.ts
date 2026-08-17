@@ -12,12 +12,12 @@ import { dirname, resolve, sep } from 'node:path'
 
 /**
  * Le dossier sous lequel le serveur accepte d'écrire. Par défaut celui du
- * screenshot fourni : « shotframe écrit à côté de la capture qu'on lui a
- * donnée ». `SHOTFRAME_OUT` le déplace, comme `SHOTFRAME_STYLES` le fait pour
+ * screenshot fourni : « screenmat écrit à côté de la capture qu'on lui a
+ * donnée ». `SCREENMAT_OUT` le déplace, comme `SCREENMAT_STYLES` le fait pour
  * les styles.
  */
 export function writeRoot(input: string): string {
-  return resolve(process.env.SHOTFRAME_OUT ?? dirname(resolve(input)))
+  return resolve(process.env.SCREENMAT_OUT ?? dirname(resolve(input)))
 }
 
 /**
@@ -30,7 +30,7 @@ export function resolveUnder(root: string, wanted: string): string {
   const target = resolve(root, wanted)
   if (target !== root && !target.startsWith(root + sep)) {
     throw new Error(
-      `\`output\` doit rester sous ${root} — reçu ${target}. Passer un chemin relatif, ou élargir avec SHOTFRAME_OUT.`,
+      `\`output\` doit rester sous ${root} — reçu ${target}. Passer un chemin relatif, ou élargir avec SCREENMAT_OUT.`,
     )
   }
   return target

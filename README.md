@@ -1,12 +1,12 @@
 <div align="center">
 
-# shotframe
+# screenmat
 
 **Turn a raw screenshot into a visual worth sharing.**
 A rounded macOS-style window, a background generated from the screenshot's own
 colours, annotations, redaction — rendered entirely in your browser.
 
-[![CI](https://github.com/samuelboulery/shotframe/actions/workflows/ci.yml/badge.svg)](https://github.com/samuelboulery/shotframe/actions/workflows/ci.yml)
+[![CI](https://github.com/samuelboulery/screenmat/actions/workflows/ci.yml/badge.svg)](https://github.com/samuelboulery/screenmat/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-7DE2FF.svg)](LICENSE)
 [![React 19](https://img.shields.io/badge/React-19-A378FF.svg)](https://react.dev)
 [![TypeScript strict](https://img.shields.io/badge/TypeScript-strict-3178C6.svg)](https://www.typescriptlang.org)
@@ -14,7 +14,7 @@ colours, annotations, redaction — rendered entirely in your browser.
 
 English · [Français](README.fr.md)
 
-<img src="docs/assets/hero.webp" alt="The shotframe editor, framed by shotframe itself" width="900">
+<img src="docs/assets/hero.webp" alt="The screenmat editor, framed by screenmat itself" width="900">
 
 </div>
 
@@ -80,7 +80,7 @@ core; the CLI, the MCP server and a direct import are thin wrappers around it.
 ```bash
 # Command line — the defaults are already good.
 pnpm cli screenshot.png
-# → screenshot-shotframe.webp  3200×2400  188464 bytes
+# → screenshot-screenmat.webp  3200×2400  188464 bytes
 
 # A whole folder, one style, one destination.
 pnpm cli shots/*.png --style docs --out-dir ./build
@@ -91,7 +91,7 @@ pnpm cli --spec scene.json --scale 3 -o hero@3x.webp
 
 ```ts
 // Node script — the direct import.
-import { render } from 'shotframe/node'
+import { render } from 'screenmat/node'
 import { writeFile } from 'node:fs/promises'
 
 const { buffer, width, height } = await render({
@@ -105,12 +105,12 @@ await writeFile('docs/hero.webp', buffer)
 
 ```bash
 # AI agent — register the MCP server once.
-claude mcp add shotframe -- node /absolute/path/to/shotframe/cli/mcp.ts
+claude mcp add screenmat -- node /absolute/path/to/screenmat/cli/mcp.ts
 ```
 
-Three MCP tools: `shotframe_render` (writes a file, returns its path — never the
-image bytes), `shotframe_inspect` (the layer coordinate frame, to call before
-placing an annotation) and `shotframe_list_styles`. Nothing is ever overwritten,
+Three MCP tools: `screenmat_render` (writes a file, returns its path — never the
+image bytes), `screenmat_inspect` (the layer coordinate frame, to call before
+placing an annotation) and `screenmat_list_styles`. Nothing is ever overwritten,
 and every written path is confined to the configured output root.
 
 **Full documentation lives in [`public/docs/`](public/docs/)** — one source,

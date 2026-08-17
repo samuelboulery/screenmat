@@ -67,7 +67,7 @@ export type WatermarkSpec = {
 }
 
 export type SceneSpec = {
-  /** Nom d'un style de `~/.shotframe/styles/`, appliqué sous les `settings`. */
+  /** Nom d'un style de `~/.screenmat/styles/`, appliqué sous les `settings`. */
   style?: string
   settings: Settings
   composition: Composition

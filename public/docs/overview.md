@@ -1,6 +1,6 @@
 # Overview
 
-shotframe turns a raw screenshot into a shareable visual: a rounded macOS-style
+screenmat turns a raw screenshot into a shareable visual: a rounded macOS-style
 window, a generative background derived from the screenshot's own colours,
 annotations, redaction, multi-shot compositions, high-resolution export.
 
@@ -57,12 +57,12 @@ Three ways in, same engine, same output.
 ```bash
 # Command line — defaults are already good.
 pnpm cli screenshot.png
-# → screenshot-shotframe.webp  3200×2400  188464 octets
+# → screenshot-screenmat.webp  3200×2400  188464 octets
 ```
 
 ```ts
 // Node script — the direct import.
-import { render } from 'shotframe/node'
+import { render } from 'screenmat/node'
 import { writeFile } from 'node:fs/promises'
 
 const { buffer, width, height } = await render({
@@ -76,7 +76,7 @@ await writeFile('docs/hero.png', buffer)
 
 ```bash
 # AI agent — register the MCP server once.
-claude mcp add shotframe -- node /absolute/path/to/shotframe/cli/mcp.ts
+claude mcp add screenmat -- node /absolute/path/to/screenmat/cli/mcp.ts
 ```
 
 ## Which façade reaches what

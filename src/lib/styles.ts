@@ -11,7 +11,7 @@ import {
 } from '../types.ts'
 
 /** Clé de préférence : le dernier style appliqué, retrouvé au démarrage. */
-const LAST_STYLE_KEY = 'shotframe:last-style'
+const LAST_STYLE_KEY = 'screenmat:last-style'
 
 export function createStyle(name: string, settings: Settings, palette?: Palette): Style {
   return { id: nextId('style'), name, settings, palette }
@@ -19,12 +19,12 @@ export function createStyle(name: string, settings: Settings, palette?: Palette)
 
 export function styleFilename(style: Style): string {
   const slug = style.name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
-  return `${slug || 'style'}.shotframe.json`
+  return `${slug || 'style'}.screenmat.json`
 }
 
 /** Le seul mécanisme de partage : un fichier, pas un compte. */
 export function exportStyle(style: Style): void {
-  const json = JSON.stringify({ kind: 'shotframe-style', version: 1, style }, null, 2)
+  const json = JSON.stringify({ kind: 'screenmat-style', version: 1, style }, null, 2)
   triggerDownload(new Blob([json], { type: 'application/json' }), styleFilename(style))
 }
 
@@ -90,8 +90,8 @@ export function parseStyle(raw: string): Style {
     throw new Error('Fichier illisible : ce n’est pas du JSON')
   }
 
-  if (!isRecord(parsed) || parsed.kind !== 'shotframe-style' || !isRecord(parsed.style)) {
-    throw new Error('Ce fichier n’est pas un style shotframe')
+  if (!isRecord(parsed) || parsed.kind !== 'screenmat-style' || !isRecord(parsed.style)) {
+    throw new Error('Ce fichier n’est pas un style screenmat')
   }
 
   const style = parsed.style

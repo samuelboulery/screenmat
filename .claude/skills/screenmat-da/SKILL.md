@@ -1,9 +1,9 @@
 ---
-name: shotframe-da
-description: Direction artistique « Afterglow » de shotframe — palette et accent, recettes de sélection, icônes Lucide, typographie, rayons, carte des quatre écrans, raccourcis clavier, références visuelles. À invoquer AVANT de toucher à un composant, une couleur, un token, une icône, un écran, un panneau, un raccourci, un état sélectionné ou survolé, une taille de texte ou un espacement. Écrire de l'interface sans avoir lu ce skill fait diverger la DA au premier ajustement.
+name: screenmat-da
+description: Direction artistique « Afterglow » de screenmat — palette et accent, recettes de sélection, icônes Lucide, typographie, rayons, carte des quatre écrans, raccourcis clavier, références visuelles. À invoquer AVANT de toucher à un composant, une couleur, un token, une icône, un écran, un panneau, un raccourci, un état sélectionné ou survolé, une taille de texte ou un espacement. Écrire de l'interface sans avoir lu ce skill fait diverger la DA au premier ajustement.
 ---
 
-# shotframe — direction artistique « Afterglow »
+# screenmat — direction artistique « Afterglow »
 
 Scène noire (`#07070A`), panneaux translucides flottants, un seul accent
 cyan→violet (`#7DE2FF` → `#A378FF`) réservé à **deux** usages : l'action

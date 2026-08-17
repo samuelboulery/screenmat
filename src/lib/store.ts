@@ -1,6 +1,6 @@
 import type { HistoryEntry, Style } from '../types.ts'
 
-const DB_NAME = 'shotframe'
+const DB_NAME = 'screenmat'
 const DB_VERSION = 1
 
 const STYLES = 'styles'

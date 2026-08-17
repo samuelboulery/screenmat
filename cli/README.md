@@ -1,4 +1,4 @@
-# shotframe, côté machine
+# screenmat, côté machine
 
 La même chose que l'app web, appelée par autre chose qu'un humain : un script de
 build, un générateur de docs, une IA dans un projet quelconque.

@@ -63,10 +63,10 @@ export default function TopBar({ screen, showNav = true, onScreen, onHome }: Top
           aria-label="Back to start"
           className={`${WORDMARK} transition-colors duration-140 hover:text-accent-ink`}
         >
-          shotframe
+          screenmat
         </button>
       ) : (
-        <span className={WORDMARK}>shotframe</span>
+        <span className={WORDMARK}>screenmat</span>
       )}
       <Badge>
         <span className="flex items-center gap-1">
@@ -86,7 +86,7 @@ export default function TopBar({ screen, showNav = true, onScreen, onHome }: Top
           l'autre. Une page servie à côté de l'app, donc hors ligne comme elle. */}
       <ExternalLink
         href="/docs/"
-        title="Dev docs — drive shotframe from a script, a CLI or an agent (Node API, CLI, MCP)"
+        title="Dev docs — drive screenmat from a script, a CLI or an agent (Node API, CLI, MCP)"
         aria-label="Dev docs"
         className="ml-auto"
       >

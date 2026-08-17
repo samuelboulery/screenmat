@@ -38,11 +38,11 @@ describe('renderMarkdown', () => {
   })
 
   it('rend un bloc de code avec sa langue et son bouton de copie', () => {
-    const { nodes } = renderMarkdown('```bash\nshotframe a.png --scale 3\n```\n')
+    const { nodes } = renderMarkdown('```bash\nscreenmat a.png --scale 3\n```\n')
 
     expect(find(nodes, 'span')?.children).toEqual(['bash'])
     expect(find(nodes, 'button')?.attrs?.['data-copy-code']).toBe('')
-    expect(text(find(nodes, 'code')?.children ?? [])).toBe('shotframe a.png --scale 3')
+    expect(text(find(nodes, 'code')?.children ?? [])).toBe('screenmat a.png --scale 3')
   })
 
   it('ne colore pas un bloc `text` — c’est le langage des schémas ASCII', () => {

@@ -1,9 +1,9 @@
 ---
-name: shotframe-machine
-description: La porte machine de shotframe — CLI `cli/main.ts`, serveur MCP `cli/mcp.ts`, API Node `render(spec)` / `inspect()`, format de scène sérialisable, shim DOM pour Node, styles de `~/.shotframe/styles/`. À invoquer AVANT de toucher à `cli/`, à un outil MCP, au format de scène, au shim, ou dès qu'il s'agit de piloter shotframe depuis un script, un build ou un autre agent.
+name: screenmat-machine
+description: La porte machine de screenmat — CLI `cli/main.ts`, serveur MCP `cli/mcp.ts`, API Node `render(spec)` / `inspect()`, format de scène sérialisable, shim DOM pour Node, styles de `~/.screenmat/styles/`. À invoquer AVANT de toucher à `cli/`, à un outil MCP, au format de scène, au shim, ou dès qu'il s'agit de piloter screenmat depuis un script, un build ou un autre agent.
 ---
 
-# shotframe — pilotage par une machine
+# screenmat — pilotage par une machine
 
 Une seconde porte d'entrée sur le **même** moteur, pour un script de build, un
 générateur de docs ou une IA dans un autre projet. Détail complet, flags, outils
@@ -48,7 +48,7 @@ millisecondes, et `--help` comme `styles` n'en ont pas besoin.
   sans lui, une position calculée en pixels tombe trop haut de la hauteur de la
   barre de titre — ou du bezel, sur un cadre d'appareil.
 - **Un style se règle dans l'app**, s'exporte en `.json`, se dépose dans
-  `~/.shotframe/styles/` et se rappelle par son nom. Aucun réglage n'est dupliqué
+  `~/.screenmat/styles/` et se rappelle par son nom. Aucun réglage n'est dupliqué
   entre l'app et le CLI. `listStyles()` met en cache le style de chaque fichier,
   daté de son `mtime` : un lot de vingt shots au même style ne relit pas vingt
   fois le même `.json`, et un style corrigé pendant qu'un serveur MCP tourne se
@@ -59,10 +59,10 @@ millisecondes, et `--help` comme `styles` n'en ont pas besoin.
 **La description des outils MCP est la seule documentation que le modèle lira**,
 et elle est relue à chaque tour par tout client connecté. Deux règles :
 
-- Le repère de coordonnées vit dans la description de `shotframe_inspect`, une
-  seule fois. `shotframe_render` y renvoie d'une ligne. L'interpoler dans les
+- Le repère de coordonnées vit dans la description de `screenmat_inspect`, une
+  seule fois. `screenmat_render` y renvoie d'une ligne. L'interpoler dans les
   deux le faisait payer deux fois.
-- `shotframe_inspect` ne prend que `geometrySettings` — ce qui déplace le
+- `screenmat_inspect` ne prend que `geometrySettings` — ce qui déplace le
   screenshot dans sa fenêtre. Le grain, la graine ou le format n'ont aucun effet
   sur sa réponse : les exposer coûterait des tokens et laisserait croire
   l'inverse.

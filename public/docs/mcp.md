@@ -7,7 +7,7 @@ agent that has no shell — three tools, no logic of its own: each one calls
 ## Connecting
 
 ```bash
-claude mcp add shotframe -- node /absolute/path/to/shotframe/cli/mcp.ts
+claude mcp add screenmat -- node /absolute/path/to/screenmat/cli/mcp.ts
 ```
 
 Any MCP client works. The equivalent JSON configuration:
@@ -15,10 +15,10 @@ Any MCP client works. The equivalent JSON configuration:
 ```json
 {
   "mcpServers": {
-    "shotframe": {
+    "screenmat": {
       "command": "node",
-      "args": ["/absolute/path/to/shotframe/cli/mcp.ts"],
-      "env": { "SHOTFRAME_OUT": "/absolute/path/to/your/project/docs/images" }
+      "args": ["/absolute/path/to/screenmat/cli/mcp.ts"],
+      "env": { "SCREENMAT_OUT": "/absolute/path/to/your/project/docs/images" }
     }
   }
 }
@@ -26,8 +26,8 @@ Any MCP client works. The equivalent JSON configuration:
 
 | Variable | Effect |
 | --- | --- |
-| `SHOTFRAME_OUT` | The only directory the server may write into. Default: the folder of the screenshot it was given. |
-| `SHOTFRAME_STYLES` | Where saved styles live. Default: `~/.shotframe/styles`. |
+| `SCREENMAT_OUT` | The only directory the server may write into. Default: the folder of the screenshot it was given. |
+| `SCREENMAT_STYLES` | Where saved styles live. Default: `~/.screenmat/styles`. |
 
 The server needs `@modelcontextprotocol/sdk`, `zod` and `@napi-rs/canvas` — all
 three are `optionalDependencies`, installed by a plain `pnpm install`.
@@ -39,7 +39,7 @@ The CLI and the MCP server are not the same trust boundary. On the command line
 remote model picks the path, and a mistake there would clobber a file nobody
 pointed at. So:
 
-- **A single write root.** `SHOTFRAME_OUT` if set, otherwise the directory of the
+- **A single write root.** `SCREENMAT_OUT` if set, otherwise the directory of the
   first shot's `input`. An `output` that resolves outside it fails the call, and
   nothing is written. Absolute paths and `../..` are both caught: the path is
   normalised before the comparison.
@@ -50,15 +50,15 @@ pointed at. So:
 - **A path is returned, never the image.** A base64 PNG would cost thousands of
   tokens per call for a picture the model does not need to see again.
 
-## shotframe_render
+## screenmat_render
 
 Renders one or more screenshots and writes a file.
 
 | Parameter | Type | Notes |
 | --- | --- | --- |
 | `shots` | array, 1 to 24 | `{ input: string, layers?: Layer[] }`. Up to 64 layers per shot. |
-| `output` | string | Optional. Default `<input>-shotframe.<format>`, resolved under the write root. |
-| `style` | string | Optional. A name from `shotframe_list_styles`. |
+| `output` | string | Optional. Default `<input>-screenmat.<format>`, resolved under the write root. |
+| `style` | string | Optional. A name from `screenmat_list_styles`. |
 | `settings` | object | Optional. See below. |
 | `composition` | object | Optional. `{ layout, spread? }`. No effect on a single shot. |
 | `scale` | `1` \| `2` \| `3` | Optional, default `2`. |
@@ -90,14 +90,14 @@ the tokens their descriptions would cost in every turn.
 The result is a JSON string:
 
 ```json
-{ "output": "/abs/path/screenshot-shotframe.webp", "width": 2048, "height": 1536, "bytes": 184320 }
+{ "output": "/abs/path/screenshot-screenmat.webp", "width": 2048, "height": 1536, "bytes": 184320 }
 ```
 
 > **Tip** — Called with no settings at all it already produces a good visual.
 > Passing nothing is the nominal case; add layers only when someone asked to
 > point at or hide something.
 
-## shotframe_inspect
+## screenmat_inspect
 
 Says where the screenshot lands inside its window. Call it **before** placing
 any layer: a position computed from the image's own pixels lands too high by the
@@ -126,28 +126,28 @@ The full frame, with the pixel-to-fraction conversion, is in
 [Coordinates](#coordinates). This tool's description carries it too, so an agent
 reads it without being told.
 
-## shotframe_list_styles
+## screenmat_list_styles
 
 No parameters. Lists the styles that were tuned by hand in the app and dropped
 into the styles directory.
 
 ```json
 {
-  "directory": "/Users/you/.shotframe/styles",
+  "directory": "/Users/you/.screenmat/styles",
   "styles": [{ "name": "docs", "label": "Docs", "frame": "macbook", "background": "mesh", "ratio": "16:9" }]
 }
 ```
 
-`name` is what goes into `shotframe_render`'s `style`. One name replaces a dozen
+`name` is what goes into `screenmat_render`'s `style`. One name replaces a dozen
 settings — see [Styles](#styles).
 
 ## A typical exchange
 
 ```text
-1. shotframe_list_styles     → is there a house style? → "docs"
-2. shotframe_inspect         → screen.y = 0.0405, screen.h = 0.625
-3. shotframe_render          → style "docs", one arrow, one redaction
-                             → /project/docs/images/login-shotframe.webp
+1. screenmat_list_styles     → is there a house style? → "docs"
+2. screenmat_inspect         → screen.y = 0.0405, screen.h = 0.625
+3. screenmat_render          → style "docs", one arrow, one redaction
+                             → /project/docs/images/login-screenmat.webp
 ```
 
 Steps 1 and 2 are cheap and each removes a way to get it wrong: the first

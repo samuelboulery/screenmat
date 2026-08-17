@@ -1,0 +1,485 @@
+/* La page `/docs`. Les couleurs, les polices et les rayons viennent de
+   `index.css` — aucun token n'est redéclaré ici, sinon la documentation
+   divergerait de l'app au premier ajustement de la DA.
+
+   La mise en page, elle, lui est propre : un texte long ne se lit pas comme un
+   panneau d'outils. Corps à 14 px, mesure bornée à 74 caractères, filets à
+   1 px, et pas une ombre portée. */
+@import '../index.css';
+
+body {
+  font-size: 14px;
+  background-image: var(--stage-glow);
+  background-attachment: fixed;
+}
+
+.docs {
+  display: grid;
+  grid-template-columns: 248px minmax(0, 1fr);
+  gap: 48px;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 32px;
+}
+
+/* — Rail ——————————————————————————————————————————————————————————— */
+
+.rail {
+  position: sticky;
+  top: 0;
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-height: 100vh;
+  padding: 28px 0 24px;
+  overflow-y: auto;
+}
+
+.brand {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--color-ink);
+  text-decoration: none;
+  transition: color 140ms var(--ease-out-ui);
+}
+
+.brand:hover {
+  color: var(--color-accent-ink);
+}
+
+.brand span {
+  color: var(--color-dim);
+  font-weight: 400;
+}
+
+.rail-kicker {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--color-dim);
+}
+
+#toc ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+#toc a {
+  display: block;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  color: var(--color-ink-soft);
+  text-decoration: none;
+  transition: color 140ms var(--ease-out-ui);
+}
+
+#toc a:hover {
+  color: var(--color-ink);
+}
+
+.toc-page {
+  font-size: 13px;
+}
+
+.toc-item {
+  font-size: 12px;
+  padding-left: 22px !important;
+}
+
+/* Les sous-titres n'apparaissent que sous la page où l'on se trouve : huit
+   sommaires dépliés d'un coup ne sont plus un sommaire. */
+.toc-sub {
+  display: none;
+  margin-bottom: 6px;
+}
+
+li.is-open .toc-sub {
+  display: block;
+}
+
+#toc a.is-active {
+  color: var(--color-accent-ink);
+  background: var(--color-sunken);
+}
+
+.rail-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-hairline);
+}
+
+.rail-foot a,
+.rail-foot button {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 5px 9px;
+  border: 1px solid var(--color-hairline-strong);
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--color-ink-soft);
+  text-decoration: none;
+  transition: color 140ms var(--ease-out-ui), border-color 140ms var(--ease-out-ui);
+}
+
+.rail-foot a:hover,
+.rail-foot button:hover {
+  color: var(--color-ink);
+  border-color: rgb(255 255 255 / 0.2);
+}
+
+/* — Prose —————————————————————————————————————————————————————————— */
+
+#doc {
+  padding: 56px 0 160px;
+  min-width: 0;
+}
+
+.page {
+  max-width: 74ch;
+}
+
+.page + .page {
+  margin-top: 96px;
+  padding-top: 56px;
+  border-top: 1px solid var(--color-hairline);
+}
+
+#doc h1,
+#doc h2,
+#doc h3,
+#doc h4 {
+  scroll-margin-top: 24px;
+  letter-spacing: -0.01em;
+}
+
+#doc h1 {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  font-size: 26px;
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+
+#doc h2 {
+  font-size: 19px;
+  font-weight: 600;
+  margin: 44px 0 14px;
+}
+
+#doc h3 {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 30px 0 10px;
+}
+
+#doc h4 {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--color-dim);
+  margin: 24px 0 8px;
+}
+
+#doc p,
+#doc li {
+  line-height: 1.68;
+  color: var(--color-ink-soft);
+}
+
+#doc p {
+  margin: 0 0 14px;
+}
+
+#doc strong {
+  color: var(--color-ink);
+  font-weight: 600;
+}
+
+/* Tailwind retire les puces dans son preflight : une liste de prose les reprend. */
+#doc ul,
+#doc ol {
+  margin: 0 0 16px;
+  padding-left: 22px;
+}
+
+#doc ul {
+  list-style: disc;
+}
+
+#doc ol {
+  list-style: decimal;
+}
+
+#doc li::marker {
+  color: var(--color-dim);
+}
+
+#doc li {
+  margin-bottom: 5px;
+}
+
+#doc li ul,
+#doc li ol {
+  margin: 5px 0 0;
+}
+
+#doc hr {
+  margin: 36px 0;
+  border: 0;
+  border-top: 1px solid var(--color-hairline);
+}
+
+#doc a {
+  color: var(--color-accent-ink);
+  text-decoration: none;
+  border-bottom: 1px solid rgb(125 226 255 / 0.3);
+}
+
+#doc a:hover {
+  border-bottom-color: var(--color-accent);
+}
+
+/* L'ancre d'un titre : discrète, et jamais un lien souligné de plus. */
+.anchor {
+  margin-left: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.7em;
+  color: var(--color-dim);
+  opacity: 0;
+  border-bottom: 0 !important;
+  transition: opacity 140ms var(--ease-out-ui);
+}
+
+h1:hover .anchor,
+h2:hover .anchor,
+h3:hover .anchor,
+h4:hover .anchor,
+.anchor:focus-visible {
+  opacity: 1;
+}
+
+#doc code {
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  padding: 1px 3px;
+  border-radius: var(--radius-xs);
+  background: var(--color-sunken);
+  color: var(--color-ink);
+}
+
+.page-copy {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  padding: 5px 9px;
+  border: 1px solid var(--color-hairline-strong);
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--color-dim);
+  white-space: nowrap;
+  transition: color 140ms var(--ease-out-ui), border-color 140ms var(--ease-out-ui);
+}
+
+.page-copy:hover {
+  color: var(--color-ink);
+  border-color: rgb(255 255 255 / 0.2);
+}
+
+/* — Tableaux ——————————————————————————————————————————————————————— */
+
+.table-scroll {
+  overflow-x: auto;
+  margin: 0 0 20px;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-md);
+}
+
+#doc table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+#doc th,
+#doc td {
+  text-align: left;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--color-hairline);
+  vertical-align: top;
+  color: var(--color-ink-soft);
+}
+
+#doc th {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--color-dim);
+  background: var(--color-sunken);
+  white-space: nowrap;
+}
+
+#doc tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+#doc td code {
+  white-space: nowrap;
+}
+
+/* — Blocs de code —————————————————————————————————————————————————— */
+
+.code {
+  margin: 0 0 20px;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--color-panel-solid);
+}
+
+.code-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px 6px 14px;
+  border-bottom: 1px solid var(--color-hairline);
+  background: var(--color-sunken);
+}
+
+.code-lang,
+.code-copy {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--color-dim);
+}
+
+.code-copy {
+  padding: 3px 7px;
+  border: 0;
+  border-radius: var(--radius-xs);
+  background: none;
+  transition: color 140ms var(--ease-out-ui), background 140ms var(--ease-out-ui);
+}
+
+.code-copy:hover {
+  color: var(--color-ink);
+  background: var(--color-raised);
+}
+
+.code pre {
+  margin: 0;
+  padding: 14px;
+  overflow-x: auto;
+}
+
+/* Même spécificité que `#doc code`, sinon la pastille du code inline repeint
+   chaque ligne d'un bloc — un sélecteur d'id ne se bat pas à la classe. */
+#doc .code code {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  line-height: 1.65;
+  padding: 0;
+  background: none;
+  white-space: pre;
+  color: var(--color-ink);
+}
+
+.tok-key {
+  color: var(--color-accent);
+}
+.tok-str {
+  color: #b9e6c8;
+}
+.tok-num,
+.tok-lit {
+  color: var(--color-accent-2);
+}
+.tok-kw {
+  color: var(--color-accent-2);
+}
+.tok-flag {
+  color: var(--color-accent);
+}
+.tok-com {
+  color: var(--color-dim);
+  font-style: italic;
+}
+
+/* — Encarts ———————————————————————————————————————————————————————— */
+
+.callout {
+  display: block;
+  margin: 0 0 20px;
+  padding: 12px 16px;
+  border: 1px solid var(--color-hairline-strong);
+  border-left: 2px solid var(--color-accent);
+  border-radius: var(--radius-md);
+  background: var(--color-sunken);
+}
+
+/* `#FF9A9A` est réservé au destructif et au floutage : un avertissement en
+   fait partie, une note et une astuce non. */
+.callout-warning {
+  border-left-color: var(--color-danger);
+}
+
+.callout-label {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--color-dim);
+  margin-bottom: 4px;
+}
+
+.callout-warning .callout-label {
+  color: var(--color-danger);
+}
+
+.callout p {
+  margin: 0;
+}
+
+.load-error {
+  padding: 14px 16px;
+  border: 1px solid rgb(255 154 154 / 0.4);
+  border-radius: var(--radius-md);
+  color: var(--color-danger);
+}
+
+/* — Étroit ————————————————————————————————————————————————————————— */
+
+/* Le rail passe au-dessus du texte sous 900 px. Comme l'app, la documentation
+   n'a pas de version mobile : elle se lit à côté d'un terminal. */
+@media (max-width: 900px) {
+  .docs {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+    padding: 0 20px;
+  }
+
+  .rail {
+    position: static;
+    max-height: none;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--color-hairline);
+  }
+
+  #doc {
+    padding-top: 32px;
+  }
+}

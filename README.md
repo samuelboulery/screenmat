@@ -54,7 +54,7 @@ English · [Français](README.fr.md)
 
 | The raw screenshot | The same one, framed and annotated |
 | --- | --- |
-| <img src="docs/assets/before.png" alt="A raw, unedited screenshot" width="420"> | <img src="docs/assets/annotated.webp" alt="The same screenshot with a generated background, badges, a callout and a baked blur" width="420"> |
+| <img src="docs/assets/before.webp" alt="A raw, unedited screenshot" width="420"> | <img src="docs/assets/annotated.webp" alt="The same screenshot with a generated background, badges, a callout and a baked blur" width="420"> |
 
 Badges, a callout arrow and a blur over the address bar — the blur is in the
 pixels, not on top of them.

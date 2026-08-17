@@ -55,7 +55,7 @@ screenshot, des annotations, du floutage — le tout calculé dans le navigateur
 
 | Le screenshot brut | Le même, mis en scène et annoté |
 | --- | --- |
-| <img src="docs/assets/before.png" alt="Un screenshot brut, sans retouche" width="420"> | <img src="docs/assets/annotated.webp" alt="Le même screenshot avec fond génératif, badges, appel de texte et floutage cuit" width="420"> |
+| <img src="docs/assets/before.webp" alt="Un screenshot brut, sans retouche" width="420"> | <img src="docs/assets/annotated.webp" alt="Le même screenshot avec fond génératif, badges, appel de texte et floutage cuit" width="420"> |
 
 Des badges, une flèche d'appel et un flou sur la barre d'adresse — le flou est
 dans les pixels, pas posé par-dessus.

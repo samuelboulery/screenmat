@@ -31,13 +31,13 @@ the default — speak; it is never overwritten with `undefined`.
 | `--style` | name or path | — | A [saved style](#styles), applied underneath the flags. |
 | `--scale` | `1` `2` `3` | `2` | Export scale. Anything else falls back to `2`. |
 | `--format` | `png` `webp` | `webp` | Falls back to PNG where the WebP encoder is missing. |
-| `--frame` | `browser` `macbook` `iphone` `none` | `browser` | |
+| `--frame` | `browser` `macbook` `iphone` `none` | `none` | |
 | `--background` | `mesh` `gradient` `solid` | `mesh` | `image` needs a scene file. |
 | `--ratio` | `auto` `4:3` `1:1` `16:9` `9:16` | `4:3` | |
 | `--theme` | `auto` `light` `dark` | `auto` | Frame chrome, not the background. |
 | `--url` | text | `example.com` | Address bar text, `frame=browser` only. Truncated at 200 characters. |
 | `--padding` | 0 to 0.3 | `0.065` | Fraction of the canvas width. |
-| `--radius` | 0 to 0.08 | `0.01` | Window corner radius, same unit. |
+| `--radius` | 0 to 0.08 | `0.018` | Window corner radius, same unit. |
 | `--seed` | integer | `1` | Same seed, same background, exactly. |
 | `--shadow` | 0 to 2 | `1` | Multiplier on the artwork's own shadow. |
 | `--grain` | 0 to 1 | `0.35` | Film grain over the background. |

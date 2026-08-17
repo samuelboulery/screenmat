@@ -64,7 +64,7 @@ Three layers, each overriding the one below:
   ────────────────────────────────────────────────────────
   the named style     ← --style / style:
   ────────────────────────────────────────────────────────
-  defaults            ← frame browser · ratio 4:3 · background mesh · seed 1 …
+  defaults            ← frame none · ratio 4:3 · background mesh · seed 1 …
 ```
 
 Only the keys you actually pass count as explicit. An absent flag lets the style

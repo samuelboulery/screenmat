@@ -242,7 +242,7 @@ export type HistoryEntry = {
 export const DEFAULT_SETTINGS: Settings = {
   padding: 0.065,
   ratio: '4:3',
-  radius: 0.01,
+  radius: 0.018,
   titleBar: true,
   theme: 'auto',
   url: 'example.com',
@@ -257,7 +257,10 @@ export const DEFAULT_SETTINGS: Settings = {
   // 8,4 Mo en PNG contre 0,8 Mo en WebP, pour un résultat visuellement
   // identique. Là où l'encodeur WebP manque, `supportsWebp()` ramène au PNG.
   format: 'webp',
-  frame: 'browser',
+  // Le screenshot nu — coins arrondis, ombre portée — plutôt qu'un faux
+  // navigateur : tout screenshot ne vient pas du web, et le cadre `browser`
+  // reste à un clic.
+  frame: 'none',
   background: 'mesh',
   rotateY: 0,
   shadow: 1,

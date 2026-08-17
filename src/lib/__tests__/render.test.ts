@@ -45,7 +45,8 @@ describe('computeGeometry', () => {
   })
 
   it('réserve la barre de titre, et rien quand elle est masquée', () => {
-    const withBar = computeGeometry(1440, 900, settings({ titleBar: true }))
+    // La barre n'existe que dans le cadre navigateur, qui n'est plus le défaut.
+    const withBar = computeGeometry(1440, 900, settings({ frame: 'browser', titleBar: true }))
     expect(withBar.titleBar).toBeCloseTo(TITLE_BAR * withBar.window.width, 6)
     // L'image occupe le reste, à son rapport d'origine.
     expect((withBar.window.height - withBar.titleBar) / withBar.window.width).toBeCloseTo(900 / 1440, 6)

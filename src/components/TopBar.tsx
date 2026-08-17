@@ -1,5 +1,5 @@
-import { LocalIcon, ScreenIcon } from './icons.tsx'
-import { Badge, Segmented } from './ui.tsx'
+import { DevDocsIcon, LocalIcon, ScreenIcon } from './icons.tsx'
+import { Badge, ExternalLink, Segmented } from './ui.tsx'
 import type { Screen } from '../types.ts'
 
 /* Les destinations gardent leur mot : un onglet de navigation se lit, il ne se
@@ -79,6 +79,20 @@ export default function TopBar({ screen, showNav = true, onScreen, onHome }: Top
           <Segmented options={SCREENS} value={screen} onPick={onScreen} />
         </nav>
       )}
+
+      {/* La porte machine, à l'autre bout de la barre. Présente aussi sur
+          l'écran d'import — c'est là qu'on cherche par quoi commencer — et de
+          largeur constante : la barre ne bouge toujours pas d'un écran à
+          l'autre. Une page servie à côté de l'app, donc hors ligne comme elle. */}
+      <ExternalLink
+        href="/docs/"
+        title="Dev docs — drive shotframe from a script, a CLI or an agent (Node API, CLI, MCP)"
+        aria-label="Dev docs"
+        className="ml-auto"
+      >
+        <DevDocsIcon />
+        <span className={WORD}>Dev docs</span>
+      </ExternalLink>
     </header>
   )
 }

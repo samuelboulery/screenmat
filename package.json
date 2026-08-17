@@ -2,8 +2,34 @@
   "name": "shotframe",
   "private": true,
   "version": "0.1.0",
+  "description": "Turn a raw screenshot into a shareable visual — macOS-style window, generative background, annotations, redaction. Runs entirely in the browser.",
+  "license": "MIT",
+  "author": "Samuel Boulery",
+  "homepage": "https://github.com/samuelboulery/shotframe#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/samuelboulery/shotframe.git"
+  },
+  "bugs": {
+    "url": "https://github.com/samuelboulery/shotframe/issues"
+  },
+  "keywords": [
+    "screenshot",
+    "canvas",
+    "image",
+    "mockup",
+    "annotation",
+    "redaction",
+    "webp",
+    "cli",
+    "mcp",
+    "offline"
+  ],
   "type": "module",
   "packageManager": "pnpm@10.12.1",
+  "engines": {
+    "node": ">=24"
+  },
   "bin": {
     "shotframe": "./cli/main.ts"
   },

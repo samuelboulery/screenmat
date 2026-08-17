@@ -4,7 +4,7 @@
  * en scène et appelle `render()` / `inspect()`.
  *
  * Ce qui compte pour un appelant qui n'est pas humain :
- * `shotframe capture.png` sans autre argument doit déjà donner un bon visuel,
+ * `screenmat capture.png` sans autre argument doit déjà donner un bon visuel,
  * et `--json` doit sortir un objet à lire plutôt qu'une phrase à parser.
  */
 import { parseArgs } from 'node:util'
@@ -42,15 +42,15 @@ const OPTIONS = {
   help: { type: 'boolean', short: 'h' },
 } as const
 
-const HELP = `shotframe — un screenshot brut, un visuel prêt à partager.
+const HELP = `screenmat — un screenshot brut, un visuel prêt à partager.
 
-  shotframe <image…> [options]     rendu direct
-  shotframe --spec scene.json      scène complète, annotations comprises
-  shotframe inspect <image>        dimensions et repère des calques
-  shotframe styles                 styles disponibles
+  screenmat <image…> [options]     rendu direct
+  screenmat --spec scene.json      scène complète, annotations comprises
+  screenmat inspect <image>        dimensions et repère des calques
+  screenmat styles                 styles disponibles
 
 Options
-  -o, --out <path>       fichier de sortie (défaut : <image>-shotframe.<ext>)
+  -o, --out <path>       fichier de sortie (défaut : <image>-screenmat.<ext>)
       --out-dir <dir>    dossier de sortie pour plusieurs images
       --style <nom|path> style enregistré, appliqué sous les autres options
       --scale 1|2|3      échelle d'export (défaut : 2)
@@ -100,7 +100,7 @@ function settingsFromFlags(flags: Flags): Partial<Settings> {
 
 function outputPath(input: string, flags: Flags, format: string): string {
   if (typeof flags.out === 'string') return flags.out
-  const name = `${basename(input, extname(input))}-shotframe.${format}`
+  const name = `${basename(input, extname(input))}-screenmat.${format}`
   return typeof flags['out-dir'] === 'string' ? join(flags['out-dir'], name) : name
 }
 

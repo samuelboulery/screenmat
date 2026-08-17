@@ -14,7 +14,7 @@ export type Batch = {
   reset: () => void
 }
 
-const ZIP_NAME = 'shotframe-batch.zip'
+const ZIP_NAME = 'screenmat-batch.zip'
 
 /** Un item de file par shot ; les ratios multiplient les fichiers, pas les items. */
 export function useBatch(): Batch {

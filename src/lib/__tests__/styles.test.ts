@@ -10,13 +10,13 @@ import {
 } from '../styles.ts'
 import { DEFAULT_SETTINGS } from '../../types.ts'
 
-const wrap = (style: unknown) => JSON.stringify({ kind: 'shotframe-style', version: 1, style })
+const wrap = (style: unknown) => JSON.stringify({ kind: 'screenmat-style', version: 1, style })
 
 describe('parseStyle', () => {
-  it('refuse ce qui n’est pas un style shotframe', () => {
+  it('refuse ce qui n’est pas un style screenmat', () => {
     expect(() => parseStyle('pas du json')).toThrow(/JSON/)
-    expect(() => parseStyle('{"kind":"autre-chose"}')).toThrow(/style shotframe/)
-    expect(() => parseStyle(JSON.stringify({ kind: 'shotframe-style' }))).toThrow()
+    expect(() => parseStyle('{"kind":"autre-chose"}')).toThrow(/style screenmat/)
+    expect(() => parseStyle(JSON.stringify({ kind: 'screenmat-style' }))).toThrow()
   })
 
   it('relit un style complet', () => {

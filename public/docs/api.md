@@ -4,7 +4,7 @@ The direct import — for a build script, a docs generator, a test fixture. Two
 functions, both in `cli/api.ts`.
 
 ```ts
-import { render, inspect } from 'shotframe/node'
+import { render, inspect } from 'screenmat/node'
 ```
 
 From a checkout, import the file: `import { render } from './cli/api.ts'`. Node
@@ -56,7 +56,7 @@ type RenderResult = {
 Nothing is written to disk. Writing is the caller's business:
 
 ```ts
-import { render } from 'shotframe/node'
+import { render } from 'screenmat/node'
 import { readdir, writeFile } from 'node:fs/promises'
 
 const shots = (await readdir('docs/raw')).filter((file) => file.endsWith('.png'))

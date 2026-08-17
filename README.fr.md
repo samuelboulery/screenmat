@@ -1,12 +1,12 @@
 <div align="center">
 
-# shotframe
+# screenmat
 
 **Un screenshot brut, un visuel qu'on a envie de partager.**
 Une fenêtre arrondie façon macOS, un fond génératif dérivé des couleurs du
 screenshot, des annotations, du floutage — le tout calculé dans le navigateur.
 
-[![CI](https://github.com/samuelboulery/shotframe/actions/workflows/ci.yml/badge.svg)](https://github.com/samuelboulery/shotframe/actions/workflows/ci.yml)
+[![CI](https://github.com/samuelboulery/screenmat/actions/workflows/ci.yml/badge.svg)](https://github.com/samuelboulery/screenmat/actions/workflows/ci.yml)
 [![Licence : MIT](https://img.shields.io/badge/Licence-MIT-7DE2FF.svg)](LICENSE)
 [![React 19](https://img.shields.io/badge/React-19-A378FF.svg)](https://react.dev)
 [![TypeScript strict](https://img.shields.io/badge/TypeScript-strict-3178C6.svg)](https://www.typescriptlang.org)
@@ -14,7 +14,7 @@ screenshot, des annotations, du floutage — le tout calculé dans le navigateur
 
 [English](README.md) · Français
 
-<img src="docs/assets/hero.webp" alt="L'éditeur shotframe, mis en scène par shotframe lui-même" width="900">
+<img src="docs/assets/hero.webp" alt="L'éditeur screenmat, mis en scène par screenmat lui-même" width="900">
 
 </div>
 
@@ -81,7 +81,7 @@ le CLI, le serveur MCP et l'import direct n'en sont que des enveloppes.
 ```bash
 # Ligne de commande — les défauts sont déjà bons.
 pnpm cli capture.png
-# → capture-shotframe.webp  3200×2400  188464 octets
+# → capture-screenmat.webp  3200×2400  188464 octets
 
 # Un dossier entier, un style, une destination.
 pnpm cli shots/*.png --style docs --out-dir ./build
@@ -92,7 +92,7 @@ pnpm cli --spec scene.json --scale 3 -o hero@3x.webp
 
 ```ts
 // Script Node — l'import direct.
-import { render } from 'shotframe/node'
+import { render } from 'screenmat/node'
 import { writeFile } from 'node:fs/promises'
 
 const { buffer, width, height } = await render({
@@ -106,12 +106,12 @@ await writeFile('docs/hero.webp', buffer)
 
 ```bash
 # Agent IA — le serveur MCP se déclare une fois.
-claude mcp add shotframe -- node /chemin/absolu/vers/shotframe/cli/mcp.ts
+claude mcp add screenmat -- node /chemin/absolu/vers/screenmat/cli/mcp.ts
 ```
 
-Trois outils MCP : `shotframe_render` (écrit un fichier et renvoie son chemin —
-jamais les octets de l'image), `shotframe_inspect` (le repère des calques, à
-appeler avant d'en placer un) et `shotframe_list_styles`. Rien n'est jamais
+Trois outils MCP : `screenmat_render` (écrit un fichier et renvoie son chemin —
+jamais les octets de l'image), `screenmat_inspect` (le repère des calques, à
+appeler avant d'en placer un) et `screenmat_list_styles`. Rien n'est jamais
 écrasé, et tout chemin écrit reste sous la racine de sortie configurée.
 
 **La documentation complète vit dans [`public/docs/`](public/docs/)** — une seule

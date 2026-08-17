@@ -11,12 +11,12 @@ let resolveStyle: typeof import('../styles-dir.ts').resolveStyle
 let render: typeof import('../api.ts').render
 
 function styleFile(name: string, settings: Record<string, unknown>): string {
-  return JSON.stringify({ kind: 'shotframe-style', version: 1, style: { name, settings } })
+  return JSON.stringify({ kind: 'screenmat-style', version: 1, style: { name, settings } })
 }
 
 beforeAll(async () => {
-  dir = await mkdtemp(join(tmpdir(), 'shotframe-styles-'))
-  process.env.SHOTFRAME_STYLES = dir
+  dir = await mkdtemp(join(tmpdir(), 'screenmat-styles-'))
+  process.env.SCREENMAT_STYLES = dir
 
   await writeFile(join(dir, 'docs.json'), styleFile('Docs', { frame: 'macbook', ratio: '16:9', seed: 5 }))
   await writeFile(join(dir, 'vide.json'), 'pas du json')

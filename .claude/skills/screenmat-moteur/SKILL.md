@@ -1,9 +1,9 @@
 ---
-name: shotframe-moteur
-description: Le moteur de rendu Canvas 2D de shotframe — carte de `src/lib/`, invariants de `renderScene`, repères de coordonnées, arbre de calques, floutage cuit, fond déterministe, cache du fond, contraste des encres, rotation Y. À invoquer AVANT de toucher au canvas, à un calque, à une annotation, au floutage, au fond, à la palette, à la géométrie, à l'export ou à la preview. Les règles qu'il porte sont ce qui garantit qu'un export 3× est l'homothétique exact de ce qu'on voit à l'écran.
+name: screenmat-moteur
+description: Le moteur de rendu Canvas 2D de screenmat — carte de `src/lib/`, invariants de `renderScene`, repères de coordonnées, arbre de calques, floutage cuit, fond déterministe, cache du fond, contraste des encres, rotation Y. À invoquer AVANT de toucher au canvas, à un calque, à une annotation, au floutage, au fond, à la palette, à la géométrie, à l'export ou à la preview. Les règles qu'il porte sont ce qui garantit qu'un export 3× est l'homothétique exact de ce qu'on voit à l'écran.
 ---
 
-# shotframe — le moteur de rendu
+# screenmat — le moteur de rendu
 
 `renderScene(ctx, scene, scale)` est **le seul chemin de rendu**. La preview
 l'appelle avec `scale = devicePixelRatio`, l'export avec 1, 2 ou 3, le CLI et le

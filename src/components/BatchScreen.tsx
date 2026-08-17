@@ -247,7 +247,7 @@ export default function BatchScreen({
           <p className="font-mono text-[10px] text-dim">
             NAMING {'{shot}-{ratio}'}@{scale}x
           </p>
-          <p className="font-mono text-[10px] text-dim">DEST shotframe-batch.zip</p>
+          <p className="font-mono text-[10px] text-dim">DEST screenmat-batch.zip</p>
         </Section>
 
         {/* Collé au bas du panneau : la file au-dessus peut défiler, la fin de

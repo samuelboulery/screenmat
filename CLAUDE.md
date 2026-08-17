@@ -1,4 +1,4 @@
-# shotframe
+# screenmat
 
 Outil web perso qui transforme un screenshot brut en visuel prêt à partager :
 fenêtre arrondie façon macOS, fond génératif dérivé des couleurs dominantes du
@@ -20,13 +20,13 @@ importées par `src/` : `@napi-rs/canvas`, `@modelcontextprotocol/sdk`, `zod`.
 Ce fichier ne garde que ce qui casse le produit s'il est ignoré. Le reste est
 chargé à la demande, et ne rien charger est une façon de se tromper :
 
-- **`shotframe-da`** — direction artistique, recettes de sélection, icônes,
+- **`screenmat-da`** — direction artistique, recettes de sélection, icônes,
   typographie, écrans, raccourcis. *Toucher à un composant, une couleur, une
   icône ou un raccourci sans l'avoir lu, c'est faire diverger la DA.*
-- **`shotframe-moteur`** — carte de `src/lib/`, invariants de `renderScene`,
+- **`screenmat-moteur`** — carte de `src/lib/`, invariants de `renderScene`,
   repères de coordonnées, arbre de calques, floutage, cache du fond.
   *À lire avant de toucher au canvas, à un calque ou à l'export.*
-- **`shotframe-machine`** — CLI, serveur MCP, API Node, format de scène, shim.
+- **`screenmat-machine`** — CLI, serveur MCP, API Node, format de scène, shim.
   *À lire avant de toucher à `cli/`.*
 
 Trois choses ne se déduisent pas d'un `ls src/lib` : `render.ts` porte l'unique

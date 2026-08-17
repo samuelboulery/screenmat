@@ -3,11 +3,12 @@
  * étroit : ce que la documentation utilise réellement, et rien de plus — titres,
  * paragraphes, listes, tableaux, blocs de code, encarts, filets, liens.
  *
- * Il ne produit pas de HTML mais un arbre d'éléments (`El`), que `dom.ts`
- * transforme en nœuds. Deux raisons, une par bout : le parsing se teste dans
- * l'environnement `node` de Vitest sans dépendance DOM, et il n'existe nulle
- * part une chaîne de balises qu'on serait tenté d'écrire dans un `innerHTML` —
- * un `<script>` posé dans un `.md` ressort en texte, par construction.
+ * Il ne produit pas de HTML mais un arbre d'éléments (`El`), que `html.ts`
+ * sérialise au build. Le parsing se teste ainsi dans l'environnement `node` de
+ * Vitest sans dépendance DOM, et l'échappement reste à un seul endroit : un
+ * `<script>` posé dans un `.md` ressort en texte parce que `html.ts` l'échappe,
+ * et c'est `__tests__/html.test.ts` qui le prouve. Ne pas produire de balises
+ * ici, jamais — ce serait une seconde porte, non gardée.
  *
  * ponytail: pas de HTML brut, pas de notes de bas de page, pas de listes de
  * définition. Les schémas sont en ASCII dans un bloc ```text — ce qui se lit

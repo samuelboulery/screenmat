@@ -11,9 +11,9 @@ describe('slug', () => {
   })
 
   it('retombe sur un nom par défaut quand l’URL est vide ou impraticable', () => {
-    expect(slug('')).toBe('shotframe')
-    expect(slug('   ')).toBe('shotframe')
-    expect(slug('///')).toBe('shotframe')
+    expect(slug('')).toBe('screenmat')
+    expect(slug('   ')).toBe('screenmat')
+    expect(slug('///')).toBe('screenmat')
   })
 
   it('borne la longueur', () => {
@@ -29,7 +29,7 @@ describe('exportFilename', () => {
     expect(exportFilename('miette-indol.vercel.app', 3, 'webp')).toBe(
       'miette-indol-vercel-app-3x.webp',
     )
-    expect(exportFilename('', 1, 'webp')).toBe('shotframe-1x.webp')
+    expect(exportFilename('', 1, 'webp')).toBe('screenmat-1x.webp')
   })
 })
 

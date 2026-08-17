@@ -141,7 +141,7 @@ of the canvas.
 
 ```ts
 import { chromium } from 'playwright'
-import { render } from 'shotframe/node'
+import { render } from 'screenmat/node'
 import { writeFile } from 'node:fs/promises'
 
 const browser = await chromium.launch()
@@ -164,7 +164,7 @@ has to be written out first.
 ## Regenerate a docs set in CI
 
 ```ts
-import { render } from 'shotframe/node'
+import { render } from 'screenmat/node'
 import { readdir, writeFile } from 'node:fs/promises'
 
 for (const file of await readdir('docs/raw')) {
@@ -207,7 +207,7 @@ the whole scene. Check the spelling against the seven kinds in
 including a redaction, which then hides nothing.
 
 **The MCP server refused to write.** `output` must resolve under the write root:
-the folder of the first screenshot, or `SHOTFRAME_OUT`. Pass a relative path, or
+the folder of the first screenshot, or `SCREENMAT_OUT`. Pass a relative path, or
 widen the root. See [Writing safely](#mcp-writing-safely).
 
 **The MCP server wrote to a path I did not ask for.** It never overwrites; an
@@ -215,5 +215,5 @@ existing file makes it try `-2`, `-3`, and so on. The path it actually used is
 in the return value.
 
 **A style name is not found.** The name is the file name without extension, and
-the error message lists what is available. Check `SHOTFRAME_STYLES` if the
+the error message lists what is available. Check `SCREENMAT_STYLES` if the
 directory is not the default one.

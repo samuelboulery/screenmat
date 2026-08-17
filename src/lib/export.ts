@@ -78,7 +78,7 @@ export function slug(url: string): string {
     .replace(/[^a-z0-9]+/gi, '-')
     .replace(/^-+|-+$/g, '')
     .toLowerCase()
-  return cleaned.slice(0, 48) || 'shotframe'
+  return cleaned.slice(0, 48) || 'screenmat'
 }
 
 export function exportFilename(url: string, scale: number, format: Format): string {

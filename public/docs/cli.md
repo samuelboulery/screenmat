@@ -1,10 +1,10 @@
 # CLI
 
 ```text
-shotframe <image…> [options]     render one or more images
-shotframe --spec scene.json      full scene, annotations included
-shotframe inspect <image>        dimensions and the layer coordinate frame
-shotframe styles                 saved styles
+screenmat <image…> [options]     render one or more images
+screenmat --spec scene.json      full scene, annotations included
+screenmat inspect <image>        dimensions and the layer coordinate frame
+screenmat styles                 saved styles
 ```
 
 From a clone of the repository, use `pnpm cli` — it is `node cli/main.ts`:
@@ -13,8 +13,8 @@ From a clone of the repository, use `pnpm cli` — it is `node cli/main.ts`:
 pnpm cli screenshot.png --frame macbook --ratio 16:9 --scale 3
 ```
 
-The package declares `bin.shotframe`, so a linked or installed copy answers to
-`shotframe` directly. Both forms are the same file.
+The package declares `bin.screenmat`, so a linked or installed copy answers to
+`screenmat` directly. Both forms are the same file.
 
 Called with no image and no `--spec`, the CLI prints its help and exits 0.
 
@@ -25,7 +25,7 @@ the default — speak; it is never overwritten with `undefined`.
 
 | Flag | Value | Default | Notes |
 | --- | --- | --- | --- |
-| `-o, --out` | path | `<image>-shotframe.<format>` | Exact output file. |
+| `-o, --out` | path | `<image>-screenmat.<format>` | Exact output file. |
 | `--out-dir` | directory | current directory | Where generated names land. |
 | `--spec` | path | — | A [scene file](#scene). Flags override its settings. |
 | `--style` | name or path | — | A [saved style](#styles), applied underneath the flags. |
@@ -72,7 +72,7 @@ Each positional image is rendered in turn and written on its own. `--out` names
 a single file, so pass one image with it; with several images, use `--out-dir`.
 
 Without either, the file is written to the **current directory** under
-`<basename>-shotframe.<format>` — the input's folder is not reused.
+`<basename>-screenmat.<format>` — the input's folder is not reused.
 
 ## Rendering a scene
 
@@ -121,7 +121,7 @@ pnpm cli styles --json
 
 ```json
 {
-  "directory": "/Users/you/.shotframe/styles",
+  "directory": "/Users/you/.screenmat/styles",
   "styles": [
     { "name": "docs", "label": "Docs", "frame": "macbook", "background": "mesh", "ratio": "16:9", "format": "webp" }
   ]
@@ -135,7 +135,7 @@ pnpm cli styles --json
 A render prints one line per file:
 
 ```text
-screenshot-shotframe.webp  3200×2400  188464 octets
+screenshot-screenmat.webp  3200×2400  188464 octets
 ```
 
 With `--json`, the same render prints an object — this is the form to parse:
@@ -152,7 +152,7 @@ With `--json`, the same render prints an object — this is the form to parse:
 without it the same object is pretty-printed.
 
 > **Note** — `format` in the result is the authoritative one. When a build of
-> Node has no WebP encoder, shotframe falls back to PNG rather than writing a
+> Node has no WebP encoder, screenmat falls back to PNG rather than writing a
 > file whose extension lies about its contents.
 
 ## Errors

@@ -17,6 +17,17 @@ included.
 Everything else has a default. `shots` is the only required field, and it needs
 at least one entry with a usable `input`.
 
+**Every path in a scene is resolved from the working directory the command runs
+in — never from the folder the scene file sits in.** That holds for
+`shots[].input`, `background` and `watermark.path` alike, and a leading `./`
+changes nothing. So a scene stored next to its images is run from that folder:
+
+```bash
+cd assets && screenmat --spec scene.json
+```
+
+Anywhere else, write the paths from where the command runs.
+
 ## A complete one
 
 ```jsonc

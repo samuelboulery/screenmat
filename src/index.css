@@ -98,9 +98,11 @@ body,
 }
 
 /* La scène est noire, le chrome du navigateur doit l'être aussi : sans ça les
-   barres de défilement des panneaux arrivent en clair sur du `#07070A`. Une
-   déclaration native plutôt qu'un `::-webkit-scrollbar` — elle vaut aussi pour
-   le curseur de texte et les contrôles natifs, et Firefox la comprend. */
+   barres de défilement des panneaux arrivent en clair sur du `#07070A`.
+   `color-scheme` vaut aussi pour le curseur de texte et les contrôles natifs.
+
+   Le reste du dessin est plus bas — un panneau flottant de 14 px de rayon ne
+   supporte pas une gouttière plaquée à son bord. */
 html {
   color-scheme: dark;
 }
@@ -111,6 +113,54 @@ body {
   font-family: var(--font-sans);
   font-size: 13px;
   -webkit-font-smoothing: antialiased;
+}
+
+/* Barre de défilement : un filet flottant, pas une gouttière. La piste reste
+   transparente et le pouce est écarté du bord par une bordure invisible — le
+   fond du panneau passe derrière, et son rayon de 14 px reste entier au lieu
+   d'être carré par une barre plaquée à l'angle. Même densité que les autres
+   filets de la DA, jamais l'accent : ce n'est ni une action ni une sélection.
+
+   Firefox n'a que les propriétés standard ; Chrome et Safari les préfèrent aux
+   pseudo-éléments dès qu'elles sont posées — on ne les leur donne donc pas, ou
+   l'écartement serait perdu. */
+@supports not selector(::-webkit-scrollbar) {
+  html {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-raised) transparent;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* La piste s'arrête avant les angles : sans cette marge, le pouce court jusqu'au
+   coin et c'est le rayon qui le tranche. */
+::-webkit-scrollbar-track:vertical {
+  margin: 10px 0;
+}
+
+::-webkit-scrollbar-track:horizontal {
+  margin: 0 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: var(--radius-xs);
+  background: var(--color-raised);
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(255 255 255 / 0.2);
+  background-clip: content-box;
 }
 
 /* Taille et épaisseur des icônes, réglées une fois pour toutes : Lucide pose

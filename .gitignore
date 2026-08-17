@@ -5,3 +5,5 @@ ovrsee/
 .DS_Store
 *.local
 *.tsbuildinfo
+.vercel
+.env*

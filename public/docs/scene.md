@@ -67,7 +67,7 @@ the app. Three rules, applied everywhere:
 
 - **Out of range is clamped**, not rejected. `"opacity": 42` renders at `1`.
 - **An unknown enum value falls back to its default.** `"frame": "tablet"`
-  renders a `browser` frame.
+  renders an unframed screenshot.
 - **An unknown layer `kind` is dropped**, and the rest of the scene renders. A
   visual missing one arrow beats a failed build because a model invented a
   layer type.
@@ -95,7 +95,7 @@ what makes an export at scale 3 the exact homothety of the preview.
 
 | Field | Values | Default | Bounds |
 | --- | --- | --- | --- |
-| `frame` | `browser` `macbook` `iphone` `none` | `browser` | |
+| `frame` | `browser` `macbook` `iphone` `none` | `none` | |
 | `ratio` | `auto` `4:3` `1:1` `16:9` `9:16` | `4:3` | |
 | `background` | `mesh` `gradient` `solid` `image` | `mesh` | `image` needs the top-level `background`. |
 | `theme` | `auto` `light` `dark` | `auto` | |
@@ -103,7 +103,7 @@ what makes an export at scale 3 the exact homothety of the preview.
 | `titleBar` | boolean | `true` | |
 | `url` | string | `example.com` | Truncated at 200 characters. `frame=browser` only. |
 | `padding` | number | `0.065` | 0 to 0.3 |
-| `radius` | number | `0.01` | 0 to 0.08 |
+| `radius` | number | `0.018` | 0 to 0.08 |
 | `rotateY` | degrees | `0` | −24 to 24 |
 | `shadow` | number | `1` | 0 to 2 |
 | `grain` | number | `0.35` | 0 to 1 |

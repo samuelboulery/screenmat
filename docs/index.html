@@ -4,21 +4,40 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="theme-color" content="#07070a" />
     <link rel="preload" as="font" type="font/woff2" href="/fonts/space-grotesk-latin.woff2" crossorigin />
     <link rel="preload" as="font" type="font/woff2" href="/fonts/jetbrains-mono-latin.woff2" crossorigin />
-    <title>shotframe — machine door</title>
-    <meta name="description" content="Reference for the shotframe Node API, CLI and MCP server." />
+    <!-- Titre, description, canonical et `og:` sont réécrits par document au
+         build : ces valeurs sont celles du sommaire servi sur `/docs/`. -->
+    <title>screenmat — machine door</title>
+    <meta name="description" content="Reference for the screenmat Node API, CLI and MCP server." />
+    <link rel="canonical" href="%SITE_URL%/docs/" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="screenmat" />
+    <meta property="og:title" content="screenmat — machine door" />
+    <meta property="og:description" content="Reference for the screenmat Node API, CLI and MCP server." />
+    <meta property="og:url" content="%SITE_URL%/docs/" />
+    <meta property="og:image" content="%SITE_URL%/og.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="675" />
+    <meta property="og:image:alt" content="A screenshot framed in a rounded macOS-style window over a generative background." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="screenmat — machine door" />
+    <meta name="twitter:description" content="Reference for the screenmat Node API, CLI and MCP server." />
+    <meta name="twitter:image" content="%SITE_URL%/og.jpg" />
   </head>
   <body>
     <!-- Le contenu vit en Markdown dans `public/docs/` et se sert tel quel :
-         cette page n'en est qu'un lecteur. -->
+         cette page n'en est qu'un lecteur, et `vite-docs-prerender.ts` la
+         remplit au build — un document par URL. -->
     <div class="docs">
       <aside class="rail">
-        <a class="brand" href="/">shotframe <span>/ docs</span></a>
+        <a class="brand" href="/">screenmat <span>/ docs</span></a>
         <span class="rail-kicker">Machine door</span>
         <nav id="toc" aria-label="Documentation"></nav>
         <div class="rail-foot">
-          <a href="./llms.txt">llms.txt</a>
+          <a href="/docs/llms.txt">llms.txt</a>
           <button type="button" id="copy-all">Copy all</button>
         </div>
       </aside>

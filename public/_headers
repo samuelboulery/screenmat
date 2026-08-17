@@ -1,0 +1,16 @@
+# L'équivalent Netlify de `vercel.json`. Inerte partout ailleurs : le garder
+# évite d'avoir à réécrire les en-têtes le jour où l'hébergeur change.
+
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/fonts/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# `llms.txt` promet qu'un LLM ou `curl` peut lire ces fichiers : ils doivent
+# s'afficher, pas se télécharger.
+/docs/*.md
+  Content-Type: text/markdown; charset=utf-8
+
+/docs/llms.txt
+  Content-Type: text/plain; charset=utf-8

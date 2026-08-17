@@ -2,7 +2,7 @@
 {
   "id": "T-0073",
   "titre": "Page lecteur /docs, rendu markdown sans dépendance",
-  "colonne": "revue",
+  "colonne": "fait",
   "priorite": "haute",
   "tags": [
     "docs",

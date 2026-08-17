@@ -2,7 +2,7 @@
 {
   "id": "T-0074",
   "titre": "Contenu de la documentation de la porte machine",
-  "colonne": "revue",
+  "colonne": "fait",
   "priorite": "haute",
   "tags": [
     "docs"

@@ -2,7 +2,7 @@
 {
   "id": "T-0075",
   "titre": "Lien Docs dans la barre haute et pointeurs uniques",
-  "colonne": "revue",
+  "colonne": "fait",
   "priorite": "moyenne",
   "tags": [
     "ui",

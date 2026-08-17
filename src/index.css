@@ -97,6 +97,14 @@ body,
   height: 100%;
 }
 
+/* La scène est noire, le chrome du navigateur doit l'être aussi : sans ça les
+   barres de défilement des panneaux arrivent en clair sur du `#07070A`. Une
+   déclaration native plutôt qu'un `::-webkit-scrollbar` — elle vaut aussi pour
+   le curseur de texte et les contrôles natifs, et Firefox la comprend. */
+html {
+  color-scheme: dark;
+}
+
 body {
   background: var(--color-stage);
   color: var(--color-ink);

@@ -6,8 +6,11 @@ description: La porte machine de shotframe — CLI `cli/main.ts`, serveur MCP `c
 # shotframe — pilotage par une machine
 
 Une seconde porte d'entrée sur le **même** moteur, pour un script de build, un
-générateur de docs ou une IA dans un autre projet. Détail complet et format de
-scène : `cli/README.md`.
+générateur de docs ou une IA dans un autre projet. Détail complet, flags, outils
+MCP et format de scène : **`public/docs/`** — la référence en Markdown, source
+unique, servie telle quelle et mise en forme par la page `/docs`. Un chiffre qui
+y figure se relit à la source avant d'être modifié : `cli/README.md` ne fait plus
+que pointer vers elle.
 
 ```
 render(spec) → Buffer          cli/api.ts        ← LE CŒUR

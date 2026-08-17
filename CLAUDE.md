@@ -33,6 +33,16 @@ Trois choses ne se déduisent pas d'un `ls src/lib` : `render.ts` porte l'unique
 moteur de rendu, `tree.ts` est le seul chemin de manipulation de l'arbre de
 calques, `spec.ts` valide une donnée externe.
 
+## La documentation de la porte machine
+
+Elle vit en Markdown dans **`public/docs/`** — source unique, en anglais, servie
+telle quelle (un modèle, `curl` ou GitHub la lisent) et mise en forme par la page
+`/docs` : seconde entrée Vite, `docs/index.html` + `src/docs/` (rendu Markdown
+maison, sans dépendance, sans `innerHTML`). Le lien vit en haut à droite de la
+barre. `cli/README.md` n'est plus qu'un panneau indicateur : ne pas y remettre de
+référence, elle divergerait au premier flag ajouté. Un défaut ou une borne cité
+dans la doc se relit à la source avant d'être écrit.
+
 ## Key Commands
 
 ```bash

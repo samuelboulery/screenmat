@@ -28,11 +28,17 @@ type ButtonProps = ComponentProps<'button'> & {
   variant?: 'primary' | 'secondary' | 'ghost' | 'danger'
 }
 
+/* Le gabarit commun de ce qui se clique en ligne — même hauteur, même rythme,
+   que ce soit un `<button>` ou un `<a>`. */
+const CONTROL = 't-ui inline-flex items-center gap-1.5 rounded-md px-3.5 py-2 transition-colors duration-140'
+/** La recette discrète : rien à annoncer, on ne la voit qu'au survol. */
+const GHOST = 'text-ink-soft hover:text-ink'
+
 export function Button({ variant = 'secondary', className = '', ...rest }: ButtonProps) {
   const styles = {
     primary: 'gradient-accent text-stage font-semibold',
     secondary: 'border border-hairline-strong text-ink hover:border-white/20',
-    ghost: 'text-ink-soft hover:text-ink',
+    ghost: GHOST,
     // Le destructif porte `#FF9A9A`, jamais le dégradé d'accent : l'accent est
     // réservé à l'action primaire. Une variante, pas une classe surchargée —
     // Tailwind trie ses utilitaires par ordre de feuille, pas par ordre d'écriture.
@@ -42,10 +48,20 @@ export function Button({ variant = 'secondary', className = '', ...rest }: Butto
   return (
     <button
       type="button"
-      className={`t-ui inline-flex items-center gap-1.5 rounded-md px-3.5 py-2 transition-colors duration-140 disabled:opacity-40 ${styles} ${className}`}
+      className={`${CONTROL} disabled:opacity-40 ${styles} ${className}`}
       {...rest}
     />
   )
+}
+
+/**
+ * Lien vers une page servie à côté de l'app, ouverte dans un onglet. Ni
+ * `SWITCH_ON` ni `SELECTED` : un lien ne s'allume pas — il n'y a pas d'état à
+ * marquer — et ce n'est pas non plus un contenu sur lequel la prochaine action
+ * porterait. Il prend donc la recette discrète, celle du bouton `ghost`.
+ */
+export function ExternalLink({ className = '', ...rest }: ComponentProps<'a'>) {
+  return <a target="_blank" rel="noreferrer" className={`${CONTROL} ${GHOST} ${className}`} {...rest} />
 }
 
 /**

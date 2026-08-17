@@ -50,6 +50,7 @@ import {
   Square,
   SquareAsterisk,
   SquareSlash,
+  Terminal,
   Trash2,
   TriangleAlert,
   Type,
@@ -176,6 +177,9 @@ export {
   Search as SearchIcon,
   Shuffle as ShuffleIcon,
   Check as CheckIcon,
+  /* Un livre disait « documentation », pas « pour développeurs ». Le prompt d'un
+     terminal le dit d'un coup d'œil, et couvre les trois façades. */
+  Terminal as DevDocsIcon,
   Trash2 as DeleteIcon,
   TriangleAlert as WarningIcon,
   Undo2 as UndoIcon,

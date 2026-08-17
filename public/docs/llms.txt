@@ -1,0 +1,40 @@
+# shotframe
+
+> A local-first tool that turns a raw screenshot into a shareable visual:
+> rounded window frame, generative background derived from the screenshot's own
+> colours, annotations, redaction, multi-shot compositions, high-resolution
+> export. No backend, no account, no network call. The same rendering engine is
+> reachable from a Node API, a CLI, and an MCP server — that second door is what
+> this documentation covers.
+
+Everything below is Markdown, served as-is. Fetch a page to read it in full, or
+concatenate all eight for the complete reference (roughly 2000 lines).
+
+## Docs
+
+- [Overview](/docs/overview.md): what the machine door is, requirements, a
+  60-second quickstart in all three modes, and which settings each façade can
+  reach.
+- [CLI](/docs/cli.md): the four command forms, every flag with its default and
+  bounds, output paths, the `--json` result shape, exit codes and error messages.
+- [MCP server](/docs/mcp.md): how to register the server, the write guard
+  (`SHOTFRAME_OUT`, never overwrites), and the three tools — `shotframe_render`,
+  `shotframe_inspect`, `shotframe_list_styles` — with their full parameters.
+- [Node API](/docs/api.md): `render(spec)` and `inspect(input, settings)`,
+  their result types, and the errors they throw.
+- [Scene format](/docs/scene.md): the complete serialisable JSON — settings,
+  composition, shots, layers, watermark, palette — every field with its default
+  and its bounds, plus how validation clamps rather than rejects.
+- [Coordinates](/docs/coordinates.md): the layer coordinate frame. Read this
+  before placing any annotation: rects are fractions of the **window width**,
+  `y` included, and `w`/`h` are signed.
+- [Styles](/docs/styles.md): tune once in the app, export a `.json`, drop it in
+  `~/.shotframe/styles/`, recall it by name. Precedence and caching.
+- [Recipes](/docs/recipes.md): runnable examples — batch, device frames,
+  deterministic backgrounds, redaction, annotations, compositions, Playwright —
+  followed by a troubleshooting list.
+
+## Optional
+
+- [Web app](/): the human door. Four screens — Edit, Batch, Styles, History —
+  and the place where a style is created in the first place.

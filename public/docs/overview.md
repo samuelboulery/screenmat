@@ -97,7 +97,11 @@ surface. When a setting is missing from the one you are using, the scene file
 
 ## Guarantees
 
-- **No network call, ever.** Not in the app, not here. Everything is local.
+- **Your images never leave the machine.** They are decoded, rendered and
+  encoded in the browser (or in your own Node process). The web app loads a
+  cookieless page counter — [Cloudflare Web
+  Analytics](https://developers.cloudflare.com/web-analytics/) — and nothing
+  else; the CLI, the Node API and the MCP server make no network call at all.
 - **One rendering path.** Preview, web export, CLI and MCP all call
   `renderScene()`. The export matches the preview by construction.
 - **External JSON is validated field by field.** A scene produced by a model is

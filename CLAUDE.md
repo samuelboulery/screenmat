@@ -5,10 +5,11 @@ fenêtre arrondie façon macOS, fond génératif dérivé des couleurs dominante
 screenshot, annotations, floutage, compositions multi-shot, export haute
 résolution.
 
-**Aucun backend, aucune base, aucun compte, aucune requête réseau après le
-chargement.** Tout le traitement d'image se fait dans le navigateur via Canvas
-2D ; les préférences vivent dans `localStorage`, les styles et l'historique dans
-IndexedDB. Partager un style = exporter un fichier `.json`.
+**Aucun backend, aucune base, aucun compte, aucun téléversement.** Tout le
+traitement d'image se fait dans le navigateur via Canvas 2D ; le seul appel
+réseau de l'app web est le compteur de pages Cloudflare Web Analytics, chargé
+depuis `index.html` ; les préférences vivent dans `localStorage`, les styles et
+l'historique dans IndexedDB. Partager un style = exporter un fichier `.json`.
 
 **Tech stack :** React 19 · TypeScript strict · Vite 8 · Tailwind CSS 4 (config
 CSS-first) · Vitest. Deux dépendances runtime seulement : React et
@@ -83,8 +84,11 @@ pnpm mcp                # serveur MCP sur stdio
 
 ## Constraints
 
-- Aucun appel réseau, aucune dépendance à un service distant. L'app doit
-  fonctionner hors ligne, polices comprises.
+- Aucun appel réseau hormis le beacon Cloudflare Web Analytics (un `<script
+  defer>` dans `index.html` et `docs/index.html`, sans cookie ni identifiant).
+  Aucune donnée d'image ne sort, aucune dépendance à un service distant pour le
+  rendu : bloqué ou hors ligne, l'app fonctionne à l'identique, polices
+  comprises. `cli/` n'appelle rien du tout.
 - Ne pas installer de dépendance sans demander — en particulier pas de librairie
   de couleur, de canvas, de zip ou de composants UI : tout est écrit à la main
   ici. `lucide-react` est la seule exception, et elle ne fournit que des icônes.

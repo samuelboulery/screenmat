@@ -18,7 +18,7 @@
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="screenmat" />
     <meta property="og:title" content="screenmat — turn a screenshot into a shareable visual" />
-    <meta property="og:description" content="macOS-style window, generative background derived from the screenshot's own colours, annotations, redaction. No backend, no account, no network call." />
+    <meta property="og:description" content="macOS-style window, generative background derived from the screenshot's own colours, annotations, redaction. No backend, no account, no upload — your images never leave the browser." />
     <meta property="og:url" content="%SITE_URL%/" />
     <meta property="og:image" content="%SITE_URL%/og.jpg" />
     <meta property="og:image:width" content="1200" />
@@ -26,7 +26,7 @@
     <meta property="og:image:alt" content="A screenshot framed in a rounded macOS-style window over a generative background." />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="screenmat — turn a screenshot into a shareable visual" />
-    <meta name="twitter:description" content="macOS-style window, generative background derived from the screenshot's own colours, annotations, redaction. No backend, no account, no network call." />
+    <meta name="twitter:description" content="macOS-style window, generative background derived from the screenshot's own colours, annotations, redaction. No backend, no account, no upload — your images never leave the browser." />
     <meta name="twitter:image" content="%SITE_URL%/og.jpg" />
     <script type="application/ld+json">
       {
@@ -53,9 +53,9 @@
           from the screenshot's own colours, annotations, redaction, multi-shot compositions and high-resolution export.
         </p>
         <p>
-          Everything runs in your browser. No backend, no account, no network call after the page loads — your images
-          never leave the machine. The same rendering engine is reachable from a Node API, a command line and an MCP
-          server.
+          Everything runs in your browser. No backend, no account, no upload — your images never leave the machine.
+          The only network call is a cookieless page counter. The same rendering engine is reachable from a Node API, a
+          command line and an MCP server.
         </p>
         <p>
           The editor needs JavaScript. The <a href="/docs/">documentation</a> does not — start with the
@@ -64,5 +64,7 @@
       </main>
     </noscript>
     <script type="module" src="/src/main.tsx"></script>
+    <!-- Cloudflare Web Analytics : compteur de pages sans cookie ni identifiant. -->
+    <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "1066d94e4b934c0daeaaa7f77fe5d984"}'></script>
   </body>
 </html>

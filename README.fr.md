@@ -152,11 +152,16 @@ unique ne vole une frappe à un panneau.
 
 ## La confidentialité par construction
 
-L'app ne fait aucune requête réseau après le chargement, n'a ni analytics, ni
-télémétrie, ni dépendance runtime au-delà de React et des icônes Lucide. Les
-préférences vivent dans `localStorage`, les styles et l'historique dans
-IndexedDB, les polices sont embarquées. Partager un style, c'est exporter un
-`.json` — il n'y a aucun serveur par lequel le faire passer.
+Les images ne sont jamais téléversées : tout le traitement se fait dans le
+navigateur. Les préférences vivent dans `localStorage`, les styles et
+l'historique dans IndexedDB, les polices sont embarquées. Partager un style,
+c'est exporter un `.json` — il n'y a aucun serveur par lequel le faire passer.
+
+Seule exception : [Cloudflare Web
+Analytics](https://developers.cloudflare.com/web-analytics/), un compteur de
+pages sans cookie, sans identifiant et sans suivi inter-sites. Il compte des
+visites, rien d'autre. Le bloquer ne change rien au fonctionnement. Le CLI,
+l'API Node et le serveur MCP ne font eux aucun appel réseau.
 
 ## Organisation du dépôt
 

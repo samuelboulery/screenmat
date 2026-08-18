@@ -22,9 +22,9 @@ English · [Français](README.fr.md)
 
 ## Why
 
-- **Nothing leaves the machine.** No backend, no account, no upload, not a single
-  network request once the page is loaded — fonts included. Your screenshots stay
-  where they were taken.
+- **Nothing leaves the machine.** No backend, no account, no upload — fonts
+  included. Your screenshots stay where they were taken. The page loads a
+  cookieless visit counter, and nothing else touches the network.
 - **One rendering path.** The live preview, the web export, the CLI and the MCP
   server all call the same `renderScene()`. A 3× export is the exact homothety of
   what you saw, by construction rather than by vigilance.
@@ -149,10 +149,16 @@ has focus, so no single-key shortcut ever steals a keystroke from a panel.
 
 ## Privacy by construction
 
-The app makes no network request after load, has no analytics, no telemetry and
-no third-party runtime beyond React and Lucide icons. Preferences live in
-`localStorage`, styles and history in IndexedDB, fonts are bundled. Sharing a
-style means exporting a `.json` file — there is no server to share it through.
+Your images are never uploaded: every pixel is processed in the browser.
+Preferences live in `localStorage`, styles and history in IndexedDB, fonts are
+bundled. Sharing a style means exporting a `.json` file — there is no server to
+share it through.
+
+The one exception is [Cloudflare Web
+Analytics](https://developers.cloudflare.com/web-analytics/), a page counter
+with no cookie, no identifier and no cross-site tracking. It counts visits and
+nothing else. Block it and the app is unaffected. The CLI, the Node API and the
+MCP server make no network call at all.
 
 ## Project layout
 

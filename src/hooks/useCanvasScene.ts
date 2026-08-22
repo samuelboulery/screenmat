@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { BASE_WIDTH, computeGeometry, renderScene, type Geometry } from '../lib/render.ts'
-import type { Scene } from '../types.ts'
+import { DEFAULT_PLACEMENT, type Scene } from '../types.ts'
 
 /** Ce que la scène doit laisser libre autour d'elle, en px CSS. */
 export type Inset = { left: number; right: number; top: number; bottom: number }
@@ -109,7 +109,7 @@ export function useCanvasScene(
         scene.settings,
         1,
         scene.composition,
-        scene.shots.length,
+        scene.shots.map((shot) => shot.placement ?? DEFAULT_PLACEMENT),
       )
       const aspect = geometry.width / geometry.height
 

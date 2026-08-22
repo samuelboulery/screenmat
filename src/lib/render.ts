@@ -5,8 +5,10 @@ import { renderWatermark } from './watermark.ts'
 import { flatten } from './tree.ts'
 import {
   DEFAULT_COMPOSITION,
+  DEFAULT_PLACEMENT,
   type Annotation,
   type Composition,
+  type Placement,
   type Ratio,
   type Scene,
   type Settings,
@@ -40,6 +42,10 @@ export type WindowBox = {
   height: number
   /** Rotation autour de l'axe Y, en degrés. 0 pour une fenêtre de face. */
   rotateY: number
+  /** Échelle propre à cette fenêtre, 1 par défaut. Barre de titre et rayon de
+   *  `geometry` sont donnés pour l'échelle 1 : c'est ce facteur qui les ramène
+   *  à cette fenêtre-ci. */
+  scale: number
   /** Index du shot dessiné dans cette fenêtre. */
   shot: number
 }
@@ -52,19 +58,81 @@ export type Geometry = {
   window: WindowBox
   /** Toutes les fenêtres, dans l'ordre de dessin. */
   windows: WindowBox[]
-  /** Hauteur de la barre de titre en px, 0 si masquée. */
+  /** Hauteur de la barre de titre en px pour une fenêtre à l'échelle 1, 0 si
+   *  masquée. Une fenêtre retouchée la multiplie par son `box.scale`. */
   titleBar: number
+  /** Rayon des coins en px pour une fenêtre à l'échelle 1. Même règle. */
   radius: number
 }
 
-/** Position d'une fenêtre en unités de largeur de fenêtre, centre à l'origine. */
+/** Position d'une fenêtre en unités de largeur de fenêtre, centre à l'origine.
+ *  C'est la disposition seule : les retouches manuelles s'y ajoutent plus tard,
+ *  et n'entrent ni dans le cadrage ni dans le centrage. */
 type Offset = { dx: number; dy: number; rotateY: number; shot: number }
+
+/**
+ * Colonnes qui rendent les fenêtres les plus grandes dans un canvas de ce
+ * ratio. On essaie chaque nombre et on garde le meilleur : c'est la même
+ * sémantique « contain » que `computeGeometry`, appliquée en amont. C'est ce
+ * qui empile deux shots d'eux-mêmes dans un canvas portrait.
+ */
+function autoColumns(count: number, gapX: number, gapY: number, targetRatio: number): number {
+  let best = count
+  let bestFit = -Infinity
+
+  for (let columns = 1; columns <= count; columns += 1) {
+    const rows = Math.ceil(count / columns)
+    // Canvas de référence : largeur `targetRatio`, hauteur 1.
+    const fit = Math.min(targetRatio / (columns * gapX), 1 / (rows * gapY))
+    if (fit > bestFit + 1e-9) {
+      bestFit = fit
+      best = columns
+    }
+  }
+
+  return best
+}
+
+/** Grille de `side` : une rangée tant que ça tient, plusieurs ensuite. */
+function gridOffsets(
+  count: number,
+  composition: Composition,
+  aspect: number,
+  targetRatio: number,
+): Offset[] {
+  const gap = 0.04 + 0.2 * composition.spread
+  const gapX = 1 + gap
+  const gapY = aspect + gap
+  const columns = Math.min(
+    count,
+    composition.columns > 0 ? composition.columns : autoColumns(count, gapX, gapY, targetRatio),
+  )
+  const rows = Math.ceil(count / columns)
+
+  return Array.from({ length: count }, (_, index) => {
+    const row = Math.floor(index / columns)
+    // La dernière rangée se centre sur son propre effectif, pas sur `columns` :
+    // cinq shots en deux colonnes donnent 3 + 2, la paire centrée sous le trio.
+    const inRow = Math.min(columns, count - row * columns)
+    return {
+      dx: ((index % columns) - (inRow - 1) / 2) * gapX,
+      dy: (row - (rows - 1) / 2) * gapY,
+      rotateY: 0,
+      shot: index,
+    }
+  })
+}
 
 /**
  * Dispose `count` fenêtres selon la composition, en unités de largeur de
  * fenêtre. Résultat trié de l'arrière vers l'avant : c'est l'ordre de dessin.
  */
-function layoutOffsets(count: number, composition: Composition): Offset[] {
+function layoutOffsets(
+  count: number,
+  composition: Composition,
+  aspect: number,
+  targetRatio: number,
+): Offset[] {
   const { layout, spread, converge, elevation } = composition
   const n = Math.max(1, count)
 
@@ -77,24 +145,13 @@ function layoutOffsets(count: number, composition: Composition): Offset[] {
     const step = 0.04 + 0.1 * spread
     const offsets: Offset[] = []
     for (let index = n - 1; index >= 0; index -= 1) {
-      offsets.push({
-        dx: -index * step,
-        dy: -index * elevation,
-        rotateY: 0,
-        shot: index,
-      })
+      offsets.push({ dx: -index * step, dy: -index * elevation, rotateY: 0, shot: index })
     }
     return offsets
   }
 
   if (layout === 'side') {
-    const gap = 1 + 0.04 + 0.2 * spread
-    return Array.from({ length: n }, (_, index) => ({
-      dx: (index - (n - 1) / 2) * gap,
-      dy: 0,
-      rotateY: 0,
-      shot: index,
-    }))
+    return gridOffsets(n, composition, aspect, targetRatio)
   }
 
   // tilt3d : les fenêtres convergent vers le centre et se chevauchent.
@@ -111,8 +168,18 @@ function layoutOffsets(count: number, composition: Composition): Offset[] {
   })
 }
 
-/** Encombrement de la disposition, en unités de largeur de fenêtre. */
-function extent(offsets: Offset[], aspect: number): { width: number; height: number } {
+/** Encombrement de la disposition et centre de sa boîte, en unités de largeur
+ *  de fenêtre. Le centre compte autant que la taille : sans lui, une
+ *  disposition asymétrique — `stack`, `tilt3d` — se dessine décalée de la
+ *  moitié de son décalage.
+ *
+ *  Les retouches manuelles n'entrent pas ici, et c'est ce qui rend le geste
+ *  prévisible : glisser une fenêtre la déplace elle, sans redimensionner ni
+ *  recentrer ses voisines sous le curseur. */
+function extent(
+  offsets: Offset[],
+  aspect: number,
+): { width: number; height: number; cx: number; cy: number } {
   let left = Infinity
   let right = -Infinity
   let top = Infinity
@@ -129,7 +196,12 @@ function extent(offsets: Offset[], aspect: number): { width: number; height: num
     bottom = Math.max(bottom, dy + halfHeight)
   }
 
-  return { width: right - left, height: bottom - top }
+  return {
+    width: right - left,
+    height: bottom - top,
+    cx: (left + right) / 2,
+    cy: (top + bottom) / 2,
+  }
 }
 
 /**
@@ -143,7 +215,7 @@ export function computeGeometry(
   settings: Settings,
   scale = 1,
   composition: Composition = DEFAULT_COMPOSITION,
-  shots = 1,
+  placements: readonly Placement[] = [DEFAULT_PLACEMENT],
 ): Geometry {
   const width = Math.max(1, Math.round(BASE_WIDTH * scale))
   const bar = settings.titleBar && settings.frame === 'browser' ? TITLE_BAR : 0
@@ -151,20 +223,35 @@ export function computeGeometry(
   // Rapport hauteur/largeur d'une fenêtre : l'image, plus la barre de titre qui
   // est elle-même exprimée en fraction de la largeur de la fenêtre.
   const aspect = imageHeight / imageWidth + bar
-  const offsets = layoutOffsets(shots, composition)
+  // Ratio visé pour choisir les colonnes d'une grille. En `auto`, le canvas
+  // épouse son contenu : on prend 4:3 comme forme de référence.
+  const targetRatio = settings.ratio === 'auto' ? 4 / 3 : RATIOS[settings.ratio]
+  const offsets = layoutOffsets(placements.length, composition, aspect, targetRatio)
   const spanned = extent(offsets, aspect)
   const pad = settings.padding * width
 
   const place = (canvasWidth: number, canvasHeight: number, windowWidth: number): Geometry => {
-    const windowHeight = windowWidth * aspect
-    const boxes = offsets.map<WindowBox>((offset) => ({
-      x: canvasWidth / 2 + offset.dx * windowWidth - windowWidth / 2,
-      y: canvasHeight / 2 + offset.dy * windowWidth - windowHeight / 2,
-      width: windowWidth,
-      height: windowHeight,
-      rotateY: offset.rotateY + settings.rotateY,
-      shot: offset.shot,
-    }))
+    const boxes = offsets.map<WindowBox>((offset) => {
+      // La retouche manuelle s'applique ici, après le cadrage : elle déplace et
+      // redimensionne cette fenêtre-là, rien d'autre.
+      const placement = placements[offset.shot] ?? DEFAULT_PLACEMENT
+      const boxWidth = windowWidth * placement.scale
+      const boxHeight = boxWidth * aspect
+      return {
+        // Le centre de la boîte englobante tombe au centre du canvas : c'est
+        // ce qui tient une pile ou une grille incomplète centrée.
+        x: canvasWidth / 2 + (offset.dx - spanned.cx + placement.dx) * windowWidth - boxWidth / 2,
+        y:
+          canvasHeight / 2 +
+          (offset.dy - spanned.cy + placement.dy + composition.offsetY) * windowWidth -
+          boxHeight / 2,
+        width: boxWidth,
+        height: boxHeight,
+        rotateY: offset.rotateY + settings.rotateY,
+        scale: placement.scale,
+        shot: offset.shot,
+      }
+    })
     const primary = boxes.find((box) => box.shot === 0) ?? boxes[0]
 
     return {
@@ -215,7 +302,7 @@ export function renderScene(
     settings,
     scale,
     composition,
-    shots.length,
+    shots.map((shot) => shot.placement ?? DEFAULT_PLACEMENT),
   )
 
   ctx.canvas.width = geometry.width

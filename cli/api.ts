@@ -15,7 +15,15 @@ import { BASE_WIDTH, computeGeometry, renderScene, type Geometry } from '../src/
 import { screenRect } from '../src/lib/frame.ts'
 import { extractPalette } from '../src/lib/palette.ts'
 import { isImageSource, parseScene, type ImageSource, type SceneSpec } from '../src/lib/spec.ts'
-import type { FractionRect, Format, Palette, Scene, Settings, Shot } from '../src/types.ts'
+import {
+  DEFAULT_PLACEMENT,
+  type FractionRect,
+  type Format,
+  type Palette,
+  type Scene,
+  type Settings,
+  type Shot,
+} from '../src/types.ts'
 
 /** Forme courte : une image, des réglages, rien d'autre. C'est l'usage « outil
  *  de dev, sans annotations » — du sucre au-dessus du même chemin. */
@@ -127,6 +135,7 @@ async function buildScene(spec: SceneSpec): Promise<Scene> {
       image,
       palette: spec.palette ?? extractPalette(image),
       layers: shot.layers,
+      placement: shot.placement,
     }
   })
 
@@ -203,7 +212,7 @@ export async function inspect(
     spec.settings,
     1,
     spec.composition,
-    1,
+    [spec.shots[0]?.placement ?? DEFAULT_PLACEMENT],
   )
 
   const { window } = geometry
@@ -221,7 +230,9 @@ export async function inspect(
       w: screen.width / window.width,
       h: screen.height / window.width,
     },
-    titleBar: geometry.titleBar / window.width,
+    // `geometry.titleBar` vaut pour une fenêtre à l'échelle 1 : c'est celle-ci
+    // qu'on décrit, donc son propre facteur s'applique avant le rapport.
+    titleBar: (geometry.titleBar * window.scale) / window.width,
     canvas: { width: geometry.width, height: geometry.height },
   }
 }

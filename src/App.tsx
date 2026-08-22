@@ -275,6 +275,9 @@ export default function App() {
             onKeys={onCanvasKeys}
             onChange={patch}
             onCompose={compose}
+            onPlace={shots.place}
+            scale={scale}
+            onScale={setScale}
             onSelectShot={shots.select}
             onReorderShots={shots.reorder}
             onAddShot={() => pick('shot')}

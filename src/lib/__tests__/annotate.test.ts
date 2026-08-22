@@ -13,6 +13,7 @@ import type { WindowBox } from '../render.ts'
 import type { Annotation, AnnotationKind, FractionRect } from '../../types.ts'
 
 const box = (patch: Partial<WindowBox> = {}): WindowBox => ({
+  scale: 1,
   x: 100,
   y: 80,
   width: 1200,

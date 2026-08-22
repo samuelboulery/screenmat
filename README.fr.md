@@ -22,9 +22,9 @@ screenshot, des annotations, du floutage — le tout calculé dans le navigateur
 
 ## Pourquoi
 
-- **Rien ne quitte la machine.** Aucun backend, aucun compte, aucun envoi, pas
-  une requête réseau une fois la page chargée — polices comprises. Vos captures
-  restent là où elles ont été prises.
+- **Rien ne quitte la machine.** Aucun backend, aucun compte, aucun envoi —
+  polices comprises. Vos captures restent là où elles ont été prises. La page
+  charge un compteur de visites sans cookie, et rien d'autre ne touche au réseau.
 - **Un seul chemin de rendu.** La preview, l'export web, le CLI et le serveur MCP
   appellent le même `renderScene()`. Un export 3× est l'homothétique exact de ce
   qu'on voyait à l'écran, par construction et non par vigilance.

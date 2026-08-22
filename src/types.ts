@@ -152,6 +152,17 @@ export type LayerGroup = {
 
 export type LayerNode = Annotation | LayerGroup
 
+/** Retouche manuelle d'une fenêtre, appliquée par-dessus la disposition. Les
+ *  décalages sont en largeurs de fenêtre — le repère de `layoutOffsets` — et
+ *  `scale` multiplie la largeur commune que la composition a calculée. */
+export type Placement = {
+  scale: number
+  dx: number
+  dy: number
+}
+
+export const DEFAULT_PLACEMENT: Placement = { scale: 1, dx: 0, dy: 0 }
+
 export type Shot = {
   id: string
   name: string
@@ -160,6 +171,8 @@ export type Shot = {
   /** Pile de calques, du fond vers l'avant. `flatten` (`lib/tree.ts`) en tire
    *  la liste plate que le rendu et le hit-test consomment. */
   layers: LayerNode[]
+  /** Retouche manuelle de cette fenêtre. Absent ⇒ `DEFAULT_PLACEMENT`. */
+  placement?: Placement
 }
 
 export type Composition = {
@@ -170,6 +183,11 @@ export type Composition = {
   converge: number
   /** Décalage vertical entre fenêtres, en fraction de la largeur du canvas. */
   elevation: number
+  /** Colonnes de la grille `side`. 0 ⇒ choisies pour le ratio du canvas. */
+  columns: number
+  /** Décalage vertical de la composition entière, en largeurs de fenêtre.
+   *  Contredit le centrage automatique sans le débrancher. */
+  offsetY: number
 }
 
 export type Watermark = {
@@ -271,4 +289,6 @@ export const DEFAULT_COMPOSITION: Composition = {
   spread: 0.64,
   converge: 11,
   elevation: 0.0225,
+  columns: 0,
+  offsetY: 0,
 }

@@ -6,7 +6,18 @@ import Preview, { type Editing } from './Preview.tsx'
 import ToolRail, { type Tool } from './ToolRail.tsx'
 import { displayOrder, findAnnotation } from '../lib/tree.ts'
 import type { NodePatch } from '../hooks/useShots.ts'
-import type { Annotation, AnnotationKind, Composition, Format, FractionRect, Scene, Settings, Shot, Style } from '../types.ts'
+import type {
+  Annotation,
+  AnnotationKind,
+  Composition,
+  Format,
+  FractionRect,
+  Placement,
+  Scene,
+  Settings,
+  Shot,
+  Style,
+} from '../types.ts'
 
 /** Les panneaux flottent au-dessus du canvas : la boîte disponible est réduite
  *  d'autant. `[96, 328]` d'inset horizontal, comme spécifié dans le handoff. */
@@ -49,6 +60,10 @@ export type EditorScreenProps = {
   onKeys: (event: React.KeyboardEvent) => void
   onChange: (patch: Partial<Settings>) => void
   onCompose: (patch: Partial<Composition>) => void
+  onPlace: (shotId: string, patch: Partial<Placement>) => void
+  /** Échelle d'export, réglée depuis le filmstrip comme aux touches 1/2/3. */
+  scale: number
+  onScale: (scale: number) => void
   onSelectShot: (id: string, additive: boolean) => void
   onReorderShots: (from: number, to: number) => void
   onAddShot: () => void
@@ -155,6 +170,7 @@ export default function EditorScreen(props: EditorScreenProps) {
           props.onSelectLayers(shotId, ids, additive)
         }}
         onTranslate={props.onTranslateLayers}
+        onPlace={props.onPlace}
         onResize={(shotId, id, rect) => props.onPatchAnnotation(shotId, id, { rect })}
         onEdit={closeEdit}
         onEditText={(shotId, id, text) => props.onPatchAnnotation(shotId, id, { text })}
@@ -185,6 +201,7 @@ export default function EditorScreen(props: EditorScreenProps) {
           styles={props.styles}
           activeStyleId={props.activeStyleId}
           windowWidth={windowWidth}
+          shotCount={shots.length}
           activeShot={activeShot}
           selectedLayerIds={props.selectedLayerIds}
           onSelectLayers={selectLayers}
@@ -197,6 +214,7 @@ export default function EditorScreen(props: EditorScreenProps) {
           onUngroupLayer={props.onUngroupLayer}
           onChange={props.onChange}
           onCompose={props.onCompose}
+          onPlace={props.onPlace}
           onApplyStyle={props.onApplyStyle}
           onSaveStyle={props.onSaveStyle}
           onUpdateStyle={props.onUpdateStyle}
@@ -214,6 +232,9 @@ export default function EditorScreen(props: EditorScreenProps) {
         onAdd={props.onAddShot}
         onReorder={props.onReorderShots}
         output={props.output}
+        scale={props.scale}
+        onScale={props.onScale}
+        onFormat={(format) => props.onChange({ format })}
         canUndo={props.canUndo}
         canRedo={props.canRedo}
         onUndo={props.onUndo}

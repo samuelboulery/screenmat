@@ -15,7 +15,7 @@ import { inWindow, layerAt, windowAt, type Target } from '../lib/hit.ts'
 import { pointAt, useCanvasScene, type Inset } from '../hooks/useCanvasScene.ts'
 import type { Geometry } from '../lib/render.ts'
 import { expandSelection, flatten } from '../lib/tree.ts'
-import type { AnnotationKind, FractionRect, Scene } from '../types.ts'
+import { DEFAULT_PLACEMENT, type AnnotationKind, type FractionRect, type Placement, type Scene } from '../types.ts'
 
 export type { Inset }
 
@@ -38,6 +38,8 @@ type PreviewProps = {
   onSelect?: (shotId: string | null, ids: string[], additive: boolean) => void
   onTranslate?: (shotId: string, ids: readonly string[], dx: number, dy: number) => void
   onResize?: (shotId: string, id: string, rect: FractionRect) => void
+  /** Retouche la fenêtre d'un shot : ⌥ + glisser la déplace dans le canvas. */
+  onPlace?: (shotId: string, patch: Partial<Placement>) => void
   onEdit?: (editing: Editing | null) => void
   onEditText?: (shotId: string, id: string, text: string) => void
   onGeometry?: (geometry: Geometry) => void
@@ -51,6 +53,7 @@ type Drag =
   | { mode: 'draw'; kind: AnnotationKind; target: Target; from: Point; to: Point; shift: boolean }
   | { mode: 'marquee'; target: Target; from: Point; to: Point; additive: boolean }
   | { mode: 'move'; ids: string[]; target: Target; from: Point; to: Point }
+  | { mode: 'shot'; shotId: string; origin: Placement; target: Target; from: Point; to: Point }
   | {
       mode: 'resize'
       id: string
@@ -81,12 +84,15 @@ export default function Preview({
   onSelect,
   onTranslate,
   onResize,
+  onPlace,
   onEdit,
   onEditText,
   onGeometry,
   onKeys,
 }: PreviewProps) {
   const [drag, setDrag] = useState<Drag | null>(null)
+  /** ⌥ enfoncé : le curseur annonce qu'un glisser déplacera la fenêtre. */
+  const [altPressed, setAltPressed] = useState(false)
   /** Dernière position d'un déplacement, en px canvas. */
   const lastPoint = useRef<Point | null>(null)
   const blink = useCaretBlink(editing !== null)
@@ -117,6 +123,22 @@ export default function Preview({
     if (editable) canvasRef.current?.focus()
   }, [editable, canvasRef])
 
+  // `⌥` se lit sur `window` : sans clic préalable, le canvas ne verrait rien du
+  // modificateur, et le curseur mentirait sur ce que le prochain geste fait.
+  useEffect(() => {
+    if (!interactive || !onPlace) return
+    const sync = (event: KeyboardEvent) => setAltPressed(event.altKey)
+    const clear = () => setAltPressed(false)
+    window.addEventListener('keydown', sync)
+    window.addEventListener('keyup', sync)
+    window.addEventListener('blur', clear)
+    return () => {
+      window.removeEventListener('keydown', sync)
+      window.removeEventListener('keyup', sync)
+      window.removeEventListener('blur', clear)
+    }
+  }, [interactive, onPlace])
+
   const targetWindow = (point: Point) => windowAt(scene, geometry, point, selectedShotId)
   const pick = (point: Point) => layerAt(scene, geometry, point)
 
@@ -143,6 +165,25 @@ export default function Preview({
     event.currentTarget.setPointerCapture(event.pointerId)
     lastPoint.current = point
     if (editing) commitEdit()
+
+    // ⌥ + glisser déplace la fenêtre elle-même. Le modificateur n'est pas un
+    // luxe : le clic simple trace déjà le rectangle de sélection, et ⇧ comme ⌘
+    // servent la sélection additive. ⌥ était le seul encore libre.
+    if (event.altKey && onPlace) {
+      const target = targetWindow(point)
+      const shot = target ? scene.shots.find((item) => item.id === target.shotId) : null
+      if (target && shot) {
+        setDrag({
+          mode: 'shot',
+          shotId: shot.id,
+          origin: shot.placement ?? DEFAULT_PLACEMENT,
+          target,
+          from: point,
+          to: point,
+        })
+        return
+      }
+    }
 
     if (tool === 'select') {
       const hit = pick(point)
@@ -268,6 +309,18 @@ export default function Preview({
     setDrag({ ...drag, to: point })
     if (drag.mode === 'marquee') return
 
+    if (drag.mode === 'shot') {
+      // Le placement est absolu depuis le point de départ : la fenêtre suit le
+      // curseur au pixel, sans dériver comme le ferait une somme d'écarts.
+      // L'unité est la largeur de fenêtre — celle de `layoutOffsets`.
+      const width = drag.target.box.width / drag.target.box.scale
+      onPlace?.(drag.shotId, {
+        dx: drag.origin.dx + (point.x - drag.from.x) / width,
+        dy: drag.origin.dy + (point.y - drag.from.y) / width,
+      })
+      return
+    }
+
     const box = drag.target.box
     const from = inWindow(box, drag.from)
     const to = inWindow(box, point)
@@ -355,7 +408,15 @@ export default function Preview({
           onPointerUp={onPointerUp}
           onPointerCancel={onPointerUp}
           className={`block touch-none rounded-sm ${
-            interactive ? (tool === 'select' ? 'cursor-default' : 'cursor-crosshair') : ''
+            !interactive
+              ? ''
+              : drag?.mode === 'shot'
+                ? 'cursor-grabbing'
+                : altPressed && onPlace
+                  ? 'cursor-grab'
+                  : tool === 'select'
+                    ? 'cursor-default'
+                    : 'cursor-crosshair'
           }`}
         />
 

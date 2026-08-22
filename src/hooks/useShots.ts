@@ -12,12 +12,14 @@ import {
   ungroup,
   updateNode,
 } from '../lib/tree.ts'
+import { DEFAULT_PLACEMENT } from '../types.ts'
 import type {
   Annotation,
   AnnotationKind,
   FractionRect,
   LayerGroup,
   LayerNode,
+  Placement,
   Shot,
 } from '../types.ts'
 
@@ -43,6 +45,8 @@ export type ShotsState = {
   /** Rend un shot actif sans toucher à la sélection de calque. */
   focusShot: (id: string) => void
   reorder: (from: number, to: number) => void
+  /** Retouche la fenêtre d'un shot : taille et décalages dans le canvas. */
+  place: (shotId: string, patch: Partial<Placement>) => void
   /** Renvoie l'identifiant du calque créé — l'appelant en a besoin tout de
    *  suite, pour ouvrir la saisie d'un label par exemple. */
   createAnnotation: (shotId: string, kind: AnnotationKind, rect: FractionRect) => string
@@ -120,6 +124,16 @@ export function useShots(): ShotsState {
       next.splice(to, 0, moved)
       return next
     })
+  }, [])
+
+  const place = useCallback((shotId: string, patch: Partial<Placement>) => {
+    setShots((current) =>
+      current.map((shot) =>
+        shot.id === shotId
+          ? { ...shot, placement: { ...(shot.placement ?? DEFAULT_PLACEMENT), ...patch } }
+          : shot,
+      ),
+    )
   }, [])
 
   const patchLayers = useCallback(
@@ -304,6 +318,7 @@ export function useShots(): ShotsState {
     select,
     focusShot,
     reorder,
+    place,
     createAnnotation: create,
     patchAnnotation,
     patchNode,

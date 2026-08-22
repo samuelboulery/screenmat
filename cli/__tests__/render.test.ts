@@ -34,6 +34,31 @@ describe('render — géométrie', () => {
   })
 })
 
+describe('render — grille et placement', () => {
+  const five = Array.from({ length: 5 }, () => ({ input: shot }))
+
+  it('rend une grille de cinq shots sans échouer ni déborder', async () => {
+    const grid = await render({
+      shots: five,
+      composition: { layout: 'side', columns: 3 },
+      settings: { ratio: '16:9' },
+      scale: 1,
+    })
+    expect(grid.width).toBe(BASE_WIDTH)
+    expect(grid.width / grid.height).toBeCloseTo(16 / 9, 2)
+  })
+
+  it('produit une image différente quand un shot est retouché', async () => {
+    const base = await render({ shots: five, composition: { layout: 'side' }, scale: 1 })
+    const moved = await render({
+      shots: [{ input: shot, placement: { scale: 0.6, dy: 0.2 } }, ...five.slice(1)],
+      composition: { layout: 'side' },
+      scale: 1,
+    })
+    expect(base.buffer.equals(moved.buffer)).toBe(false)
+  })
+})
+
 describe('render — déterminisme', () => {
   it('rend deux fois le même octet à graine égale', async () => {
     const a = await render({ input: shot, settings: { seed: 7 }, scale: 1 })

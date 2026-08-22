@@ -127,10 +127,22 @@ a style is where they live.
 | `spread` | number | `0.64` | 0 to 1 |
 | `converge` | degrees | `11` | 0 to 24 |
 | `elevation` | number | `0.0225` | 0 to 0.1 |
+| `columns` | integer | `0` | 0 to 8. `0` picks the count itself. |
+| `offsetY` | number | `0` | −0.5 to 0.5, in window widths |
 
 `spread` sets how far apart the windows sit, `converge` the perspective angle of
 `tilt3d`, `elevation` the vertical offset between them. With a single shot the
 whole object is inert.
+
+`side` is a grid, not a row: past a certain count the windows wrap, and the last
+row is centred on its own tally — five shots in three columns render 3 + 2, the
+pair centred under the trio. `columns` at `0` picks whatever fits the canvas
+ratio best, which is why two shots stack vertically in a `9:16` canvas and sit
+side by side in `16:9`. Set it to `1` to force a column whatever the ratio.
+
+Whatever the layout, the composition is centred on its own bounding box, so a
+stack never drifts low. `offsetY` is the one knob that contradicts that, moving
+the whole composition up or down.
 
 ## shots
 
@@ -139,6 +151,17 @@ whole object is inert.
 | `input` | path or bytes | required | A string path, or a `Uint8Array` from an in-memory caller. |
 | `name` | string | `shot-1`, `shot-2`… | Truncated at 64 characters. |
 | `layers` | array, 0 to 64 | `[]` | Extra layers are dropped. |
+| `placement` | `{ scale, dx, dy }` | `{1, 0, 0}` | `scale`: 0.2 to 3. `dx`/`dy`: −3 to 3. |
+
+`placement` retouches one window on top of the layout: `scale` multiplies the
+common window width the composition computed, `dx` and `dy` shift that window in
+**window widths**. The title bar and corner radius of a scaled window scale with
+it.
+
+A placement is deliberately invisible to framing: the canvas is sized and the
+composition centred on the layout alone. Move one window and nothing else moves
+or resizes — which also means a large enough offset pushes it past the edge, and
+that is your call, not a bug.
 
 ## layers
 

@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { computeGeometry } from '../lib/render.ts'
-import type { Composition, Scene, Settings, Shot, Style } from '../types.ts'
+import { DEFAULT_PLACEMENT, type Composition, type Scene, type Settings, type Shot, type Style } from '../types.ts'
 
 type SceneInput = {
   shots: readonly Shot[]
@@ -61,7 +61,7 @@ export function useScene(input: SceneInput) {
       settings,
       1,
       composition,
-      composed.length,
+      composed.map((shot) => shot.placement ?? DEFAULT_PLACEMENT),
     )
   }, [composed, settings, composition])
 

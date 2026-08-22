@@ -103,6 +103,14 @@ repère de coordonnées, et sa réponse dit où le screenshot atterrit.`,
           z.object({
             input: z.string().describe('Chemin du screenshot à embellir.'),
             layers: z.array(layer).max(64).optional(),
+            placement: z
+              .object({
+                scale: z.number().min(0.2).max(3).optional(),
+                dx: z.number().min(-3).max(3).optional(),
+                dy: z.number().min(-3).max(3).optional(),
+              })
+              .optional()
+              .describe('Retouche de cette fenêtre, en largeurs de fenêtre.'),
           }),
         )
         .min(1)
@@ -114,6 +122,8 @@ repère de coordonnées, et sa réponse dit où le screenshot atterrit.`,
         .object({
           layout: z.enum(['single', 'stack', 'side', 'tilt3d']),
           spread: z.number().min(0).max(1).optional(),
+          columns: z.number().int().min(0).max(8).optional().describe('Grille `side`. 0 = auto.'),
+          offsetY: z.number().min(-0.5).max(0.5).optional(),
         })
         .optional()
         .describe('Disposition multi-shot. Sans effet à un seul shot.'),

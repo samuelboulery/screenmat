@@ -22,11 +22,13 @@ import { parsePalette, parseSettings } from './styles.ts'
 import { WATERMARK_POSITIONS } from './watermark.ts'
 import {
   DEFAULT_COMPOSITION,
+  DEFAULT_PLACEMENT,
   type Annotation,
   type AnnotationKind,
   type Composition,
   type FractionRect,
   type Palette,
+  type Placement,
   type Settings,
   type WatermarkPosition,
 } from '../types.ts'
@@ -55,6 +57,7 @@ export type ShotSpec = {
   input: ImageSource
   name: string
   layers: Annotation[]
+  placement: Placement
 }
 
 /** Le filigrane d'une scène désigne un fichier, là où un style embarque une
@@ -130,7 +133,21 @@ function parseShots(value: unknown): ShotSpec[] {
         ? shot.name.trim().slice(0, 64)
         : `shot-${index + 1}`,
       layers: parseLayers(shot.layers),
+      placement: parsePlacement(shot.placement),
     }))
+}
+
+/** Retouche manuelle d'une fenêtre. Bornes larges mais finies : un `scale` nul
+ *  ou un décalage aberrant sortirait la fenêtre du canvas sans le dire. */
+function parsePlacement(value: unknown): Placement {
+  if (!isRecord(value)) return DEFAULT_PLACEMENT
+  const d = DEFAULT_PLACEMENT
+
+  return {
+    scale: clamp(num(value.scale, d.scale), 0.2, 3),
+    dx: clamp(num(value.dx, d.dx), -3, 3),
+    dy: clamp(num(value.dy, d.dy), -3, 3),
+  }
 }
 
 /** Les calques d'un shot. Un `kind` inconnu est écarté sans faire tomber la
@@ -203,6 +220,8 @@ function parseComposition(value: unknown): Composition {
     spread: clamp(num(value.spread, d.spread), 0, 1),
     converge: clamp(num(value.converge, d.converge), 0, 24),
     elevation: clamp(num(value.elevation, d.elevation), 0, 0.1),
+    columns: Math.round(clamp(num(value.columns, d.columns), 0, 8)),
+    offsetY: clamp(num(value.offsetY, d.offsetY), -0.5, 0.5),
   }
 }
 

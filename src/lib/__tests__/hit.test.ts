@@ -4,6 +4,7 @@ import { computeGeometry } from '../render.ts'
 import { createAnnotation } from '../annotate.ts'
 import {
   DEFAULT_COMPOSITION,
+  DEFAULT_PLACEMENT,
   DEFAULT_SETTINGS,
   type Composition,
   type LayerNode,
@@ -34,7 +35,14 @@ const scene = (shots: Shot[], composition: Partial<Composition> = {}): Scene => 
 
 /** La géométrie que la preview aurait calculée pour cette scène. */
 const geometryFor = (s: Scene) =>
-  computeGeometry(1440, 900, s.settings, 1, s.composition, s.shots.length)
+  computeGeometry(
+    1440,
+    900,
+    s.settings,
+    1,
+    s.composition,
+    s.shots.map(() => DEFAULT_PLACEMENT),
+  )
 
 /** Un point au centre de la n-ième fenêtre, en px canvas. */
 function centerOf(geometry: ReturnType<typeof geometryFor>, index: number) {

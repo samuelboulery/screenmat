@@ -8,7 +8,7 @@ import {
   RedoIcon,
   UndoIcon,
 } from './icons.tsx'
-import { Button, DashedTile, IconButton, Panel } from './ui.tsx'
+import { Button, DashedTile, IconButton, Panel, Segmented } from './ui.tsx'
 import type { Format, Shot } from '../types.ts'
 
 type FilmstripProps = {
@@ -28,6 +28,12 @@ type FilmstripProps = {
      — un filmstrip sans `onUndo` ne le rend pas. --- */
   /** Dimensions de sortie, déjà multipliées par l'échelle. */
   output?: { width: number; height: number; format: Format } | null
+  /* --- Ce que l'export va produire. Ces deux réglages vivaient dans
+     l'inspecteur, à six sections du bouton qu'ils décrivent ; l'échelle, elle,
+     ne s'atteignait qu'aux touches 1/2/3. --- */
+  scale?: number
+  onScale?: (scale: number) => void
+  onFormat?: (format: Format) => void
   canUndo?: boolean
   canRedo?: boolean
   onUndo?: () => void
@@ -39,6 +45,19 @@ type FilmstripProps = {
   onCopy?: () => void
   onExport?: () => void
 }
+
+/** Les échelles d'export, en toutes lettres : `useShortcuts` pose les mêmes
+ *  sur 1/2/3, et les deux doivent dire la même chose. */
+const SCALES = [
+  { value: '1', label: '1×' },
+  { value: '2', label: '2×' },
+  { value: '3', label: '3×' },
+] as const
+
+const FORMATS: ReadonlyArray<{ value: Format; label: string }> = [
+  { value: 'webp', label: 'WebP' },
+  { value: 'png', label: 'PNG' },
+]
 
 /** Filet de séparation, celui déjà en place entre vignettes et hint. */
 function Divider() {
@@ -59,6 +78,9 @@ export default function Filmstrip({
   docked = false,
   hint,
   output,
+  scale,
+  onScale,
+  onFormat,
   canUndo = false,
   canRedo = false,
   onUndo,
@@ -145,8 +167,25 @@ export default function Filmstrip({
           {/* Métadonnée annexe : elle tombe avant que le panneau ne déborde. */}
           {output && (
             <span className="t-mono-micro shrink-0 whitespace-nowrap text-dim max-[1180px]:hidden">
-              {output.width} × {output.height} · {output.format}
+              {output.width} × {output.height}
             </span>
+          )}
+
+          {/* Le format n'est plus écrit à côté des dimensions : le commutateur
+              le dit déjà, et le répéter serait la redondance qu'on retire. */}
+          {output && onScale && onFormat && (
+            <div className="flex shrink-0 items-center gap-1.5 max-[1180px]:hidden">
+              <Segmented
+                options={SCALES}
+                value={String(scale ?? 2)}
+                onPick={(value) => onScale(Number(value))}
+              />
+              <Segmented
+                options={FORMATS}
+                value={output.format}
+                onPick={(format) => onFormat(format)}
+              />
+            </div>
           )}
 
           {onNewSession && (

@@ -85,8 +85,10 @@ export function screenRect(
     }
   }
 
-  // `geometry.titleBar` vaut déjà 0 hors du cadre navigateur ou barre masquée.
-  const bar = geometry.titleBar
+  // `geometry.titleBar` vaut déjà 0 hors du cadre navigateur ou barre masquée,
+  // et il est donné pour une fenêtre à l'échelle 1 : une fenêtre retouchée
+  // porte son facteur, sinon elle garderait une barre pleine taille.
+  const bar = geometry.titleBar * box.scale
   return {
     x: box.x,
     y: box.y + bar,
@@ -99,7 +101,7 @@ export function screenRect(
 export function frameRadius(box: WindowBox, geometry: Geometry, settings: Settings): number {
   if (settings.frame === 'macbook') return MACBOOK_RADIUS * box.width
   if (settings.frame === 'iphone') return IPHONE_RADIUS * box.width
-  return geometry.radius
+  return geometry.radius * box.scale
 }
 
 /** Cisaillement vertical simulant la rotation Y. `render.ts` l'importe pour
@@ -211,7 +213,9 @@ export function renderFrame(
     drawDeviceShell(ctx, box, screen, image, settings.frame)
   } else {
     ctx.drawImage(image, screen.x, screen.y, screen.width, screen.height)
-    if (geometry.titleBar > 0) drawTitleBar(ctx, box, geometry.titleBar, chrome, settings.url)
+    if (geometry.titleBar > 0) {
+      drawTitleBar(ctx, box, geometry.titleBar * box.scale, chrome, settings.url)
+    }
   }
 
   ctx.restore()

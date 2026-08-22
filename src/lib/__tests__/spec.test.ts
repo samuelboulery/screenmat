@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { parseScene } from '../spec.ts'
 import { ANNOTATION_LIMITS } from '../annotate.ts'
-import { DEFAULT_COMPOSITION, DEFAULT_SETTINGS } from '../../types.ts'
+import { DEFAULT_COMPOSITION, DEFAULT_PLACEMENT, DEFAULT_SETTINGS } from '../../types.ts'
 
 const minimal = { shots: [{ input: 'a.png' }] }
 
@@ -42,6 +42,34 @@ describe('parseScene — réglages', () => {
     const scene = parseScene({ ...minimal, settings: { padding: 'beaucoup', seed: 7 } })
     expect(scene.settings.padding).toBe(DEFAULT_SETTINGS.padding)
     expect(scene.settings.seed).toBe(7)
+  })
+})
+
+describe('parseScene — composition et placement', () => {
+  const withComposition = (composition: unknown) => parseScene({ ...minimal, composition })
+
+  it('borne les colonnes et le décalage vertical', () => {
+    expect(withComposition({ columns: 42 }).composition.columns).toBe(8)
+    expect(withComposition({ columns: -3 }).composition.columns).toBe(0)
+    expect(withComposition({ columns: 2.6 }).composition.columns).toBe(3)
+    expect(withComposition({ offsetY: 9 }).composition.offsetY).toBe(0.5)
+    expect(withComposition({ offsetY: 'bas' }).composition.offsetY).toBe(
+      DEFAULT_COMPOSITION.offsetY,
+    )
+  })
+
+  it('valide le placement d’un shot champ par champ', () => {
+    const scene = parseScene({
+      shots: [
+        { input: 'a.png', placement: { scale: 99, dx: -7, dy: 0.25 } },
+        { input: 'b.png', placement: 'au milieu' },
+        { input: 'c.png' },
+      ],
+    })
+
+    expect(scene.shots[0].placement).toEqual({ scale: 3, dx: -3, dy: 0.25 })
+    expect(scene.shots[1].placement).toEqual(DEFAULT_PLACEMENT)
+    expect(scene.shots[2].placement).toEqual(DEFAULT_PLACEMENT)
   })
 })
 

@@ -52,6 +52,18 @@ random.ts       mulberry32
   plate qu'en tire `flatten()` (`tree.ts`) ; un calque masqué en est écarté, et
   n'existe donc pas non plus à l'export. Toute manipulation d'arbre passe par
   `tree.ts`, jamais par un `map`/`filter` local.
+- **La composition se centre sur sa boîte englobante**, jamais sur l'origine des
+  décalages : `extent()` (`render.ts`) rend le centre de la boîte autant que sa
+  taille, et `place()` le retranche. Sans ça une pile, dont les décalages ne vont
+  que vers le haut et la gauche, se dessine basse et à droite d'un demi-décalage.
+  `composition.offsetY` est la seule façon de contredire ce centrage.
+- **La retouche manuelle d'une fenêtre (`Shot.placement`) n'entre ni dans le
+  cadrage ni dans le centrage.** Elle s'applique dans `place()`, après coup :
+  déplacer un shot ne redimensionne ni ne recentre ses voisins — sans quoi le
+  glisser (⌥) ferait dériver toute la composition sous le curseur. Corollaire
+  assumé : un décalage assez grand sort la fenêtre du canvas. `geometry.titleBar`
+  et `geometry.radius` valent pour l'échelle 1 ; `box.scale` les ramène à une
+  fenêtre retouchée, et c'est `screenRect()`/`frameRadius()` qui le font.
 - **Toutes les dimensions sont relatives à la largeur du canvas**, jamais en px
   absolus, sinon l'export 3× ne ressemble plus à la preview. `y` est divisé par
   la largeur, pas par la hauteur.

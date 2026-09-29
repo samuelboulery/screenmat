@@ -56,7 +56,9 @@ Options
       --scale 1|2|3      échelle d'export (défaut : 2)
       --format png|webp
       --frame browser|macbook|iphone|none
-      --background mesh|gradient|solid
+      --background mesh|gradient|solid       depuis la capture
+                   waves|dunes|aurora|ribbons façon macOS
+                   bayer|halftone|scanlines   tramés
       --ratio auto|4:3|1:1|16:9|9:16
       --theme auto|light|dark
       --url <texte>      texte de la barre d'adresse

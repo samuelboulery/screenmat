@@ -26,7 +26,7 @@ function StyleThumb({ scene, style }: { scene: Scene; style: Style }) {
     if (!ctx || !shot) return
     const thumb: Scene = {
       shots: [{ ...shot, layers: [] }],
-      palette: style.palette ?? palette,
+      palette,
       settings: style.settings,
       composition: { ...composition, layout: 'single' },
       backgroundImage,

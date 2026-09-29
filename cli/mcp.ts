@@ -82,7 +82,9 @@ const geometrySettings = z.object({
 
 const settings = geometrySettings
   .extend({
-    background: z.enum(['mesh', 'gradient', 'solid']).optional(),
+    background: z
+      .enum(['mesh', 'gradient', 'solid', 'waves', 'dunes', 'aurora', 'ribbons', 'bayer', 'halftone', 'scanlines'])
+      .optional(),
     theme: z.enum(['auto', 'light', 'dark']).optional(),
     url: z.string().max(200).optional().describe('Texte de la barre d’adresse, pour frame=browser.'),
     shadow: z.number().min(0).max(2).optional(),

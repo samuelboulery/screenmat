@@ -4,7 +4,7 @@ import type { useBatch } from './useBatch.ts'
 import type { useLibrary } from './useLibrary.ts'
 import type { BatchControls } from '../components/ExportMenu.tsx'
 import { buildBatchJobs } from '../lib/export.ts'
-import type { Palette, Ratio, Scene, Shot } from '../types.ts'
+import type { Ratio, Scene, Shot } from '../types.ts'
 
 type BatchExportInput = {
   scene: Scene | null
@@ -12,7 +12,6 @@ type BatchExportInput = {
   scale: number
   /** Le ratio de l'éditeur, point de départ du lot. */
   ratio: Ratio
-  palette: Palette | undefined
   batch: ReturnType<typeof useBatch>
   library: ReturnType<typeof useLibrary>
   onError: (message: string) => void
@@ -23,7 +22,7 @@ type BatchExportInput = {
  * un zip. Porte les ratios cochés et l'harmonisation des fonds ; rend ce que le
  * menu Export affiche.
  */
-export function useBatchExport({ scene, shots, scale, ratio, palette, batch, library, onError }: BatchExportInput) {
+export function useBatchExport({ scene, shots, scale, ratio, batch, library, onError }: BatchExportInput) {
   /** `null` ⇒ celui de l'éditeur : ouvrir le menu d'export ne doit pas changer
    *  le cadrage de ce qu'on vient de régler. `auto` n'a pas de case dans le
    *  menu, il n'entre donc jamais dans le lot. */
@@ -35,7 +34,7 @@ export function useBatchExport({ scene, shots, scale, ratio, palette, batch, lib
    *  N images × R ratios rempliraient IndexedDB de variantes d'un même réglage. */
   const exportAll = useCallback(() => {
     if (!scene) return
-    const jobs = buildBatchJobs(scene, shots, ratios, scale, palette, harmonize)
+    const jobs = buildBatchJobs(scene, shots, ratios, scale, harmonize)
     const styleId = library.activeStyleId
     void batch.start(
       jobs,
@@ -46,7 +45,7 @@ export function useBatchExport({ scene, shots, scale, ratio, palette, batch, lib
           onError(cause instanceof Error ? cause.message : 'Could not save the export to history'),
         ),
     )
-  }, [scene, shots, ratios, scale, palette, harmonize, batch, library, onError])
+  }, [scene, shots, ratios, scale, harmonize, batch, library, onError])
 
   const controls: BatchControls = {
     running: batch.running,

@@ -2,7 +2,7 @@ import { harmonizePalettes } from './palette.ts'
 import { renderScene } from './render.ts'
 import { loadTextFonts, textFontsReady } from './text.ts'
 import { makeZip, type ZipEntry } from './zip.ts'
-import type { Format, Palette, Ratio, Scene, Settings, Shot } from '../types.ts'
+import type { Format, Ratio, Scene, Settings, Shot } from '../types.ts'
 
 const MIME: Record<Format, string> = {
   png: 'image/png',
@@ -187,7 +187,6 @@ export function buildBatchJobs(
   shots: readonly Shot[],
   ratios: readonly Ratio[],
   scale: number,
-  palette?: Palette,
   harmonize = false,
 ): BatchJob[] {
   const palettes = harmonize
@@ -203,7 +202,7 @@ export function buildBatchJobs(
       scene: {
         ...scene,
         shots: [shot],
-        palette: palette ?? palettes[index],
+        palette: palettes[index],
         composition: { ...scene.composition, layout: 'single' as const },
         settings: { ...scene.settings, ratio },
       },

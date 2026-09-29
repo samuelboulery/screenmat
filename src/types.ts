@@ -5,8 +5,21 @@ export type Format = 'png' | 'webp'
 /** Style de fenêtre dessiné autour du screenshot. */
 export type FrameStyle = 'browser' | 'macbook' | 'iphone' | 'none'
 
-/** Preset de fond. `image` utilise l'image fournie dans la `Scene`. */
-export type BackgroundKind = 'mesh' | 'gradient' | 'solid' | 'image'
+/** Trois séries — tirée de la capture, façon macOS, tramée — plus l'image
+ *  perso, fournie dans la `Scene`. La série se déduit du type (`SERIES`,
+ *  `lib/series.ts`). */
+export type BackgroundKind =
+  | 'mesh'
+  | 'gradient'
+  | 'solid'
+  | 'waves'
+  | 'dunes'
+  | 'aurora'
+  | 'ribbons'
+  | 'bayer'
+  | 'halftone'
+  | 'scanlines'
+  | 'image'
 
 /** Disposition multi-shot. `single` n'affiche que le shot actif. */
 export type LayoutKind = 'single' | 'stack' | 'side' | 'tilt3d'
@@ -74,6 +87,12 @@ export type Settings = {
   grain: number
   /** Graine du PRNG : même graine ⇒ même fond, en preview comme à l'export. */
   seed: number
+  /** Série tramée : taille d'une cellule, en fraction de la largeur du canvas. */
+  ditherCell: number
+  /** Série tramée : angle de la trame, en degrés (points et lignes). */
+  ditherAngle: number
+  /** Couleurs du fond figées à la main. Absent ⇒ celles de la capture. */
+  palette?: Palette
   /** PNG : sans perte, mais le grain est du bruit et fait exploser le poids.
    *  WebP : le défaut, et 7 à 10× plus léger pour un résultat visuellement
    *  identique — mesuré à l'échelle 3, 11,5 Mo contre 1,5 Mo. */
@@ -221,9 +240,8 @@ export type Watermark = {
 export type Style = {
   id: string
   name: string
+  /** Les couleurs figées vivent dans `settings.palette`, avec le reste. */
   settings: Settings
-  /** Palette figée. Absente ⇒ les couleurs viennent de `extractPalette`. */
-  palette?: Palette
   watermark?: Watermark
 }
 
@@ -288,6 +306,8 @@ export const DEFAULT_SETTINGS: Settings = {
   contrast: 1,
   grain: 0.35,
   seed: 1,
+  ditherCell: 0.006,
+  ditherAngle: 45,
   // Le grain est du bruit : il fait exploser un PNG. Mesuré à l'échelle 3,
   // 8,4 Mo en PNG contre 0,8 Mo en WebP, pour un résultat visuellement
   // identique. Là où l'encodeur WebP manque, `supportsWebp()` ramène au PNG.

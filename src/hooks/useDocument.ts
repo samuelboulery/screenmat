@@ -21,7 +21,17 @@ export function useDocument() {
   const [backgroundImage, setBackgroundImage] = useState<HTMLImageElement | null>(null)
 
   const patch = useCallback(
-    (next: Partial<Settings>) => setSettings((current) => ({ ...current, ...next })),
+    (next: Partial<Settings>) =>
+      setSettings((current) => {
+        const merged = { ...current, ...next }
+        // Revenir aux couleurs de la capture retire la clé : une `palette:
+        // undefined` resterait dans les styles et l'historique.
+        if ('palette' in next && next.palette === undefined) {
+          const { palette: _dropped, ...rest } = merged
+          return rest
+        }
+        return merged
+      }),
     [],
   )
 

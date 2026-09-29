@@ -310,7 +310,9 @@ export function renderScene(
   ctx.setTransform(1, 0, 0, 1, 0, 0)
   ctx.clearRect(0, 0, geometry.width, geometry.height)
 
-  renderBackground(ctx, geometry, palette, settings, scale, scene.backgroundImage)
+  // Les couleurs figées à la main passent avant celles de la capture — ici, à
+  // un seul endroit : app, lot, CLI et MCP en héritent sans rien savoir.
+  renderBackground(ctx, geometry, settings.palette ?? palette, settings, scale, scene.backgroundImage)
 
   // Aplati une fois par fenêtre : le rendu destructif et le rendu des
   // annotations lisent la même liste, en deux passes séparées.

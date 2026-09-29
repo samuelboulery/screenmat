@@ -102,7 +102,6 @@ export default function App() {
     shots: shots.shots,
     scale,
     ratio: settings.ratio,
-    palette: activeStyle?.palette,
     batch,
     library,
     onError: setFailure,
@@ -149,7 +148,6 @@ export default function App() {
   const styleEditing = useStyleEditing({
     styles,
     library,
-    activeShot: shots.activeShot,
     confirm,
     onPickWatermark: () => pick('watermark'),
   })
@@ -302,7 +300,6 @@ export default function App() {
                 activeStyle && (
                   <StyleSection
                     style={activeStyle}
-                    sampled={shots.activeShot?.palette ?? null}
                     editing={styleEditing}
                   />
                 )

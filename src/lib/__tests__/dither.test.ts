@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ditherPixels } from '../../landing/dither.ts'
+import { ditherPixels } from '../dither.ts'
 
 const INK: [number, number, number] = [17, 17, 17]
 const PAPER: [number, number, number] = [243, 242, 238]

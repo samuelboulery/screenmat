@@ -97,7 +97,7 @@ what makes an export at scale 3 the exact homothety of the preview.
 | --- | --- | --- | --- |
 | `frame` | `browser` `macbook` `iphone` `none` | `none` | |
 | `ratio` | `auto` `4:3` `1:1` `16:9` `9:16` | `4:3` | |
-| `background` | `mesh` `gradient` `solid` `image` | `mesh` | `image` needs the top-level `background`. |
+| `background` | see [below](#background-series) | `mesh` | `image` needs the top-level `background`. |
 | `theme` | `auto` `light` `dark` | `auto` | |
 | `format` | `png` `webp` | `webp` | |
 | `titleBar` | boolean | `true` | |
@@ -113,11 +113,30 @@ what makes an export at scale 3 the exact homothety of the preview.
 | `shapeOpacity` | number | `0.75` | 0 to 1 |
 | `saturation` | number | `1` | 0 to 2 |
 | `contrast` | number | `1` | 0 to 2 |
+| `ditherCell` | number | `0.006` | 0.002 to 0.03. Dithered backgrounds only. |
+| `ditherAngle` | degrees | `45` | 0 to 90. `halftone` and `scanlines` only. |
+| `palette` | `{ base, accents }` | absent | Frozen background colours — see [palette](#palette). |
 
 `blur`, `shapes`, `shapeOpacity`, `saturation` and `contrast` tune the generated
 background: how soft the mesh is, how many blobs it has, and how the whole
 backdrop is graded. They have no CLI flag and no MCP parameter — a scene file or
-a style is where they live.
+a style is where they live. So do `ditherCell` and `ditherAngle`.
+
+### Background series
+
+Every generated background is drawn by the engine from the palette, and the same
+`seed` always gives the same pixels.
+
+| Series | Values | Reads |
+| --- | --- | --- |
+| From the screenshot | `mesh` `gradient` `solid` | `blur`, `shapes`, `shapeOpacity` (mesh); `shapeOpacity` (gradient) |
+| Wallpaper-style | `waves` `dunes` `aurora` `ribbons` | `shapeOpacity`, `seed` |
+| Dithered | `bayer` `halftone` `scanlines` | `ditherCell`, `ditherAngle`, `shapes`, `blur`, `seed` |
+
+All of them read `saturation` and `contrast`. `grain` applies to every
+background except the dithered ones, where it would blur the pattern. A dithered
+background is two tones — the lightest and the darkest colour of the palette —
+laid over the mesh: `ditherCell` is the cell size as a fraction of the width.
 
 ## composition
 
@@ -257,6 +276,9 @@ The watermark is drawn last, over everything else.
 ```
 
 Freeze the colours instead of extracting them from the first screenshot. Useful
-for a batch that must look like one family. Each entry must be a `#RRGGBB`
+for a batch that must look like one family. The same object may live in
+`settings.palette` — that is where the app and a style keep it. Order of
+precedence: a valid `settings.palette`, then the top-level `palette`, then the
+style's. Each entry must be a `#RRGGBB`
 string; anything else is dropped, and an invalid `base` discards the whole
 palette so extraction takes over. Up to 8 accents are kept.

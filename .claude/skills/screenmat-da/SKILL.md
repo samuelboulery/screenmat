@@ -84,6 +84,12 @@ cadres, poignées, caret — ne se dessine que quand un calque est sélectionné
 qu'un instrument de tracé est en main : avec `SEL` et rien de sélectionné, le
 canvas montre exactement ce que l'export produira, et `Escape` y ramène.
 
+**La section Background range les fonds en séries** — `Screenshot · macOS ·
+Dither`, un `Segmented` dont la valeur se déduit du type de fond. Les tuiles sont
+des miniatures dessinées par le moteur (`BackgroundThumb`), jamais un dégradé CSS :
+elles suivent la palette retouchée. Seuls les réglages que la série lit
+s'affichent. Pas d'image Apple : leurs fonds sont sous licence.
+
 Sous 1100 px, l'inspecteur devient une feuille rétractable. Pas de version
 mobile — l'outil vit à côté d'un screenshot pris sur desktop.
 

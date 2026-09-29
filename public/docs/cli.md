@@ -32,7 +32,7 @@ the default — speak; it is never overwritten with `undefined`.
 | `--scale` | `1` `2` `3` | `2` | Export scale. Anything else falls back to `2`. |
 | `--format` | `png` `webp` | `webp` | Falls back to PNG where the WebP encoder is missing. |
 | `--frame` | `browser` `macbook` `iphone` `none` | `none` | |
-| `--background` | `mesh` `gradient` `solid` | `mesh` | `image` needs a scene file. |
+| `--background` | `mesh` `gradient` `solid` `waves` `dunes` `aurora` `ribbons` `bayer` `halftone` `scanlines` | `mesh` | `image` needs a scene file. Series: see the scene reference. |
 | `--ratio` | `auto` `4:3` `1:1` `16:9` `9:16` | `4:3` | |
 | `--theme` | `auto` `light` `dark` | `auto` | Frame chrome, not the background. |
 | `--url` | text | `example.com` | Address bar text, `frame=browser` only. Truncated at 200 characters. |

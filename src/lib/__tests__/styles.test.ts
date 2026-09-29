@@ -50,10 +50,10 @@ describe('parseStyle', () => {
   })
 
   it('ignore une palette mal formée mais garde une palette valide', () => {
-    expect(parseStyle(wrap({ name: 'x', palette: { base: 'rouge' } })).palette).toBeUndefined()
+    expect(parseStyle(wrap({ name: 'x', palette: { base: 'rouge' } })).settings.palette).toBeUndefined()
     expect(
       parseStyle(wrap({ name: 'x', palette: { base: '#112233', accents: ['#445566', 'nope'] } }))
-        .palette,
+        .settings.palette,
     ).toEqual({ base: '#112233', accents: ['#445566'] })
   })
 
@@ -99,14 +99,11 @@ describe('normalizeStyle', () => {
   })
 
   it('écarte une palette illisible plutôt que de la propager', () => {
-    const style = normalizeStyle({
-      id: 'x',
-      name: 'x',
-      settings: DEFAULT_SETTINGS,
-      palette: { base: 'not-a-color', accents: ['#ff0000'] },
-    })
+    const legacy = { id: 'x', name: 'x', settings: DEFAULT_SETTINGS, palette: { base: 'not-a-color', accents: ['#ff0000'] } }
+    const style = normalizeStyle(legacy)
 
-    expect(style.palette).toBeUndefined()
+    expect(style.settings.palette).toBeUndefined()
+    expect('palette' in style).toBe(false)
   })
 })
 

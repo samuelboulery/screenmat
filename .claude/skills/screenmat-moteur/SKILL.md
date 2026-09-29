@@ -15,7 +15,11 @@ l'export doit correspondre à la preview par construction, pas par vigilance.
 ```
 render.ts       renderScene(ctx, scene, scale) — LE MOTEUR, et computeGeometry
 frame.ts        cadres browser/macbook/iphone/none, rotation Y, screenRect
-background.ts   presets de fond : mesh · gradient · solid · image, + cache
+background.ts   dispatch des fonds, backgroundColors, + cache
+series.ts       SERIES : capture · macOS · trame — source unique des types de fond
+wallpapers.ts   fonds façon macOS : waves · dunes · aurora · ribbons
+dithered.ts     fonds tramés : bayer · halftone · scanlines (sur le mesh)
+dither.ts       ditherPixels, Bayer 4×4 — partagé avec la landing
 noise.ts        tuile de grain, générée une fois, blittée à l'échelle
 palette.ts      couleurs dominantes + harmonisation d'un lot
 layers.ts       rendu des calques, floutage cuit
@@ -86,6 +90,12 @@ random.ts       mulberry32
   un coin : `luminance()` n'est pas corrigée en gamma et se trompe sur les tons
   moyens.
 - **Le fond est déterministe** : PRNG `mulberry32` seedé par `settings.seed`.
+- **Les couleurs du fond se résolvent à un seul endroit** : `settings.palette ??
+  scene.palette`, dans `render.ts`. Une palette figée vit dans les réglages, donc
+  suit l'annulation, les styles, l'historique et le lot sans code en plus.
+  `Style.palette` n'existe plus ; `withLegacyPalette` migre l'ancien format.
+- **Une trame dessine une forme par `fill`**, jamais un chemin cumulé : sous
+  Skia, 43 000 points dans un seul chemin prennent 19 s, un par un 30 ms.
 - **Le fond est mis en cache d'une frame à l'autre**, sur une clé qui liste tous
   les champs dont il dépend (`backgroundKey`, dans `background.ts`). Un champ
   oublié dans cette clé fige le fond : le réglage bouge, l'image ne suit pas.

@@ -2,6 +2,7 @@ import { nextId } from './annotate.ts'
 import { triggerDownload } from './export.ts'
 import { HEX, clamp, isRecord, num, oneOf } from './parse.ts'
 import { WATERMARK_POSITIONS } from './watermark.ts'
+import { BACKGROUND_KINDS } from './series.ts'
 import {
   DEFAULT_SETTINGS,
   type Palette,
@@ -13,8 +14,8 @@ import {
 /** Clé de préférence : le dernier style appliqué, retrouvé au démarrage. */
 const LAST_STYLE_KEY = 'screenmat:last-style'
 
-export function createStyle(name: string, settings: Settings, palette?: Palette): Style {
-  return { id: nextId('style'), name, settings, palette }
+export function createStyle(name: string, settings: Settings): Style {
+  return { id: nextId('style'), name, settings }
 }
 
 export function styleFilename(style: Style): string {
@@ -37,11 +38,16 @@ export function exportStyle(style: Style): void {
  * en sort repasse par les mêmes bornes qu'un `.json` importé.
  */
 export function normalizeStyle(style: Style): Style {
-  return {
-    ...style,
-    settings: parseSettings(style.settings),
-    palette: style.palette ? parsePalette(style.palette) : undefined,
-  }
+  const { palette, ...rest } = style as Style & { palette?: unknown }
+  return { ...rest, settings: withLegacyPalette(parseSettings(style.settings), palette) }
+}
+
+/** Avant les couleurs du document, un style figeait sa palette à côté de ses
+ *  réglages. Elle y entre désormais : un seul endroit décide des couleurs. */
+function withLegacyPalette(settings: Settings, legacy: unknown): Settings {
+  if (settings.palette) return settings
+  const palette = parsePalette(legacy)
+  return palette ? { ...settings, palette } : settings
 }
 
 /* --- Édition d'une palette figée ---------------------------------------- */
@@ -100,8 +106,7 @@ export function parseStyle(raw: string): Style {
   return {
     id: nextId('style'),
     name: name.slice(0, 64),
-    settings: parseSettings(style.settings),
-    palette: parsePalette(style.palette),
+    settings: withLegacyPalette(parseSettings(style.settings), style.palette),
     watermark: parseWatermark(style.watermark),
   }
 }
@@ -126,12 +131,22 @@ export function parseSettings(value: unknown): Settings {
     contrast: clamp(num(value.contrast, d.contrast), 0, 2),
     grain: clamp(num(value.grain, d.grain), 0, 1),
     seed: Math.round(num(value.seed, d.seed)),
+    ditherCell: clamp(num(value.ditherCell, d.ditherCell), 0.002, 0.03),
+    ditherAngle: clamp(num(value.ditherAngle, d.ditherAngle), 0, 90),
     format: oneOf(value.format, ['png', 'webp'] as const, d.format),
     frame: oneOf(value.frame, ['browser', 'macbook', 'iphone', 'none'] as const, d.frame),
-    background: oneOf(value.background, ['mesh', 'gradient', 'solid', 'image'] as const, d.background),
+    background: oneOf(value.background, BACKGROUND_KINDS, d.background),
     rotateY: clamp(num(value.rotateY, d.rotateY), -24, 24),
     shadow: clamp(num(value.shadow, d.shadow), 0, 2),
+    ...optionalPalette(value.palette),
   }
+}
+
+/** Absente plutôt que `undefined` : un style sans couleurs figées se relit à
+ *  l'identique, champ compris. */
+function optionalPalette(value: unknown): { palette?: Palette } {
+  const palette = parsePalette(value)
+  return palette ? { palette } : {}
 }
 
 export function parsePalette(value: unknown): Palette | undefined {

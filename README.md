@@ -40,7 +40,7 @@ English · [Français](README.fr.md)
 | | |
 | --- | --- |
 | **Frames** | `browser` (macOS chrome with an editable address bar), `macbook`, `iphone`, or `none`. Title bar optional, corner radius and Y-axis tilt (−24° to 24°) adjustable. |
-| **Backgrounds** | `mesh`, `gradient`, `solid` or your own image — all derived from the dominant colours of the screenshot, with dials for blur, shape count, opacity, saturation, contrast and film grain. |
+| **Backgrounds** | Three series drawn by the engine — from the screenshot (`mesh`, `gradient`, `solid`), wallpaper-style (`waves`, `dunes`, `aurora`, `ribbons`) and dithered (`bayer`, `halftone`, `scanlines`) — or your own image. Every colour is editable; dials for blur, shapes, opacity, saturation, contrast, grain, dither cell and angle. |
 | **Annotations** | Seven layer kinds: text labels, ranked badges, arrows, lines, boxes, ellipses and redaction. Colour, size, stroke, fill, opacity and inverted contrast per layer. |
 | **Redaction** | `blur`, `pixel` or `solid`, baked under the window clip. |
 | **Compositions** | Up to 24 shots in one visual: `single`, `stack`, `side` or `tilt3d`, with spread, convergence and elevation. |

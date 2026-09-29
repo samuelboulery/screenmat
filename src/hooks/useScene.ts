@@ -41,7 +41,7 @@ export function useScene(input: SceneInput) {
     if (composed.length === 0) return null
     return {
       shots: composed,
-      palette: activeStyle?.palette ?? composed[0].palette,
+      palette: composed[0].palette,
       settings,
       composition,
       backgroundImage: backgroundImage ?? undefined,

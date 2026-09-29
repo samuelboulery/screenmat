@@ -75,9 +75,10 @@ speak; it is never overwritten with an empty value.
 pnpm cli screenshot.png --style docs --ratio 1:1
 ```
 
-A style may also carry a frozen `palette`. The scene's own `palette` wins if it
-has one; otherwise the style's is used; otherwise the colours are extracted from
-the first screenshot.
+A style may also carry a frozen palette, in `settings.palette`. The scene's own
+`palette` wins if it has one; otherwise the style's is used; otherwise the
+colours are extracted from the first screenshot. A style file from an older
+version that keeps `palette` next to `settings` is still read.
 
 ## The file
 
@@ -91,8 +92,12 @@ exports and imports.
   "style": {
     "id": "style-1",
     "name": "Docs",
-    "settings": { "frame": "macbook", "ratio": "16:9", "seed": 5 },
-    "palette": { "base": "#101018", "accents": ["#7DE2FF"] }
+    "settings": {
+      "frame": "macbook",
+      "ratio": "16:9",
+      "seed": 5,
+      "palette": { "base": "#101018", "accents": ["#7DE2FF"] }
+    }
   }
 }
 ```

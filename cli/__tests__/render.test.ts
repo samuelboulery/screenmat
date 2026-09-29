@@ -140,9 +140,29 @@ describe('render — cache du fond', () => {
     contrast: { contrast: 1.6 },
     grain: { grain: 0.9 },
     seed: { seed: 42 },
+    palette: { palette: { base: '#101018', accents: ['#ff5500'] } },
+    waves: { background: 'waves' },
+    dunes: { background: 'dunes' },
+    aurora: { background: 'aurora' },
+    ribbons: { background: 'ribbons' },
+    bayer: { background: 'bayer' },
+    halftone: { background: 'halftone' },
+    scanlines: { background: 'scanlines' },
   } as const
 
   const base = { seed: 5 } as const
+
+  // La trame a ses propres réglages : ils ne valent que pour la série tramée.
+  for (const background of ['bayer', 'halftone', 'scanlines'] as const) {
+    for (const [nom, patch] of Object.entries({ ditherCell: { ditherCell: 0.02 }, ditherAngle: { ditherAngle: 10 } })) {
+      if (background === 'bayer' && nom === 'ditherAngle') continue
+      it(`invalide le cache quand \`${nom}\` change (${background})`, async () => {
+        const plain = await render({ input: shot, settings: { ...base, background }, scale: 1 })
+        const changed = await render({ input: shot, settings: { ...base, background, ...patch }, scale: 1 })
+        expect(changed.buffer.equals(plain.buffer)).toBe(false)
+      })
+    }
+  }
 
   it('rejoue le même fichier quand rien ne change', async () => {
     const a = await render({ input: shot, settings: base, scale: 1 })
@@ -177,4 +197,18 @@ describe('render — cache du fond', () => {
     const two = await render({ input: shot, settings: base, scale: 2 })
     expect(two.width).toBe(one.width * 2)
   })
+})
+
+describe('render — séries macOS et tramée', () => {
+  const kinds = ['waves', 'dunes', 'aurora', 'ribbons', 'bayer', 'halftone', 'scanlines'] as const
+
+  for (const background of kinds) {
+    it(`\`${background}\` est déterministe par graine`, async () => {
+      const a = await render({ input: shot, settings: { background, seed: 3, grain: 0 }, scale: 1 })
+      const b = await render({ input: shot, settings: { background, seed: 3, grain: 0 }, scale: 1 })
+      const c = await render({ input: shot, settings: { background, seed: 4, grain: 0 }, scale: 1 })
+      expect(a.buffer.equals(b.buffer)).toBe(true)
+      expect(a.buffer.equals(c.buffer)).toBe(false)
+    })
+  }
 })

@@ -101,10 +101,16 @@ async function toSpec(spec: SceneSpec | SimpleSpec | unknown): Promise<SceneSpec
   // Un style nommé fournit le socle ; les `settings` explicites le recouvrent.
   const style = await resolveStyle(parsed.style)
   const explicit = isRecordLike(raw) && isRecordLike(raw.settings) ? raw.settings : {}
+  const picked = pickSettings(parsed.settings, explicit)
   return {
     ...parsed,
-    settings: { ...style.settings, ...pickSettings(parsed.settings, explicit) },
-    palette: parsed.palette ?? style.palette,
+    settings: {
+      ...style.settings,
+      ...picked,
+      // Même ordre qu'au rendu sans style : `settings.palette` valide, puis la
+      // `palette` de scène, puis celle du style.
+      ...(parsed.palette && !picked.palette ? { palette: parsed.palette } : {}),
+    },
   }
 }
 

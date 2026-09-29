@@ -1,24 +1,20 @@
-import StylePalette from './StylePalette.tsx'
 import StyleWatermark from './StyleWatermark.tsx'
 import { DeleteIcon } from './icons.tsx'
 import { Button, Section } from './ui.tsx'
 import type { useStyleEditing } from '../hooks/useStyleEditing.ts'
-import type { Palette, Style } from '../types.ts'
+import type { Style } from '../types.ts'
 
 type StyleSectionProps = {
   style: Style
-  /** Palette échantillonnée du shot actif, montrée tant que le style n'en fige
-   *  pas une. */
-  sampled: Palette | null
   editing: ReturnType<typeof useStyleEditing>
 }
 
 /**
- * Ce qu'un style porte au-delà de ses réglages : son nom, son filigrane, sa
- * palette figée. Affiché sous les réglages du document quand un style est
+ * Ce qu'un style porte au-delà de ses réglages : son nom et son filigrane. Ses
+ * couleurs de fond sont des réglages comme les autres (section Background). Affiché sous les réglages du document quand un style est
  * appliqué — l'ancien écran Styles, ramené là où l'on voit l'effet.
  */
-export default function StyleSection({ style, sampled, editing }: StyleSectionProps) {
+export default function StyleSection({ style, editing }: StyleSectionProps) {
   return (
     <>
       <Section title="Style">
@@ -43,15 +39,6 @@ export default function StyleSection({ style, sampled, editing }: StyleSectionPr
         onPick={editing.onPickWatermark}
         onPatchPosition={editing.onPatchWatermark}
         onRemove={editing.onRemoveWatermark}
-      />
-
-      <StylePalette
-        palette={style.palette ?? sampled}
-        frozen={Boolean(style.palette)}
-        onOverride={editing.onOverridePalette}
-        onColor={editing.onPatchColor}
-        onAdd={editing.onAddColor}
-        onRemove={editing.onRemoveColor}
       />
     </>
   )

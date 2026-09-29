@@ -2,7 +2,8 @@ import { badgeNumbers, badgeRadius, normalizeRect, toLength, toPixels, type Rect
 import { css, hexToRgb, inkOn } from './color.ts'
 import { frameRadius, screenRect, windowPath, windowTransform, type ScreenRect } from './frame.ts'
 import type { Geometry, WindowBox } from './render.ts'
-import type { Annotation, LabelStyle, Settings } from '../types.ts'
+import { layoutText, shadowFor } from './text.ts'
+import type { Annotation, Settings } from '../types.ts'
 
 /* Dessin des calques. Un seul chemin : la preview et l'export appellent les
    mêmes fonctions, avec la même `WindowBox` à des échelles différentes. */
@@ -146,6 +147,11 @@ export function renderAnnotations(
     ctx.lineCap = 'round'
     ctx.lineJoin = 'round'
 
+    // L'ombre porte sur tout ce que le calque dessine ; un texte la réserve à
+    // sa plaque (voir `drawLabel`).
+    const shadow = shadowFor(annotation.shadow, box)
+    if (shadow && annotation.kind !== 'text') applyShadow(ctx, shadow)
+
     const rect = toPixels(annotation.rect, box)
     if (annotation.kind === 'box') drawBox(ctx, annotation, rect, box)
     else if (annotation.kind === 'ellipse') drawEllipse(ctx, annotation, rect)
@@ -155,7 +161,7 @@ export function renderAnnotations(
       drawBadge(ctx, annotation, rect, box, numbers.get(annotation.id) ?? 1)
     } else if (annotation.kind === 'text') {
       const edited = editing?.id === annotation.id ? editing : null
-      drawLabel(ctx, annotation, rect, toLength(annotation.size, box), edited)
+      drawLabel(ctx, annotation, rect, box, edited)
     }
 
     ctx.restore()
@@ -268,60 +274,87 @@ function drawBadge(
   ctx.fillText(String(number), cx, cy)
 }
 
+type Shadow = NonNullable<ReturnType<typeof shadowFor>>
+
+function applyShadow(ctx: CanvasRenderingContext2D, shadow: Shadow): void {
+  ctx.shadowColor = shadow.color
+  ctx.shadowBlur = shadow.blur
+  ctx.shadowOffsetY = shadow.offsetY
+}
+
+function clearShadow(ctx: CanvasRenderingContext2D): void {
+  ctx.shadowColor = 'transparent'
+  ctx.shadowBlur = 0
+  ctx.shadowOffsetY = 0
+}
+
 /**
- * Label. `invert` échange le fond et l'encre : pastille à la couleur du calque,
- * texte automatiquement noir ou blanc selon son contraste. Sans effet sur
- * `plain`, qui n'a pas de fond à remplir.
+ * Texte, sur une ou plusieurs lignes, avec sa plaque. L'ombre va à la plaque
+ * quand elle existe — doubler celle du texte dessus le rendrait flou — et au
+ * texte seul sinon.
  *
  * `editing` porte la saisie en cours. Le caret est dessiné ici et nulle part
  * ailleurs : c'est la seule façon qu'il tombe au bon pixel quelle que soit
- * l'échelle et l'inclinaison de la fenêtre. Un label en cours de saisie garde
- * sa pastille même vide — sinon elle clignoterait avec le curseur.
+ * l'échelle et l'inclinaison de la fenêtre. Un texte en cours de saisie garde
+ * sa plaque même vide — sinon elle clignoterait avec le curseur.
  */
 function drawLabel(
   ctx: CanvasRenderingContext2D,
   annotation: Annotation,
   rect: Rect,
-  fontSize: number,
+  box: WindowBox,
   editing: { caret: number; blink: boolean } | null = null,
 ): void {
-  const label = annotation.text.trim()
-  if (!label && !editing) return
+  if (!annotation.text.trim() && !editing) return
 
-  const style: LabelStyle = annotation.labelStyle
-  ctx.font = `${fontSize}px ${MONO}`
-  ctx.textAlign = 'left'
-  ctx.textBaseline = 'middle'
+  const layout = layoutText(annotation, box)
+  const shadow = shadowFor(annotation.shadow, box)
+  const plate = annotation.background
 
-  const filled = annotation.invert && style !== 'plain'
-  const padX = style === 'plain' ? 0 : fontSize * 0.8
-  const padY = style === 'plain' ? 0 : fontSize * 0.55
-  const width = ctx.measureText(label).width + padX * 2
-  const height = fontSize + padY * 2
-
-  if (style !== 'plain') {
-    ctx.fillStyle = filled ? annotation.color : STAGE
+  if (plate.on) {
+    if (shadow) applyShadow(ctx, shadow)
+    ctx.fillStyle = css(hexToRgb(plate.color), plate.opacity)
     ctx.beginPath()
-    ctx.roundRect(rect.x, rect.y, width, height, style === 'pill' ? height / 2 : fontSize * 0.35)
+    ctx.roundRect(rect.x, rect.y, layout.width, layout.height, plate.radius * layout.fontSize)
     ctx.fill()
-    if (!filled) {
-      ctx.strokeStyle = annotation.color
-      ctx.lineWidth = Math.max(1, fontSize * 0.09)
-      ctx.stroke()
-    }
+    clearShadow(ctx)
+  } else if (shadow) {
+    applyShadow(ctx, shadow)
   }
 
-  const ink = filled ? inkOn(annotation.color) : annotation.color
-  ctx.fillStyle = ink
-  ctx.fillText(label, rect.x + padX, rect.y + height / 2)
+  ctx.font = layout.font
+  ctx.textBaseline = 'middle'
+  ctx.textAlign = 'left'
+  ctx.fillStyle = annotation.color
+
+  const inner = layout.width - layout.padX * 2
+  const lineX = (width: number) =>
+    rect.x +
+    layout.padX +
+    (annotation.align === 'center' ? (inner - width) / 2 : annotation.align === 'right' ? inner - width : 0)
+  const lineY = (index: number) => rect.y + layout.padY + layout.lineHeight * (index + 0.5)
+
+  layout.lines.forEach((line, index) => ctx.fillText(line.text, lineX(line.width), lineY(index)))
 
   if (!editing || !editing.blink) return
-  const caret = Math.max(0, Math.min(editing.caret, label.length))
-  const offset = ctx.measureText(label.slice(0, caret)).width
+  clearShadow(ctx)
+  const row = caretRow(layout.lines, editing.caret)
+  const line = layout.lines[row]
+  const column = Math.max(0, Math.min(editing.caret - line.start, line.text.length))
+  const offset = ctx.measureText(line.text.slice(0, column)).width
   ctx.fillRect(
-    rect.x + padX + offset,
-    rect.y + height / 2 - fontSize * 0.6,
-    Math.max(1, fontSize * 0.06),
-    fontSize * 1.2,
+    lineX(line.width) + offset,
+    lineY(row) - layout.fontSize * 0.6,
+    Math.max(1, layout.fontSize * 0.06),
+    layout.fontSize * 1.2,
   )
+}
+
+/** La ligne qui porte le caret : la dernière qui commence avant lui. */
+function caretRow(lines: readonly { start: number }[], caret: number): number {
+  let row = 0
+  lines.forEach((line, index) => {
+    if (line.start <= caret) row = index
+  })
+  return row
 }

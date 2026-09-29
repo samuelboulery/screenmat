@@ -175,17 +175,21 @@ before writing a single one.
 | --- | --- | --- | --- |
 | `kind` | one of the seven | required | An unknown kind drops the layer. |
 | `rect` | `{ x, y, w, h }` | `{0,0,0,0}` | `x`/`y`: −2 to 3. `w`/`h`: −3 to 3, **signed**. |
-| `text` | string | `""` | ≤ 280 characters. `kind=text`. |
-| `labelStyle` | `pill` `plain` `badge` | `pill` | |
+| `text` | string | `""` | ≤ 280 characters. `kind=text`. `\n` starts a new line. |
+| `font` | `sans` `mono` | `sans` | `kind=text`. Space Grotesk or JetBrains Mono, both bundled. |
+| `weight` | number | `600` | 400 to 700, rounded to the hundred. |
+| `align` | `left` `center` `right` | `left` | Lines inside the text box. |
+| `background` | object | see below | The plate behind a text. |
 | `redaction` | `blur` `pixel` `solid` | `blur` | `kind=redaction`. |
 | `color` | `#RRGGBB` | `#FFD479` | Six hex digits, or the default. `red` is not a colour here. |
-| `size` | number | `0.011` | 0.005 to 0.04 — font size. |
+| `size` | number | `0.024` text · `0.011` badge | 0.005 to 0.08 — font size. |
 | `strokeWidth` | number | `0.004` arrow · `0.003` line, box, ellipse · `0.0022` otherwise | 0.0005 to 0.012 |
 | `radius` | number | `0.012` box · `0.006` otherwise | 0 to 0.06 — box corners. |
 | `arrowHead` | number | `0.016` arrow · `0.012` otherwise | 0.004 to 0.04 |
 | `fill` | number | `0` | 0 to 1. `0` is outline only. |
 | `opacity` | number | `1` | 0.1 to 1 |
-| `invert` | boolean | `false` | Flips a label's ink and plate. |
+| `shadow` | number | `0.4` text · `0` otherwise | 0 to 1. A drop shadow, scaled with the window. |
+| `invert` | boolean | `false` | Turns a badge into an outlined disc. |
 | `hidden` | boolean | `false` | Not drawn, and not exported either. |
 | `locked` | boolean | `false` | App only: not selectable by click. |
 | `name` | string | `""` | App only: the label in the layer stack. |
@@ -194,7 +198,7 @@ before writing a single one.
 
 | Kind | Reads | Ignores |
 | --- | --- | --- |
-| `text` | `text`, `labelStyle`, `size`, `color`, `invert`, `rect.x`/`rect.y` | `rect.w`/`rect.h` — a label sizes itself around its text. An empty `text` draws nothing. |
+| `text` | `text`, `font`, `weight`, `align`, `size`, `color`, `background`, `shadow`, `rect.x`/`rect.y`, `rect.w` | `rect.h` — the box grows with its lines. `rect.w > 0` wraps at that width, `0` fits the longest line. An empty `text` draws nothing. |
 | `badge` | `size`, `color`, `invert`, `rect.x`/`rect.y` | `text` — a badge shows its **rank** among the badges of that shot, and the number is never stored. |
 | `arrow` | `rect` (signed), `strokeWidth`, `arrowHead`, `color` | `fill`, `radius` — the head is filled with `color`. |
 | `line` | `rect` (signed), `strokeWidth`, `color` | `fill`, `radius`, `arrowHead` |
@@ -205,10 +209,18 @@ before writing a single one.
 `opacity` applies to every kind except `redaction`: a half-transparent mask
 would not be a mask. A `rect` smaller than one pixel is skipped.
 
-`invert` swaps plate and ink: a badge becomes an outlined disc with its number
-in the layer colour, a label becomes a coloured plate with black or white text
-picked by real WCAG contrast. It has no effect on `labelStyle: "plain"`, which
-has no plate to fill.
+`invert` turns a badge into an outlined disc with its number in the layer
+colour.
+
+A text's `background` is `{ on, color, opacity, padding, radius }`. Default:
+`on: true`, `#000000` at `0.85`, `padding: 0.5` and `radius: 0.3` — both in
+**ems**, so the plate follows the font size. `color` is the colour of the text
+itself.
+
+Scenes written before the text layer still render: a layer with `labelStyle`
+or `invert` and no `font` is read as the old label — monospace, `size 0.011`,
+a dark plate for `pill` and `badge`, none for `plain`, and a coloured plate
+with contrasting ink when it was inverted.
 
 > **Warning** — Redaction is baked into the pixels under the window clip, never
 > applied as a filter on top. What it covers is genuinely unreadable in the

@@ -11,12 +11,8 @@
  * une machine est une donnée externe au même titre qu'un fichier importé à la
  * main. Chaque champ est vérifié, borné, et retombe sur sa valeur par défaut.
  */
-import {
-  defaultsFor,
-  ANNOTATION_LIMITS,
-  DEFAULT_LABEL_SIZE,
-  nextId,
-} from './annotate.ts'
+import { ANNOTATION_ACCENT, ANNOTATION_LIMITS, defaultsFor, nextId, TEXT_BACKGROUND } from './annotate.ts'
+import { inkOn } from './color.ts'
 import { HEX, bool, clamp, isRecord, num, oneOf } from './parse.ts'
 import { parsePalette, parseSettings } from './styles.ts'
 import { WATERMARK_POSITIONS } from './watermark.ts'
@@ -27,6 +23,7 @@ import {
   type AnnotationKind,
   type Composition,
   type FractionRect,
+  type TextBackground,
   type Palette,
   type Placement,
   type Settings,
@@ -167,6 +164,10 @@ function parseAnnotation(value: Record<string, unknown>): Annotation {
   const kind = oneOf(value.kind, ANNOTATION_KINDS, 'box')
   const limits = ANNOTATION_LIMITS
   const d = defaultsFor(kind)
+  // Un label d'avant le calque texte : il porte `labelStyle` ou `invert`, pas de `font`.
+  const legacy = kind === 'text' && value.font === undefined && (value.labelStyle !== undefined || value.invert !== undefined)
+  const legacyInvert = legacy && bool(value.invert, false) && value.labelStyle !== 'plain'
+  const color = typeof value.color === 'string' && HEX.test(value.color) ? value.color : legacy ? ANNOTATION_ACCENT : d.color
 
   return {
     id: nextId(kind),
@@ -176,11 +177,11 @@ function parseAnnotation(value: Record<string, unknown>): Annotation {
     hidden: bool(value.hidden, d.hidden),
     locked: bool(value.locked, d.locked),
     text: typeof value.text === 'string' ? value.text.slice(0, 280) : '',
-    labelStyle: oneOf(value.labelStyle, ['pill', 'plain', 'badge'] as const, 'pill'),
+    ...parseText(value, legacy),
     invert: bool(value.invert, d.invert),
-    size: clamp(num(value.size, DEFAULT_LABEL_SIZE), limits.size.min, limits.size.max),
+    size: clamp(num(value.size, legacy ? LEGACY_LABEL_SIZE : d.size), limits.size.min, limits.size.max),
     redaction: oneOf(value.redaction, ['blur', 'pixel', 'solid'] as const, 'blur'),
-    color: typeof value.color === 'string' && HEX.test(value.color) ? value.color : d.color,
+    color: legacyInvert ? inkOn(color, '#000000') : color,
     strokeWidth: clamp(
       num(value.strokeWidth, d.strokeWidth),
       limits.strokeWidth.min,
@@ -190,7 +191,51 @@ function parseAnnotation(value: Record<string, unknown>): Annotation {
     arrowHead: clamp(num(value.arrowHead, d.arrowHead), limits.arrowHead.min, limits.arrowHead.max),
     fill: clamp(num(value.fill, d.fill), limits.fill.min, limits.fill.max),
     opacity: clamp(num(value.opacity, d.opacity), limits.opacity.min, limits.opacity.max),
+    shadow: clamp(num(value.shadow, legacy ? 0 : d.shadow), limits.shadow.min, limits.shadow.max),
   }
+}
+
+/** Taille de l'ancien label mono, qui n'avait pas de défaut propre au texte. */
+const LEGACY_LABEL_SIZE = 0.011
+
+/** Les réglages propres à un texte. Un ancien label (`labelStyle`, sans
+ *  `font`) se relit à l'identique ou presque : mono, plaque d'après son style,
+ *  couleurs échangées s'il était inversé. */
+function parseText(
+  value: Record<string, unknown>,
+  legacy: boolean,
+): Pick<Annotation, 'font' | 'weight' | 'align' | 'background'> {
+  const limits = ANNOTATION_LIMITS
+  return {
+    font: oneOf(value.font, ['sans', 'mono'] as const, legacy ? 'mono' : 'sans'),
+    weight: Math.round(clamp(num(value.weight, legacy ? 400 : 600), limits.weight.min, limits.weight.max) / 100) * 100,
+    align: oneOf(value.align, ['left', 'center', 'right'] as const, 'left'),
+    background: legacy ? legacyBackground(value) : parseBackground(value.background),
+  }
+}
+
+function parseBackground(value: unknown): TextBackground {
+  const d = TEXT_BACKGROUND
+  if (!isRecord(value)) return d
+  const limits = ANNOTATION_LIMITS
+  return {
+    on: bool(value.on, d.on),
+    color: typeof value.color === 'string' && HEX.test(value.color) ? value.color : d.color,
+    opacity: clamp(num(value.opacity, d.opacity), 0, 1),
+    padding: clamp(num(value.padding, d.padding), limits.padding.min, limits.padding.max),
+    radius: clamp(num(value.radius, d.radius), limits.plateRadius.min, limits.plateRadius.max),
+  }
+}
+
+/** `pill` et `badge` avaient une plaque sombre translucide, `plain` aucune ;
+ *  inversée, la plaque prenait la couleur du calque. */
+function legacyBackground(value: Record<string, unknown>): TextBackground {
+  const style = oneOf(value.labelStyle, ['pill', 'plain', 'badge'] as const, 'pill')
+  const color = typeof value.color === 'string' && HEX.test(value.color) ? value.color : ANNOTATION_ACCENT
+  if (style === 'plain') return { ...TEXT_BACKGROUND, on: false }
+  const radius = style === 'pill' ? 1 : 0.35
+  if (bool(value.invert, false)) return { ...TEXT_BACKGROUND, color, opacity: 1, radius }
+  return { ...TEXT_BACKGROUND, color: '#07070A', opacity: 0.78, radius }
 }
 
 /**

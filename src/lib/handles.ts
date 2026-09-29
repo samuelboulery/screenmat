@@ -1,5 +1,7 @@
 import { ANNOTATION_LIMITS, isPoint, isSegment, type Point } from './annotate.ts'
 import { clamp } from './parse.ts'
+import type { WindowBox } from './render.ts'
+import { layoutText, measureText, type Measure } from './text.ts'
 import type { Annotation, AnnotationKind, FractionRect } from '../types.ts'
 
 /* Géométrie des poignées de sélection. Logique pure : les poignées elles-mêmes
@@ -9,6 +11,9 @@ export type Handle = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w' | 'start'
 
 const AREA_HANDLES: readonly Handle[] = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w']
 const SEGMENT_HANDLES: readonly Handle[] = ['start', 'end']
+/** Un texte : ses bords règlent la largeur de retour à la ligne, son coin la
+ *  taille de police. */
+const TEXT_HANDLES: readonly Handle[] = ['w', 'e', 'se']
 /** Une sélection multiple ne se tire que par ses coins : elle garde toujours
  *  ses proportions, un bord n'aurait donc rien à faire seul. */
 export const GROUP_HANDLES: readonly Handle[] = ['nw', 'ne', 'se', 'sw']
@@ -30,11 +35,12 @@ export const HANDLE_CURSOR: Record<Handle, string> = {
 }
 
 /**
- * Poignées d'un calque. Un badge et un label n'en ont pas : leur taille vient
- * du réglage de police, les tirer par un coin n'aurait aucun effet visible.
+ * Poignées d'un calque. Un badge n'en a pas : sa taille vient du réglage de
+ * police, le tirer par un coin n'aurait aucun effet visible.
  */
 export function handlesFor(kind: AnnotationKind): readonly Handle[] {
   if (isSegment(kind)) return SEGMENT_HANDLES
+  if (kind === 'text') return TEXT_HANDLES
   if (isPoint(kind)) return []
   return AREA_HANDLES
 }
@@ -176,6 +182,36 @@ export function scaleLayer(
       ? clamp(layer.size * scale, ANNOTATION_LIMITS.size.min, ANNOTATION_LIMITS.size.max)
       : layer.size,
   }
+}
+
+/**
+ * Poignée d'un texte. Un bord fixe la largeur de retour à la ligne — partie de
+ * la largeur affichée, pour que le premier geste ne fasse pas sauter le
+ * cadre — ; le coin agrandit la police, et la largeur fixée avec elle.
+ * `delta` en fractions de la largeur de la fenêtre, depuis la saisie.
+ */
+export function resizeText(
+  layer: Annotation,
+  handle: Handle,
+  delta: Point,
+  box: WindowBox,
+  measure: Measure = measureText,
+): Partial<Annotation> {
+  const layout = layoutText(layer, box, measure)
+  const width = layout.width / box.width
+  const floor = layer.size * 2
+
+  if (handle === 'e' || handle === 'w') {
+    const west = handle === 'w'
+    const next = Math.max(floor, width + (west ? -delta.x : delta.x))
+    return { rect: { ...layer.rect, x: west ? layer.rect.x + width - next : layer.rect.x, w: next } }
+  }
+
+  const height = layout.height / box.width
+  const limits = ANNOTATION_LIMITS.size
+  const size = clamp((layer.size * (height + delta.y)) / height, limits.min, limits.max)
+  const ratio = size / layer.size
+  return { size, rect: { ...layer.rect, w: layer.rect.w * ratio } }
 }
 
 /** Déplacement au clavier, en fractions de la largeur de la fenêtre. */

@@ -12,9 +12,12 @@ describe('handlesFor', () => {
     expect(handlesFor('line')).toEqual(['start', 'end'])
   })
 
-  it("n'en donne aucune là où la taille vient du réglage de police", () => {
-    expect(handlesFor('text')).toHaveLength(0)
+  it("n'en donne aucune à un badge, dont la taille vient du réglage de police", () => {
     expect(handlesFor('badge')).toHaveLength(0)
+  })
+
+  it('donne à un texte ses deux bords et un coin', () => {
+    expect(handlesFor('text')).toEqual(['w', 'e', 'se'])
   })
 })
 

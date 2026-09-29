@@ -5,7 +5,7 @@ import { toFractions, unionBounds, type Point } from '../lib/annotate.ts'
 import { draftRect } from '../lib/draft.ts'
 import { describeScene, marqueeStyle } from '../lib/describe.ts'
 import { marqueeCatch, paintDraft, type Drag } from '../lib/gesture.ts'
-import { applyHandle, resizeGroup, scaleLayer, type Handle } from '../lib/handles.ts'
+import { applyHandle, resizeGroup, resizeText, scaleLayer, type Handle } from '../lib/handles.ts'
 import { inWindow, layerAt, windowAt, type Target } from '../lib/hit.ts'
 import type { Geometry } from '../lib/render.ts'
 import { expandSelection, flatten } from '../lib/tree.ts'
@@ -171,8 +171,12 @@ export default function Preview({
       }
     }
 
+    // Un clic avec l'outil Texte sur un texte existant le rouvre plutôt que
+    // d'en poser un second par-dessus.
+    const hit = pick(point)
+    if (tool === 'text' && hit && openText(hit)) return
+
     if (tool === 'select') {
-      const hit = pick(point)
       const additive = event.shiftKey || event.metaKey || event.ctrlKey
 
       if (!hit) {
@@ -183,16 +187,6 @@ export default function Preview({
       }
 
       onSelect?.(hit.target.shotId, [hit.annotation.id], additive)
-
-      // Double-clic sur un label : on rouvre la saisie plutôt que de le déplacer.
-      if (event.detail === 2 && hit.annotation.kind === 'text') {
-        onEdit?.({
-          shotId: hit.target.shotId,
-          id: hit.annotation.id,
-          caret: hit.annotation.text.length,
-        })
-        return
-      }
 
       const moving = additive || selectedIds.includes(hit.annotation.id)
       const chosenIds = moving ? [...new Set([...selectedIds, hit.annotation.id])] : [hit.annotation.id]
@@ -210,6 +204,23 @@ export default function Preview({
     const target = targetWindow(point)
     if (!target) return
     setDrag({ mode: 'draw', kind: tool, target, from: point, to: point, shift: event.shiftKey })
+  }
+
+  /** Rouvre la saisie d'un texte. Faux si le calque n'en est pas un. */
+  const openText = (hit: { annotation: Annotation; target: Target }): boolean => {
+    if (hit.annotation.kind !== 'text') return false
+    onSelect?.(hit.target.shotId, [hit.annotation.id], false)
+    onEdit?.({ shotId: hit.target.shotId, id: hit.annotation.id, caret: hit.annotation.text.length })
+    return true
+  }
+
+  /** Double-clic sur un texte, quel que soit l'outil en main. Sur `dblclick`
+   *  et non sur `pointerdown` : `detail` y vaut 0 dans Chrome. */
+  const onDoubleClick = (event: React.MouseEvent) => {
+    if (!interactive || !geometry) return
+    const point = pointAt(event, canvasRef.current, geometry)
+    const hit = point ? pick(point) : null
+    if (hit) openText(hit)
   }
 
   /** Saisie d'une poignée : le drag part de la sélection courante. */
@@ -235,6 +246,7 @@ export default function Preview({
       target,
       origin: only.rect,
       kind: only.kind,
+      layer: only,
       handle,
       from: point,
       to: point,
@@ -308,9 +320,13 @@ export default function Preview({
       return
     }
 
-    onPatch?.(drag.target.shotId, drag.id, {
-      rect: applyHandle(drag.origin, drag.handle, delta, shift, drag.kind),
-    })
+    onPatch?.(
+      drag.target.shotId,
+      drag.id,
+      drag.kind === 'text'
+        ? resizeText(drag.layer, drag.handle, delta, box)
+        : { rect: applyHandle(drag.origin, drag.handle, delta, shift, drag.kind) },
+    )
   }
 
   // Tout ce qui bouge d'un `pointermove` à l'autre se lit dans une ref
@@ -391,6 +407,7 @@ export default function Preview({
           tabIndex={editable ? 0 : undefined}
           onKeyDown={onKeys}
           onPointerDown={onPointerDown}
+          onDoubleClick={onDoubleClick}
           className={`block touch-none rounded-sm ${
             !interactive
               ? ''

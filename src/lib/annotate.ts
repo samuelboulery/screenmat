@@ -1,5 +1,6 @@
 import type { WindowBox } from './render.ts'
-import type { Annotation, AnnotationKind, FractionRect } from '../types.ts'
+import { layoutText } from './text.ts'
+import type { Annotation, AnnotationKind, FractionRect, TextBackground } from '../types.ts'
 
 /* Modèle et géométrie des calques. Le dessin vit dans `layers.ts` : ici, rien
    qui touche à un contexte canvas — tout est testable sans navigateur. */
@@ -13,18 +14,15 @@ export type Point = { x: number; y: number }
  *  une annotation non sélectionnée ne doit pas ressembler à une sélection. */
 export const ANNOTATION_ACCENT = '#FFD479'
 
-/** Taille de police par défaut d'un callout, en fraction de la largeur de la
- *  fenêtre. */
-export const DEFAULT_LABEL_SIZE = 0.011
-
-/** Avance d'un caractère en police monospace, en fraction de la taille de
- *  police. Sert à estimer la largeur d'un label sans contexte canvas.
- *
- *  ponytail: le dessin, lui, mesure exactement (`ctx.measureText`) — cette
- *  estimation ne sert qu'au hit-test et au cadre de sélection, où quelques
- *  pixels d'écart ne se voient pas. Remonter la mesure du rendu si ça devient
- *  gênant. */
-const MONO_ADVANCE = 0.6
+/** Plaque d'un texte : noire à 85 %, le texte blanc s'y lit sur n'importe
+ *  quel screenshot. */
+export const TEXT_BACKGROUND: TextBackground = {
+  on: true,
+  color: '#000000',
+  opacity: 0.85,
+  padding: 0.5,
+  radius: 0.3,
+}
 
 /** Valeurs de départ d'un calque. Toutes les tailles sont des fractions de la
  *  largeur de la fenêtre. */
@@ -39,6 +37,9 @@ export const ANNOTATION_DEFAULTS = {
   arrowHead: 0.012,
   fill: 0,
   opacity: 1,
+  shadow: 0,
+  /** Taille de police d'un badge ou d'un texte, en fraction de la largeur. */
+  size: 0.011,
 } as const
 
 type AnnotationDefaults = {
@@ -52,6 +53,8 @@ type AnnotationDefaults = {
 /** Ce qui distingue un type d'un autre au moment de le poser : une flèche se
  *  lit de loin, un cadre s'adoucit. Le reste vient d'`ANNOTATION_DEFAULTS`. */
 const DEFAULTS_BY_KIND: Partial<Record<AnnotationKind, Partial<AnnotationDefaults>>> = {
+  // Un texte se lit : grand, blanc sur sa plaque noire, décollé d'une ombre.
+  text: { size: 0.024, color: '#FFFFFF', shadow: 0.4 },
   arrow: { strokeWidth: 0.004, arrowHead: 0.016 },
   line: { strokeWidth: 0.003 },
   box: { strokeWidth: 0.003, radius: 0.012 },
@@ -66,12 +69,16 @@ export function defaultsFor(kind: AnnotationKind): AnnotationDefaults {
 
 /** Bornes des réglages, partagées par l'inspecteur et les tests. */
 export const ANNOTATION_LIMITS = {
-  size: { min: 0.005, max: 0.04, step: 0.001 },
+  size: { min: 0.005, max: 0.08, step: 0.001 },
   strokeWidth: { min: 0.0005, max: 0.012, step: 0.0005 },
   radius: { min: 0, max: 0.06, step: 0.002 },
   arrowHead: { min: 0.004, max: 0.04, step: 0.001 },
   fill: { min: 0, max: 1, step: 0.05 },
   opacity: { min: 0.1, max: 1, step: 0.05 },
+  shadow: { min: 0, max: 1, step: 0.05 },
+  weight: { min: 400, max: 700, step: 100 },
+  padding: { min: 0, max: 1.5, step: 0.05 },
+  plateRadius: { min: 0, max: 1, step: 0.05 },
 } as const
 
 /** Formes qui se tracent d'un point à un autre : leur rect garde son signe. */
@@ -103,8 +110,10 @@ export function createAnnotation(kind: AnnotationKind, rect: FractionRect): Anno
     // Vide : la saisie s'ouvre dans la foulée, un texte par défaut n'aurait
     // qu'à être effacé.
     text: '',
-    labelStyle: 'pill',
-    size: DEFAULT_LABEL_SIZE,
+    font: 'sans',
+    weight: 600,
+    align: 'left',
+    background: TEXT_BACKGROUND,
     redaction: 'blur',
     ...defaultsFor(kind),
   }
@@ -183,21 +192,6 @@ export function badgeRadius(annotation: Annotation, box: WindowBox): number {
   return toLength(annotation.size, box) * 1.05
 }
 
-/** Dimensions de la pastille d'un label, en pixels. */
-export function labelSize(annotation: Annotation, box: WindowBox): Rect {
-  const fontSize = toLength(annotation.size, box)
-  const padX = annotation.labelStyle === 'plain' ? 0 : fontSize * 0.8
-  const padY = annotation.labelStyle === 'plain' ? 0 : fontSize * 0.55
-  const text = annotation.text.trim()
-
-  return {
-    x: 0,
-    y: 0,
-    w: text.length * fontSize * MONO_ADVANCE + padX * 2,
-    h: fontSize + padY * 2,
-  }
-}
-
 /**
  * Bornes réellement occupées par un calque, en pixels du canvas et avant la
  * rotation de la fenêtre. Source unique : le hit-test et le cadre de sélection
@@ -212,8 +206,8 @@ export function bounds(annotation: Annotation, box: WindowBox): Rect {
   }
 
   if (annotation.kind === 'text') {
-    const size = labelSize(annotation, box)
-    return { x: rect.x, y: rect.y, w: size.w, h: size.h }
+    const layout = layoutText(annotation, box)
+    return { x: rect.x, y: rect.y, w: layout.width, h: layout.height }
   }
 
   const normalized = normalizeRect(rect)

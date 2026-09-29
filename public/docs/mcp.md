@@ -74,11 +74,15 @@ A `Layer` is a subset of the [scene layer](#scene-layers):
 | --- | --- | --- |
 | `kind` | `text` `badge` `arrow` `line` `box` `ellipse` `redaction` | Required. |
 | `rect` | `{ x, y, w?, h? }` | Required. Fractions of the **window width**. `w` and `h` are signed and default to 0. |
-| `text` | string, ≤ 280 | `kind=text` only. |
+| `text` | string, ≤ 280 | `kind=text` only. `\n` breaks lines; `rect.w > 0` wraps at that width. |
 | `redaction` | `blur` `pixel` `solid` | `kind=redaction` only. |
 | `color` | `#RRGGBB` | Six hex digits. |
-| `labelStyle` | `pill` `plain` `badge` | |
-| `size` | 0.005 to 0.04 | Font size, fraction of the window width. |
+| `font` | `sans` `mono` | `kind=text` only. |
+| `weight` | 400 to 700 | |
+| `align` | `left` `center` `right` | |
+| `background` | `{ on?, color?, opacity? }` | Plate behind a text. Default on, `#000000` at 0.85. |
+| `shadow` | 0 to 1 | Text defaults to 0.4, shapes to 0. |
+| `size` | 0.005 to 0.08 | Font size, fraction of the window width. |
 | `strokeWidth` | 0.0005 to 0.012 | |
 | `fill` | 0 to 1 | Fill opacity. `0` means outline only. |
 | `opacity` | 0.1 to 1 | |

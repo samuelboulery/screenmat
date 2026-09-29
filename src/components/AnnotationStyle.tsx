@@ -1,16 +1,12 @@
+import ColorPicker from './ColorPicker.tsx'
 import { REDACTION_ICON } from './icons.tsx'
-import { Section, Slider, Swatch, Tile, Toggle } from './ui.tsx'
-import { ANNOTATION_LIMITS, isPoint, isSegment } from '../lib/annotate.ts'
-import type { Annotation, LabelStyle, Palette, RedactionMode } from '../types.ts'
+import TextStyle from './TextStyle.tsx'
+import { Section, Slider, Tile, Toggle } from './ui.tsx'
+import { ANNOTATION_LIMITS, isSegment } from '../lib/annotate.ts'
+import type { Annotation, Palette, RedactionMode } from '../types.ts'
 
 /* Éditeurs de propriétés d'un calque. Séparés de la liste des calques pour
    qu'aucun des deux fichiers ne devienne un fourre-tout. */
-
-const LABEL_STYLES: Array<{ value: LabelStyle; label: string }> = [
-  { value: 'pill', label: 'pill' },
-  { value: 'plain', label: 'plain' },
-  { value: 'badge', label: 'badge' },
-]
 
 const REDACTIONS: Array<{ value: RedactionMode; label: string }> = [
   { value: 'blur', label: 'blur' },
@@ -73,33 +69,17 @@ export default function AnnotationStyle({
 
   return (
     <>
-      <Section title="Color">
-        <div className="flex flex-wrap gap-1.5">
-          {colors.map((color) => (
-            <Swatch
-              key={color}
-              color={color}
-              active={annotation.color.toUpperCase() === color.toUpperCase()}
-              onClick={() => onPatch({ color })}
-            />
-          ))}
-          {/* L'input garde sa taille : réduit à 0×0 il restait focalisable, et
-              l'anneau de focus n'avait plus rien à entourer. Ici il couvre tout
-              le carré, invisible mais focalisable là où on le voit. */}
-          <label
-            title="Custom color"
-            className="relative flex size-10 items-center justify-center rounded-lg border border-dashed border-ink/20 text-[10px] text-dim hover:border-ink/35"
-          >
-            <span aria-hidden>···</span>
-            <input
-              type="color"
-              value={annotation.color}
-              aria-label="Custom color"
-              onChange={(event) => onPatch({ color: event.target.value })}
-              className="absolute inset-0 size-full rounded-lg opacity-0"
-            />
-          </label>
-        </div>
+      {kind === 'text' && (
+        <TextStyle annotation={annotation} accents={palette.accents.slice(0, 4)} onPatch={onPatch} />
+      )}
+
+      <Section title={kind === 'text' ? 'Text color' : 'Color'}>
+        <ColorPicker
+          colors={colors}
+          value={annotation.color}
+          label={kind === 'text' ? 'Text color' : 'Custom color'}
+          onPick={(color) => onPatch({ color })}
+        />
         <Slider
           label="Opacity"
           value={annotation.opacity}
@@ -107,45 +87,23 @@ export default function AnnotationStyle({
           {...ANNOTATION_LIMITS.opacity}
           onInput={(opacity) => onPatch({ opacity })}
         />
+        <Slider
+          label="Shadow"
+          value={annotation.shadow}
+          display={annotation.shadow === 0 ? 'none' : `${Math.round(annotation.shadow * 100)} %`}
+          {...ANNOTATION_LIMITS.shadow}
+          onInput={(shadow) => onPatch({ shadow })}
+        />
       </Section>
 
-      {isPoint(kind) && (
-        <Section title={kind === 'text' ? 'Label' : 'Badge'}>
-          {kind === 'text' && (
-            <>
-              <input
-                type="text"
-                value={annotation.text}
-                onChange={(event) => onPatch({ text: event.target.value })}
-                aria-label="Label text"
-                className="w-full rounded-md border border-hairline bg-sunken px-3 py-2 text-[12px] text-ink placeholder:text-dim"
-              />
-              <div className="grid grid-cols-3 gap-1">
-                {LABEL_STYLES.map((style) => (
-                  <Tile
-                    key={style.value}
-                    active={annotation.labelStyle === style.value}
-                    onClick={() => onPatch({ labelStyle: style.value })}
-                    className="h-[34px] font-mono text-[10px]"
-                  >
-                    {style.label}
-                  </Tile>
-                ))}
-              </div>
-            </>
-          )}
-          {/* Le contraste du texte se déduit du fond : pas de réglage à
-              rater côté accessibilité. Sans effet sur un label `plain`. */}
-          {(kind === 'badge' || annotation.labelStyle !== 'plain') && (
-            <div className="flex items-center justify-between">
-              <span className="t-ui text-ink-soft">Invert</span>
-              <Toggle
-                checked={annotation.invert}
-                label="Invert"
-                onChange={(invert) => onPatch({ invert })}
-              />
-            </div>
-          )}
+      {kind === 'badge' && (
+        <Section title="Badge">
+          {/* Le contraste du numéro se déduit du disque : pas de réglage à
+              rater côté accessibilité. */}
+          <div className="flex items-center justify-between">
+            <span className="t-ui text-ink-soft">Invert</span>
+            <Toggle checked={annotation.invert} label="Invert" onChange={(invert) => onPatch({ invert })} />
+          </div>
           <Slider
             label="Size"
             value={annotation.size}

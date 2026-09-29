@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { BASE_WIDTH, computeGeometry, renderScene, type Geometry } from '../lib/render.ts'
+import { loadTextFonts } from '../lib/text.ts'
 import { DEFAULT_PLACEMENT, type Scene } from '../types.ts'
 
 /** Ce que la scène doit laisser libre autour d'elle, en px CSS. */
@@ -53,7 +54,7 @@ function sameGeometry(a: Geometry | null, b: Geometry | null): boolean {
 
 /** Point du pointeur, en pixels du canvas de rendu. */
 export function pointAt(
-  event: React.PointerEvent,
+  event: { clientX: number; clientY: number },
   canvas: HTMLCanvasElement | null,
   geometry: Geometry,
 ): { x: number; y: number } | null {
@@ -89,6 +90,16 @@ export function useCanvasScene(
     const observer = new ResizeObserver(() => setResized((value) => value + 1))
     observer.observe(box)
     return () => observer.disconnect()
+  }, [])
+
+  // Une police de calque texte qui finit de charger relance un rendu : sans
+  // quoi le texte resterait dans la police de secours jusqu'au prochain geste.
+  useEffect(() => {
+    if (!('fonts' in document)) return
+    const bump = () => setResized((value) => value + 1)
+    document.fonts.addEventListener('loadingdone', bump)
+    loadTextFonts().then(bump, (cause: unknown) => console.error('fonts', cause))
+    return () => document.fonts.removeEventListener('loadingdone', bump)
   }, [])
 
   useEffect(() => {

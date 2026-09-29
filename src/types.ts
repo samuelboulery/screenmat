@@ -29,7 +29,19 @@ export type AnnotationKind =
 
 export type RedactionMode = 'blur' | 'pixel' | 'solid'
 
-export type LabelStyle = 'pill' | 'plain' | 'badge'
+export type TextFont = 'sans' | 'mono'
+
+export type TextAlign = 'left' | 'center' | 'right'
+
+/** Plaque derrière un texte. `padding` et `radius` sont en fractions de la
+ *  taille de police : la plaque suit le texte quand on le grossit. */
+export type TextBackground = {
+  on: boolean
+  color: string
+  opacity: number
+  padding: number
+  radius: number
+}
 
 export type WatermarkPosition =
   | 'top-left'
@@ -103,6 +115,8 @@ export type FractionRect = {
 export type Annotation = {
   id: string
   kind: AnnotationKind
+  /** Un `text` y lit sa largeur de retour à la ligne : `w > 0` la fixe, `0`
+   *  suit la ligne la plus longue. */
   rect: FractionRect
   /** Nom affiché dans la pile. Vide ⇒ dérivé du texte, puis du type. */
   name: string
@@ -111,11 +125,15 @@ export type Annotation = {
   /** Plus attrapable au clic ni au rectangle de sélection ; le panneau, lui,
    *  le sélectionne toujours. */
   locked: boolean
-  /** Texte du callout. Ignoré hors `text`. */
+  /** Texte, lignes séparées par `\n`. Ignoré hors `text`. */
   text: string
-  labelStyle: LabelStyle
-  /** Inverse le contraste d'un label ou d'un badge : la pastille prend la
-   *  couleur du calque, le texte l'encre lisible dessus. Ignoré sur `plain`. */
+  /** Police, graisse et alignement d'un `text`. */
+  font: TextFont
+  weight: number
+  align: TextAlign
+  /** Plaque derrière un `text`. */
+  background: TextBackground
+  /** Inverse le contraste d'un badge : le disque devient un contour. */
   invert: boolean
   /** Taille de police, en fraction de la largeur de la fenêtre. */
   size: number
@@ -133,6 +151,8 @@ export type Annotation = {
   fill: number
   /** Opacité du calque entier. */
   opacity: number
+  /** Ombre portée, 0 → 1. Sans effet sur un masquage, qui cache sans dessiner. */
+  shadow: number
 }
 
 /** Regroupement de calques. `kind` discrimine un groupe d'une annotation dans

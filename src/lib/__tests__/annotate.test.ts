@@ -96,13 +96,21 @@ describe('bounds', () => {
     expect(area.x).toBeLessThan(toPixels(arrow.rect, window).x)
   })
 
-  it('suit la taille de police d’un label, pas le rectangle du tracé', () => {
+  it('suit la taille de police d’un texte à largeur libre', () => {
     const window = box()
-    const small = make('text', { x: 0.1, y: 0.1, w: 0.9, h: 0.9 }, { text: 'Hello', size: 0.01 })
+    const small = make('text', { x: 0.1, y: 0.1, w: 0, h: 0 }, { text: 'Hello', size: 0.01 })
     const large = { ...small, size: 0.03 }
 
     expect(bounds(large, window).w).toBeGreaterThan(bounds(small, window).w)
-    expect(bounds(small, window).w).toBeLessThan(0.9 * window.width)
+  })
+
+  it('prend la largeur fixée d’un texte replié, et grandit en hauteur', () => {
+    const window = box()
+    const wide = make('text', { x: 0.1, y: 0.1, w: 0.9, h: 0 }, { text: 'Hello world again', size: 0.01 })
+    const narrow = { ...wide, rect: { ...wide.rect, w: 0.05 } }
+
+    expect(bounds(wide, window).w).toBeCloseTo(0.9 * window.width, 6)
+    expect(bounds(narrow, window).h).toBeGreaterThan(bounds(wide, window).h)
   })
 
   it('reste attrapable pour un label posé d’un clic', () => {

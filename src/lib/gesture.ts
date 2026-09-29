@@ -21,6 +21,9 @@ export type Drag =
       target: Target
       origin: FractionRect
       kind: AnnotationKind
+      /** Le calque tel qu'à la saisie : un texte se redimensionne d'après sa
+       *  mise en page, pas seulement son rect. */
+      layer: Annotation
       handle: Handle
       from: Point
       to: Point

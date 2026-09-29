@@ -39,13 +39,24 @@ const rect = z
 const layer = z.object({
   kind: z.enum(['text', 'badge', 'arrow', 'line', 'box', 'ellipse', 'redaction']),
   rect,
-  text: z.string().max(280).optional().describe('Texte, pour kind=text uniquement.'),
+  text: z.string().max(280).optional().describe('kind=text only. \\n breaks lines; rect.w > 0 wraps at that width.'),
+  font: z.enum(['sans', 'mono']).optional(),
+  weight: z.number().min(400).max(700).optional(),
+  align: z.enum(['left', 'center', 'right']).optional(),
+  background: z
+    .object({
+      on: z.boolean().optional(),
+      color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+      opacity: z.number().min(0).max(1).optional(),
+    })
+    .optional()
+    .describe('Plate behind a text. Default: on, #000000 at 0.85.'),
+  shadow: z.number().min(0).max(1).optional().describe('Drop shadow. Text defaults to 0.4, shapes to 0.'),
   redaction: z
     .enum(['blur', 'pixel', 'solid'])
     .optional()
     .describe('Mode de masquage, pour kind=redaction. Cuit dans les pixels : illisible à l’export.'),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional().describe('Hex à six chiffres, ex. #FFD479.'),
-  labelStyle: z.enum(['pill', 'plain', 'badge']).optional(),
   size: z.number().min(ANNOTATION_LIMITS.size.min).max(ANNOTATION_LIMITS.size.max).optional(),
   strokeWidth: z
     .number()

@@ -137,3 +137,52 @@ describe('parseScene — filigrane et palette', () => {
     expect(parseScene({ ...minimal, palette: { base: '#101010' } }).palette?.base).toBe('#101010')
   })
 })
+
+describe('parseScene — texte', () => {
+  const text = (layer: object) =>
+    parseScene({ shots: [{ input: 'a.png', layers: [{ kind: 'text', text: 'Hi', ...layer }] }] }).shots[0]
+      ?.layers[0]
+
+  it('pose un texte neuf blanc, sur plaque noire, en Space Grotesk', () => {
+    const layer = text({})
+    expect(layer?.font).toBe('sans')
+    expect(layer?.background.on).toBe(true)
+    expect(layer?.background.color).toBe('#000000')
+    expect(layer?.color).toBe('#FFFFFF')
+  })
+
+  it('relit un ancien label `pill` : plaque allumée, police mono, taille d’origine', () => {
+    const layer = text({ labelStyle: 'pill', color: '#7DE2FF' })
+    expect(layer?.background.on).toBe(true)
+    expect(layer?.font).toBe('mono')
+    expect(layer?.color).toBe('#7DE2FF')
+    expect(layer?.size).toBe(0.011)
+  })
+
+  it('relit un ancien label `plain` sans plaque', () => {
+    expect(text({ labelStyle: 'plain' })?.background.on).toBe(false)
+  })
+
+  it('relit un ancien label inversé : la plaque prend la couleur, le texte l’encre lisible', () => {
+    const layer = text({ labelStyle: 'pill', invert: true, color: '#FFD479' })
+    expect(layer?.background.color).toBe('#FFD479')
+    expect(layer?.background.opacity).toBe(1)
+    expect(layer?.color).toBe('#000000')
+  })
+
+  it('borne et valide une plaque fournie', () => {
+    const layer = text({ background: { on: false, color: 'rouge', opacity: 4, padding: -1 } })
+    expect(layer?.background.on).toBe(false)
+    expect(layer?.background.color).toBe('#000000')
+    expect(layer?.background.opacity).toBe(1)
+    expect(layer?.background.padding).toBe(0)
+  })
+
+  it('accepte le multi-ligne, l’alignement et la graisse', () => {
+    const layer = text({ text: 'a\nb', align: 'center', weight: 700, font: 'mono' })
+    expect(layer?.text).toBe('a\nb')
+    expect(layer?.align).toBe('center')
+    expect(layer?.weight).toBe(700)
+    expect(layer?.font).toBe('mono')
+  })
+})

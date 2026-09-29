@@ -95,9 +95,10 @@ annuler · `⇧⌘Z` refaire · `⌘D` dupliquer · `⌘A` tout sélectionner ·
 `⇧⌘G` dégrouper · `⌘↑`/`⌘↓` ordre dans la pile.
 
 Les **touches nues** n'existent que quand le canvas a le focus — il l'a par
-défaut dès qu'un shot est chargé : `R` régénérer le fond · `1/2/3` échelle
-d'export · `Delete` supprimer · `Escape` désélectionner · `←↑→↓` déplacer
-(`⇧` = pas ×5). Les poser sur `window` avec `preventDefault()` tuait le
+défaut dès qu'un shot est chargé, et le reprend après un choix d'outil ou une
+saisie : les outils `V T N A L R O B` (table `TOOL_KEYS`, `ToolRail.tsx`) ·
+`⇧R` régénérer le fond · `1/2/3` échelle d'export · `Delete` supprimer ·
+`Escape` désélectionner, puis revenir à `V` · `←↑→↓` déplacer (`⇧` = pas ×5). Les poser sur `window` avec `preventDefault()` tuait le
 défilement aux flèches de tout panneau, et WCAG 2.1.4 exige de pouvoir couper,
 remapper, ou n'activer qu'au focus un raccourci à touche unique. `useShortcuts`
 rend le handler du canvas, il ne l'installe pas.
@@ -108,8 +109,18 @@ tirant une poignée, il conserve les proportions et aimante de même. Sur le can
 avec l'outil Select : `⇧`/`⌘`-clic ajoute au lot, glisser sur le vide trace un
 rectangle de sélection.
 
-L'outil Texte pose son label d'un clic et ouvre la saisie sur place ; un
-double-clic la rouvre, un texte laissé vide supprime le calque.
+**Après chaque tracé, l'outil revient à `V`**, comme dans Figma ; un double-clic
+sur le rail le verrouille (point d'encre au coin), un clic le libère. Au survol,
+un trait fin montre ce qu'un clic attraperait. Une sélection multiple porte sa
+boîte englobante, pointillée, avec quatre poignées de coin homothétiques.
+
+Le **calque texte** est blanc sur une plaque noire à 85 %, en Space Grotesk 600,
+avec une ombre : lisible sur n'importe quel screenshot sans rien régler. Un clic
+le pose et ouvre la saisie sur place — `Entrée` va à la ligne, `⌘Entrée` ou
+`Escape` valident ; un double-clic, quel que soit l'outil, la rouvre ; un texte
+laissé vide supprime le calque. Ses bords règlent la largeur de retour à la
+ligne, son coin la taille. Toute la mise en page passe par `layoutText`
+(`lib/text.ts`) : le dessin et le cadre de sélection lisent la même mesure.
 
 ## Références visuelles
 

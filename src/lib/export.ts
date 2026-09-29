@@ -1,5 +1,6 @@
 import { harmonizePalettes } from './palette.ts'
 import { renderScene } from './render.ts'
+import { loadTextFonts, textFontsReady } from './text.ts'
 import { makeZip, type ZipEntry } from './zip.ts'
 import type { Format, Palette, Ratio, Scene, Settings, Shot } from '../types.ts'
 
@@ -128,6 +129,9 @@ export async function renderToBlob(scene: Scene, scale: number): Promise<Blob> {
   const context = canvas.getContext('2d')
   if (!context) throw new Error('Canvas 2D is unavailable')
 
+  // Une fois chargées, plus d'attente : le rendu reste synchrone jusqu'à
+  // l'encodage, ce que `runBatch` suppose pour sérialiser ses rendus.
+  if (!textFontsReady) await loadTextFonts()
   renderScene(context, scene, scale)
   return canvasToBlob(canvas, scene.settings.format)
 }

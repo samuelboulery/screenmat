@@ -16,15 +16,20 @@ const THUMB = 56
 function StyleThumb({ scene, style }: { scene: Scene; style: Style }) {
   const ref = useRef<HTMLCanvasElement>(null)
 
+  // Ce qui change la miniature, et rien d'autre : un calque déplacé ne la
+  // redessine pas, et elle ne montre pas les calques.
+  const shot = scene.shots[0]
+  const { palette, composition, backgroundImage } = scene
+
   useEffect(() => {
     const ctx = ref.current?.getContext('2d')
-    if (!ctx) return
+    if (!ctx || !shot) return
     const thumb: Scene = {
-      shots: scene.shots.slice(0, 1),
-      palette: style.palette ?? scene.palette,
+      shots: [{ ...shot, layers: [] }],
+      palette: style.palette ?? palette,
       settings: style.settings,
-      composition: { ...scene.composition, layout: 'single' },
-      backgroundImage: scene.backgroundImage,
+      composition: { ...composition, layout: 'single' },
+      backgroundImage,
     }
     try {
       renderScene(ctx, thumb, (THUMB * devicePixelRatio) / BASE_WIDTH)
@@ -32,7 +37,7 @@ function StyleThumb({ scene, style }: { scene: Scene; style: Style }) {
       // Un fond `image` sans image chargée : la case reste vide, le style marche.
       console.warn('[styles] miniature impossible', style.name, error)
     }
-  }, [scene, style])
+  }, [shot?.image, palette, composition, backgroundImage, style])
 
   return <canvas ref={ref} aria-hidden className="w-14 shrink-0 rounded-xs bg-sunken" />
 }

@@ -56,7 +56,7 @@ export default function ImportScreen({
           </Button>
           {/* Sans image, appliquer un style ne se voit pas : le bouton dit donc
               lui-même qu'il est pris, et pour quoi. */}
-          <Button onClick={onUseLastStyle} disabled={!lastStyle} aria-pressed={lastStyleArmed}>
+          <Button onClick={onUseLastStyle} disabled={!lastStyle}>
             {lastStyleArmed ? <CopiedIcon /> : <SaveStyleIcon />}
             <span className="max-w-56 truncate">
               {lastStyleArmed ? `“${lastStyle}” ready for your image` : 'Start from last style'}

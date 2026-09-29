@@ -38,6 +38,9 @@ export default function App() {
   /** Accusé de réception bref, dans la ligne d'état : enregistrer un style ne
    *  change presque rien à l'écran, il faut le dire. */
   const [note, setNote] = useState<string | null>(null)
+  /** Une écriture refusée se dit : la note seule mentirait. */
+  const fail = (fallback: string) => (cause: unknown) =>
+    setFailure(cause instanceof Error ? cause.message : fallback)
   useEffect(() => {
     if (!note) return
     const timer = setTimeout(() => setNote(null), 2400)
@@ -237,14 +240,14 @@ export default function App() {
           active={activeStyle}
           scene={scene}
           onApply={styles.apply}
-          onSave={() => {
-            styles.save()
-            setNote('Style saved — name it under Style in the inspector')
-          }}
-          onUpdate={() => {
-            styles.update()
-            setNote(`“${activeStyle?.name}” updated`)
-          }}
+          onSave={() =>
+            void styles
+              .save()
+              .then(() => setNote('Style saved — name it under Style in the inspector'), fail('Could not save the style'))
+          }
+          onUpdate={() =>
+            void styles.update().then(() => setNote(`“${activeStyle?.name}” updated`), fail('Could not update the style'))
+          }
           onImport={() => pick('style')}
           onExport={exportStyle}
         />
@@ -351,12 +354,12 @@ export default function App() {
 
       {/* Les deux régions sont montées en permanence, vides comprises : une
           région insérée au moment de l'annonce n'est pas lue de façon fiable. */}
-      <div role="alert" className="absolute bottom-[76px] left-1/2 z-30 -translate-x-1/2">
+      <div role="alert" className="absolute bottom-[128px] left-1/2 z-30 -translate-x-1/2">
         {problem && <ErrorNote>{problem}</ErrorNote>}
       </div>
       <p
         role="status"
-        className="absolute bottom-[76px] left-1/2 z-30 -translate-x-1/2 font-mono text-[10px] whitespace-nowrap text-dim"
+        className="absolute bottom-[128px] left-1/2 z-30 -translate-x-1/2 font-mono text-[10px] whitespace-nowrap text-dim"
       >
         {!problem && (note ?? (exporter.copied ? 'Copied to clipboard' : (exporter.status ?? '')))}
       </p>

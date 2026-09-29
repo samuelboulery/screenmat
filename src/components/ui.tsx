@@ -103,7 +103,7 @@ export function IconButton({
       type="button"
       title={shortcut ? undefined : label}
       aria-label={label}
-      aria-keyshortcuts={shortcut && ariaKeys(shortcut)}
+      aria-keyshortcuts={shortcut?.includes('⌘') ? ariaKeys(shortcut) : undefined}
       aria-pressed={active}
       className={`flex size-8 shrink-0 items-center justify-center rounded-md transition-colors duration-140 hover:bg-ink/[.04] hover:text-ink disabled:opacity-40 disabled:hover:bg-transparent ${color} ${className}`}
       {...rest}

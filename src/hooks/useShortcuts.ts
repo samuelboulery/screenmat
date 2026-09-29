@@ -26,7 +26,7 @@ export type ShortcutEntry = { keys: string; label: string }
 
 /**
  * La table des raccourcis, source unique du panneau `?`. Les outils n'y sont
- * pas : `TOOL_KEYS` (`ToolRail.tsx`) les porte, et le panneau les lit là.
+ * pas : `TOOL_KEYS` (`lib/tools.ts`) les porte, et le panneau les lit là.
  * Une ligne ajoutée à un handler sans l'être ici est un raccourci introuvable.
  */
 export const SHORTCUTS: { title: string; hint: string; items: ShortcutEntry[] }[] = [

@@ -28,7 +28,6 @@ export default function ToolRail({ active, locked, onPick, onLock }: ToolRailPro
             <button
               type="button"
               aria-label={held ? `${TOOL_TITLES[tool]}, locked` : TOOL_TITLES[tool]}
-              aria-keyshortcuts={TOOL_KEYS[tool]}
               aria-pressed={active === tool}
               onClick={() => onPick(tool)}
               onDoubleClick={() => onLock(tool)}

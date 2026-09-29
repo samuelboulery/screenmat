@@ -34,10 +34,12 @@ export function useShortcutsPanel(): { open: () => void; dialog: ReactNode } {
       onClose={() => setShown(false)}
       // Clic sur le fond : la cible est le `<dialog>` lui-même.
       onClick={(event) => event.target === event.currentTarget && ref.current?.close()}
-      className="panel m-auto max-h-[calc(100vh-40px)] w-[680px] max-w-[calc(100vw-40px)] overflow-y-auto rounded-lg p-6 text-ink backdrop:bg-stage/70"
+      className="panel m-auto max-h-[calc(100vh-40px)] w-[680px] max-w-[calc(100vw-40px)] overflow-y-auto rounded-lg p-0 text-ink backdrop:bg-stage/70"
     >
+      {/* Le contenu porte le padding : un clic dans la marge n'est pas un clic
+          sur le fond. */}
       {shown && (
-        <>
+        <div className="p-6">
           <div className="flex items-center justify-between">
             <h2 id="shortcuts-title" className="t-card-title">Keyboard shortcuts</h2>
             <IconButton icon={CancelIcon} label="Close" onClick={() => ref.current?.close()} />
@@ -62,7 +64,7 @@ export function useShortcutsPanel(): { open: () => void; dialog: ReactNode } {
               </section>
             ))}
           </div>
-        </>
+        </div>
       )}
     </dialog>
   )

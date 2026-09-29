@@ -8,7 +8,13 @@ export type Batch = {
   rendered: number
   total: number
   error: string | null
-  start: (jobs: readonly BatchJob[], shotIds: readonly string[]) => Promise<void>
+  /** `onItem` reçoit chaque fichier rendu : c'est ce qui l'archive dans
+   *  l'historique, comme un export simple. */
+  start: (
+    jobs: readonly BatchJob[],
+    shotIds: readonly string[],
+    onItem?: (job: BatchJob, blob: Blob) => void,
+  ) => Promise<void>
   cancel: () => void
   /** Vide la file : ses `shotId` ne désignent plus rien après un changement de session. */
   reset: () => void
@@ -25,7 +31,12 @@ export function useBatch(): Batch {
   const [error, setError] = useState<string | null>(null)
   const cancelled = useRef(false)
 
-  const start = useCallback(async (jobs: readonly BatchJob[], shotIds: readonly string[]) => {
+  const start = useCallback(
+    async (
+      jobs: readonly BatchJob[],
+      shotIds: readonly string[],
+      onItem?: (job: BatchJob, blob: Blob) => void,
+    ) => {
     if (jobs.length === 0) return
 
     cancelled.current = false
@@ -47,7 +58,9 @@ export function useBatch(): Batch {
             ),
           )
         },
-        onItem: (shotId) => {
+        onItem: (job, blob) => {
+          const { shotId } = job
+          onItem?.(job, blob)
           setRendered((current) => current + 1)
           setQueue((current) =>
             current.map((item) =>
@@ -75,7 +88,9 @@ export function useBatch(): Batch {
     } finally {
       setRunning(false)
     }
-  }, [])
+    },
+    [],
+  )
 
   const cancel = useCallback(() => {
     cancelled.current = true

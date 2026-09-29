@@ -1,5 +1,4 @@
 import AnnotationStyle from './AnnotationStyle.tsx'
-import LayersPanel from './LayersPanel.tsx'
 import {
   BackwardIcon,
   DeleteIcon,
@@ -11,12 +10,10 @@ import {
 } from './icons.tsx'
 import { Badge, IconButton, Section } from './ui.tsx'
 import { findNode, isGroup } from '../lib/tree.ts'
-import type { NodePatch } from '../hooks/useShots.ts'
 import type { Annotation, AnnotationKind, Shot } from '../types.ts'
 
-/* La moitié contextuelle de l'inspecteur : elle ne parle que de la sélection en
-   cours. Elle ne porte pas de panneau — c'est `Inspector` qui l'accueille, en
-   tête de ses sections document, et le panneau reste unique. */
+/* L'inspecteur d'un calque sélectionné : ses réglages, puis ses actions. La
+   pile elle-même vit dans le panneau gauche, sous les images. */
 
 /** Le badge nomme le type du calque sélectionné. Il porte l'icône de l'outil
  *  qui l'a créé et le mot en entier : l'abréviation mono n'avait de sens que
@@ -31,15 +28,12 @@ const KIND_LABEL: Record<AnnotationKind, string> = {
   redaction: 'Redact',
 }
 
-type LayerInspectorProps = {
+export type LayerInspectorProps = {
   shot: Shot | null
   selectedIds: readonly string[]
-  onSelect: (ids: string[], additive: boolean, range: boolean) => void
   onPatch: (shotId: string, id: string, patch: Partial<Annotation>) => void
-  onPatchNode: (shotId: string, id: string, patch: NodePatch) => void
   onDelete: (shotId: string, ids: readonly string[]) => void
   onMove: (shotId: string, id: string, direction: 'up' | 'down') => void
-  onMoveTo: (shotId: string, ids: readonly string[], parentId: string | null, index: number) => void
   onGroup: (shotId: string, ids: readonly string[]) => void
   onUngroup: (shotId: string, groupId: string) => void
 }
@@ -47,12 +41,9 @@ type LayerInspectorProps = {
 export default function LayerInspector({
   shot,
   selectedIds,
-  onSelect,
   onPatch,
-  onPatchNode,
   onDelete,
   onMove,
-  onMoveTo,
   onGroup,
   onUngroup,
 }: LayerInspectorProps) {
@@ -64,14 +55,6 @@ export default function LayerInspector({
 
   return (
     <>
-      <LayersPanel
-        shot={shot}
-        selectedIds={selectedIds}
-        onSelect={onSelect}
-        onPatch={(id, patch) => shot && onPatchNode(shot.id, id, patch)}
-        onMove={(ids, parentId, index) => shot && onMoveTo(shot.id, ids, parentId, index)}
-      />
-
       {annotation && shot && (
         <AnnotationStyle
           annotation={annotation}

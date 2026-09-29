@@ -48,19 +48,13 @@ type ToolRailProps = {
   locked: boolean
   onPick: (tool: Tool) => void
   onLock: (tool: Tool) => void
-  /** Rail horizontal sous la barre haute, en dessous de 1100 px. */
-  horizontal?: boolean
 }
 
-export default function ToolRail({ active, locked, onPick, onLock, horizontal = false }: ToolRailProps) {
+/** La barre d'outils, flottante en haut du canvas. L'éditeur la centre sur la
+ *  zone de dessin ; elle ne se positionne pas elle-même. */
+export default function ToolRail({ active, locked, onPick, onLock }: ToolRailProps) {
   return (
-    <Panel
-      className={
-        horizontal
-          ? 'absolute top-2 left-1/2 z-10 flex -translate-x-1/2 gap-1.5 rounded-lg p-1.5'
-          : 'absolute top-[88px] left-5 z-10 w-14 space-y-1.5 p-1.5'
-      }
-    >
+    <Panel className="pointer-events-auto flex gap-1 rounded-lg p-1.5">
       {TOOLS.map((tool) => {
         const Icon: LucideIcon = TOOL_ICON[tool]
         const title = `${TOOL_TITLES[tool]} · ${TOOL_KEYS[tool]}`

@@ -2,28 +2,23 @@ import { useConfirm } from '../components/ConfirmDialog.tsx'
 import { withAccent, withColor, withoutAccent } from '../lib/styles.ts'
 import type { useLibrary } from './useLibrary.ts'
 import type { useStyleActions } from './useStyleActions.ts'
-import type { Palette, Settings, Shot, WatermarkPosition } from '../types.ts'
+import type { Palette, Shot, WatermarkPosition } from '../types.ts'
 
-type StyleScreenInput = {
+type StyleEditingInput = {
   styles: ReturnType<typeof useStyleActions>
   library: ReturnType<typeof useLibrary>
   activeShot: Shot | null
   confirm: ReturnType<typeof useConfirm>['confirm']
-  /** Pousse aussi le réglage dans l'éditeur : le style affiché au centre est
-   *  toujours le style appliqué, et l'aperçu de droite doit le refléter sans
-   *  second chemin de rendu. */
-  patch: (next: Partial<Settings>) => void
-  onEdit: () => void
   onPickWatermark: () => void
 }
 
 /**
- * Les gestes de l'écran Styles. Ils vivent ici parce qu'ils sont presque tous
- * la même chose — recopier le style actif avec un champ changé — et qu'alignés
- * dans le JSX d'`App` ils noyaient le routage sous soixante lignes.
+ * Les gestes de la section « Style » de l'inspecteur. Ils vivent ici parce
+ * qu'ils sont presque tous la même chose — recopier le style actif avec un
+ * champ changé — et qu'alignés dans le JSX ils noieraient la mise en page.
  */
-export function useStyleScreen(input: StyleScreenInput) {
-  const { styles, library, activeShot, confirm, patch, onEdit, onPickWatermark } = input
+export function useStyleEditing(input: StyleEditingInput) {
+  const { styles, library, activeShot, confirm, onPickWatermark } = input
   const { activeStyle } = styles
 
   /** Éditer une couleur d'une palette encore échantillonnée la fige dans le
@@ -36,17 +31,9 @@ export function useStyleScreen(input: StyleScreenInput) {
   }
 
   return {
-    onSelect: styles.apply,
-
     onRename: (id: string, name: string) => {
       const style = library.styles.find((item) => item.id === id)
       if (style) styles.patch({ ...style, name })
-    },
-
-    onPatchSettings: (next: Partial<Settings>) => {
-      if (!activeStyle) return
-      styles.patch({ ...activeStyle, settings: { ...activeStyle.settings, ...next } })
-      patch(next)
     },
 
     onPatchWatermark: (position: WatermarkPosition) => {
@@ -77,11 +64,6 @@ export function useStyleScreen(input: StyleScreenInput) {
       editPalette((palette) => withColor(palette, index, color)),
     onAddColor: (color: string) => editPalette((palette) => withAccent(palette, color)),
     onRemoveColor: (index: number) => editPalette((palette) => withoutAccent(palette, index)),
-
-    onEditInEditor: (id: string) => {
-      styles.apply(id)
-      onEdit()
-    },
 
     onDelete: (id: string) => {
       // Un style supprimé n'est pas dans la pile d'annulation : on confirme,

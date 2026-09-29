@@ -24,7 +24,6 @@ export function useStyleActions(
   library: Library,
   settings: Settings,
   setSettings: (settings: Settings) => void,
-  onSaved: () => void,
 ): StyleActions {
   const [watermarkImage, setWatermarkImage] = useState<HTMLImageElement | null>(null)
   const activeStyle = library.styles.find((style) => style.id === library.activeStyleId) ?? null
@@ -57,8 +56,7 @@ export function useStyleActions(
   const save = useCallback(() => {
     const style = createStyle(`Style ${library.styles.length + 1}`, settings)
     void library.saveStyle(style).then(() => library.setActiveStyleId(style.id))
-    onSaved()
-  }, [library, settings, onSaved])
+  }, [library, settings])
 
   const update = useCallback(() => {
     if (!activeStyle) return

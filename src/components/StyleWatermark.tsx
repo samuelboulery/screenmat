@@ -19,9 +19,9 @@ export default function StyleWatermark({
 
   return (
     <Section title="Watermark">
-      <div className="flex items-start gap-4">
+      <div className="flex items-start gap-3">
         <div className="flex shrink-0 flex-col gap-1.5">
-          <DashedTile onClick={onPick} className="h-[86px] w-[122px] font-mono text-[10px]">
+          <DashedTile onClick={onPick} className="h-[86px] w-[96px] font-mono text-[10px]">
             {mark ? (
               <img src={mark.dataUrl} alt="" className="max-h-full max-w-full object-contain" />
             ) : (

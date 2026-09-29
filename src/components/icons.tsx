@@ -2,6 +2,7 @@ import {
   AppWindow,
   Archive,
   ArrowDown,
+  ArrowLeft,
   ArrowDownLeft,
   ArrowDownNarrowWide,
   ArrowDownRight,
@@ -11,7 +12,6 @@ import {
   ArrowUpRight,
   Ban,
   Bookmark,
-  Boxes,
   Check,
   ChevronDown,
   ChevronRight,
@@ -58,7 +58,6 @@ import {
   Type,
   Undo2,
   Ungroup,
-  Wand2,
   X,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
@@ -77,13 +76,9 @@ export type { LucideIcon }
 
 /* ── Navigation ─────────────────────────────────────────────────────────── */
 
-/** Une icône par destination — quatre, comme la barre haute. */
-export const ScreenIcon = {
-  edit: Wand2,
-  batch: Boxes,
-  styles: Palette,
-  history: History,
-} as const
+/** Les deux tiroirs de la barre haute : la bibliothèque, pas des écrans. */
+export const StylesIcon = Palette
+export const HistoryIcon = History
 export const LocalIcon = ShieldCheck
 /** Bascule de thème : l'icône montre le thème vers lequel on va. */
 export const ThemeIcon = { light: Moon, dark: Sun } as const
@@ -156,6 +151,7 @@ export {
   /* La pile se dit par une flèche : les deux icônes de profondeur de Lucide
      sont deux carrés qui se confondent à 16 px. */
   ArrowDown as BackwardIcon,
+  ArrowLeft as BackIcon,
   ArrowUp as ForwardIcon,
   ArrowDownNarrowWide as SortNewestIcon,
   ArrowUpNarrowWide as SortOldestIcon,

@@ -46,7 +46,7 @@ English · [Français](README.fr.md)
 | **Compositions** | Up to 24 shots in one visual: `single`, `stack`, `side` or `tilt3d`, with spread, convergence and elevation. |
 | **Layers** | A real tree — groups, reordering, hide, lock, multi-selection, undo/redo. |
 | **Styles** | Save a full set of settings under a name, recall it from the app, the CLI, MCP or Node. Share it as a `.json` file. |
-| **Batch** | Queue a folder of screenshots, render them with one style, download a single `.zip`. |
+| **Batch** | Drop a folder of screenshots, keep them as separate images, export them all as one `.zip` — from the Export menu. |
 | **History** | Past exports live in IndexedDB with their thumbnails, reopenable with every setting intact. |
 | **Export** | WebP by default (7–10× lighter than PNG at equal grain), PNG on demand, at 1× / 2× / 3× — 1600, 3200 or 4800 px wide. |
 

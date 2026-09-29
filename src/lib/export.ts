@@ -248,7 +248,7 @@ export async function runBatch(
   options: {
     shouldCancel?: () => boolean
     onProgress?: (progress: BatchProgress) => void
-    onItem?: (shotId: string, blob: Blob) => void
+    onItem?: (job: BatchJob, blob: Blob) => void
   } = {},
 ): Promise<Blob> {
   // Indexé plutôt qu'empilé : les encodages finissent dans le désordre, l'archive
@@ -276,7 +276,7 @@ export async function runBatch(
         const blob = await renderToBlob(job.scene, job.scale)
         const filename = batchFilename(job.name, job.ratio, job.scale, job.scene.settings.format)
         entries[index] = { name: filename, data: new Uint8Array(await blob.arrayBuffer()) }
-        options.onItem?.(job.shotId, blob)
+        options.onItem?.(job, blob)
       } catch (cause: unknown) {
         failure ??= cause
       }

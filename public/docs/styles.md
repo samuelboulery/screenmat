@@ -5,7 +5,7 @@ from a machine. It exists so that no setting is ever duplicated between the app
 and the CLI: you get it right once, visually, and scripts refer to it.
 
 ```text
-  app  →  Styles screen  →  Export .json  →  ~/.screenmat/styles/docs.screenmat.json
+  app  →  Styles menu    →  Export .json  →  ~/.screenmat/styles/docs.screenmat.json
                                                         │
                                     --style docs ───────┤
                                     style: "docs" ──────┘
@@ -14,8 +14,8 @@ and the CLI: you get it right once, visually, and scripts refer to it.
 ## Saving one
 
 1. Set up a shot the way you want it in the app.
-2. Go to **Styles**, name it, save it.
-3. Export it — you get a `.json` file.
+2. Open the **Styles** menu in the top bar, then **Save as a new style**.
+3. Pick **Export** in the same menu — you get a `.json` file.
 4. Drop that file into `~/.screenmat/styles/`.
 
 `SCREENMAT_STYLES` moves that directory somewhere else. Putting it inside a

@@ -35,21 +35,27 @@ const CONTROL = 't-ui inline-flex items-center gap-1.5 rounded-md px-3.5 py-2 tr
 /** La recette discrète : rien à annoncer, on ne la voit qu'au survol. */
 const GHOST = 'text-ink-soft hover:text-ink'
 
-export function Button({ variant = 'secondary', className = '', ...rest }: ButtonProps) {
-  const styles = {
-    primary: 'bg-accent sheen text-stage font-semibold',
-    secondary: 'sheen border border-hairline-strong text-ink hover:border-ink/40',
-    ghost: GHOST,
-    // Le destructif porte le rouge, jamais l'aplat d'encre : l'accent est
-    // réservé à l'action primaire. Une variante, pas une classe surchargée —
-    // Tailwind trie ses utilitaires par ordre de feuille, pas par ordre d'écriture.
-    danger: 'border border-danger/40 text-danger hover:border-danger/70',
-  }[variant]
+const VARIANTS = {
+  primary: 'bg-accent sheen text-stage font-semibold',
+  secondary: 'sheen border border-hairline-strong text-ink hover:border-ink/40',
+  ghost: GHOST,
+  // Le destructif porte le rouge, jamais l'aplat d'encre : l'accent est
+  // réservé à l'action primaire. Une variante, pas une classe surchargée —
+  // Tailwind trie ses utilitaires par ordre de feuille, pas par ordre d'écriture.
+  danger: 'border border-danger/40 text-danger hover:border-danger/70',
+} as const
 
+/** Les classes d'un bouton, pour ce qui n'est pas un `<Button>` mais doit en
+ *  avoir l'air — le déclencheur d'un `Menu`. */
+export function buttonClass(variant: keyof typeof VARIANTS = 'secondary', className = ''): string {
+  return `${CONTROL} disabled:opacity-40 ${VARIANTS[variant]} ${className}`
+}
+
+export function Button({ variant = 'secondary', className = '', ...rest }: ButtonProps) {
   return (
     <button
       type="button"
-      className={`${CONTROL} disabled:opacity-40 ${styles} ${className}`}
+      className={buttonClass(variant, className)}
       {...rest}
     />
   )
@@ -199,7 +205,11 @@ export function Segmented<T extends string>({
           aria-label={option.title}
           aria-pressed={value === option.value}
           onClick={() => onPick(option.value)}
+          // Pleine largeur ⇒ les options se partagent la place, sinon elles se
+          // tassent à gauche et le groupe paraît à moitié vide.
           className={`t-ui flex items-center gap-1.5 rounded-sm px-3 py-1.5 transition-colors duration-140 ${
+            className.includes('w-full') ? 'flex-1 justify-center' : ''
+          } ${
             value === option.value ? SWITCH_ON : 'text-ink-soft hover:text-ink'
           }`}
         >

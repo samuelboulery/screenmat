@@ -36,5 +36,6 @@ concatenate all eight for the complete reference (roughly 2000 lines).
 
 ## Optional
 
-- [Web app](/): the human door. Four screens — Edit, Batch, Styles, History —
+- [Web app](/): the human door. One workspace — images on the left, a contextual
+  inspector on the right, Styles and Export menus on top, History in a drawer —
   and the place where a style is created in the first place.

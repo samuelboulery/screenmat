@@ -1,29 +1,30 @@
-import { useCallback, useMemo, useRef, useState } from 'react'
-import Filmstrip from './Filmstrip.tsx'
-import { CloseSheetIcon, OpenSheetIcon } from './icons.tsx'
+import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react'
+import ImagesPanel, { type OutputMode } from './ImagesPanel.tsx'
+import { CloseSheetIcon, OpenSheetIcon, RedoIcon, UndoIcon } from './icons.tsx'
 import Inspector from './Inspector.tsx'
 import Preview, { type Editing } from './Preview.tsx'
 import ToolRail, { toolForKey, type Tool } from './ToolRail.tsx'
+import { IconButton, Panel } from './ui.tsx'
 import { displayOrder, findAnnotation } from '../lib/tree.ts'
 import type { NodePatch } from '../hooks/useShots.ts'
 import type {
   Annotation,
   AnnotationKind,
   Composition,
-  Format,
   FractionRect,
   Placement,
+  QueueItem,
   Scene,
   Settings,
   Shot,
-  Style,
 } from '../types.ts'
 
 /** Les panneaux flottent au-dessus du canvas : la boîte disponible est réduite
- *  d'autant. `[96, 328]` d'inset horizontal, comme spécifié dans le handoff. */
-const INSET = { left: 96, right: 328, top: 8, bottom: 110 }
-/** Sous 1100 px : le rail occupe une barre horizontale de 64 px en haut. */
-const NARROW_INSET = { left: 20, right: 20, top: 72, bottom: 110 }
+ *  d'autant. Images à gauche (240 px), inspecteur à droite (288 px), barre
+ *  d'outils en haut et barre du document en bas. */
+const INSET = { left: 280, right: 328, top: 80, bottom: 76 }
+/** Sous 1100 px : l'inspecteur devient une feuille, le canvas s'élargit. */
+const NARROW_INSET = { left: 280, right: 20, top: 80, bottom: 76 }
 
 const ANNOTATION_KIND: Record<Tool, AnnotationKind | 'select'> = {
   SEL: 'select',
@@ -40,36 +41,33 @@ export type EditorScreenProps = {
   scene: Scene
   shots: readonly Shot[]
   activeShotId: string
-  selection: readonly string[]
-  styles: readonly Style[]
-  activeStyleId: string | null
+  /** Membres de la composition, en mode combiné. */
+  members: readonly string[]
+  mode: OutputMode
+  /** État de chaque image dans le lot en cours d'export. */
+  queue: readonly QueueItem[]
   selectedLayerIds: readonly string[]
-  /** Vrai sous 1100 px : le rail passe à l'horizontale, l'inspecteur se replie. */
+  /** La section « Style » de l'inspecteur, quand un style est appliqué. */
+  style: ReactNode
+  /** Vrai sous 1100 px : l'inspecteur se replie en feuille. */
   narrow: boolean
-  /** Dimensions de sortie, affichées par le filmstrip. */
-  output: { width: number; height: number; format: Format } | null
+  /** Dimensions de sortie, affichées sous le canvas. */
+  output: { width: number; height: number } | null
   canUndo: boolean
   canRedo: boolean
-  copied: boolean
   onUndo: () => void
   onRedo: () => void
   onNewSession: () => void
-  onCopy: () => void
-  onExport: () => void
   /** Touches nues de l'édition, à poser sur le canvas — voir `useShortcuts`. */
   onKeys: (event: React.KeyboardEvent) => void
   onChange: (patch: Partial<Settings>) => void
   onCompose: (patch: Partial<Composition>) => void
   onPlace: (shotId: string, patch: Partial<Placement>) => void
-  /** Échelle d'export, réglée depuis le filmstrip comme aux touches 1/2/3. */
-  scale: number
-  onScale: (scale: number) => void
-  onSelectShot: (id: string, additive: boolean) => void
+  onMode: (mode: OutputMode) => void
+  onActivate: (id: string) => void
+  onToggleMember: (id: string) => void
   onReorderShots: (from: number, to: number) => void
   onAddShot: () => void
-  onApplyStyle: (id: string) => void
-  onSaveStyle: () => void
-  onUpdateStyle: () => void
   onPickBackgroundImage: () => void
   onCreateAnnotation: (shotId: string, kind: AnnotationKind, rect: FractionRect) => string
   onPatchAnnotation: (shotId: string, id: string, patch: Partial<Annotation>) => void
@@ -83,6 +81,11 @@ export type EditorScreenProps = {
   onSelectLayers: (shotId: string | null, ids: readonly string[], additive: boolean) => void
 }
 
+/**
+ * L'espace de travail unique : les images et leurs calques à gauche, le canvas
+ * au centre avec ses outils au-dessus, l'inspecteur à droite. Séparé ou
+ * combiné, une image ou vingt, c'est le même écran.
+ */
 export default function EditorScreen(props: EditorScreenProps) {
   const { scene, shots, narrow } = props
   const [tool, setTool] = useState<Tool>('SEL')
@@ -101,7 +104,6 @@ export default function EditorScreen(props: EditorScreenProps) {
      mode Compose — et `Escape` y ramène en un geste. Le `Preview` tient déjà
      cette règle : sans `selectedIds`, il n'affiche ni cadre ni poignée. */
 
-  const docked = scene.composition.layout !== 'single' && shots.length > 1
   const inset = narrow ? NARROW_INSET : INSET
 
   // Largeur d'une fenêtre à l'échelle 1 : l'inspecteur en a besoin pour
@@ -190,6 +192,8 @@ export default function EditorScreen(props: EditorScreenProps) {
     [activeShot, onSelectLayers],
   )
 
+  const center = { paddingLeft: inset.left, paddingRight: inset.right }
+
   return (
     <div className="stage-grain absolute inset-x-0 top-[58px] bottom-0">
       <Preview
@@ -212,7 +216,44 @@ export default function EditorScreen(props: EditorScreenProps) {
         onEditText={(shotId, id, text) => props.onPatchAnnotation(shotId, id, { text })}
       />
 
-      <ToolRail active={tool} locked={locked} onPick={pickTool} onLock={lockTool} horizontal={narrow} />
+      {/* Barre d'outils et barre du document, centrées sur la zone de dessin
+          et non sur l'écran : les panneaux latéraux n'ont pas la même largeur. */}
+      <div className="pointer-events-none absolute inset-x-0 top-4 z-10 flex justify-center" style={center}>
+        <ToolRail active={tool} locked={locked} onPick={pickTool} onLock={lockTool} />
+      </div>
+      <div className="pointer-events-none absolute inset-x-0 bottom-4 z-10 flex justify-center" style={center}>
+        <Panel className="pointer-events-auto flex items-center gap-1 rounded-lg px-2 py-1.5">
+          <IconButton icon={UndoIcon} label="Undo (⌘Z)" disabled={!props.canUndo} onClick={props.onUndo} />
+          <IconButton icon={RedoIcon} label="Redo (⇧⌘Z)" disabled={!props.canRedo} onClick={props.onRedo} />
+          {props.output && (
+            <span className="t-mono-micro px-2 whitespace-nowrap text-dim">
+              {props.output.width} × {props.output.height}
+            </span>
+          )}
+        </Panel>
+      </div>
+
+      <ImagesPanel
+        shots={shots}
+        activeId={props.activeShotId}
+        members={props.members}
+        mode={props.mode}
+        queue={props.queue}
+        onMode={props.onMode}
+        onActivate={props.onActivate}
+        onToggleMember={props.onToggleMember}
+        onReorder={props.onReorderShots}
+        onAdd={props.onAddShot}
+        onNewSession={props.onNewSession}
+        layers={{
+          shot: activeShot,
+          selectedIds: props.selectedLayerIds,
+          onSelect: selectLayers,
+          onPatch: (id, patch) => activeShot && props.onPatchNode(activeShot.id, id, patch),
+          onMove: (ids, parentId, index) =>
+            activeShot && props.onMoveLayers(activeShot.id, ids, parentId, index),
+        }}
+      />
 
       {/* Sous 1100 px l'inspecteur devient une feuille rétractable ancrée à
           droite : il n'y a plus la place de le laisser flotter en permanence. */}
@@ -223,7 +264,7 @@ export default function EditorScreen(props: EditorScreenProps) {
           aria-expanded={sheetOpen}
           title={sheetOpen ? 'Close the inspector' : 'Open the inspector'}
           aria-label={sheetOpen ? 'Close the inspector' : 'Open the inspector'}
-          className="panel absolute top-[76px] right-5 z-20 flex size-9 items-center justify-center rounded-md text-ink-soft hover:text-ink"
+          className="panel absolute top-4 right-5 z-20 flex size-9 items-center justify-center rounded-md text-ink-soft hover:text-ink"
         >
           {sheetOpen ? <CloseSheetIcon /> : <OpenSheetIcon />}
         </button>
@@ -231,58 +272,36 @@ export default function EditorScreen(props: EditorScreenProps) {
 
       {(!narrow || sheetOpen) && (
         <Inspector
-          settings={scene.settings}
-          composition={scene.composition}
-          palette={scene.palette}
-          styles={props.styles}
-          activeStyleId={props.activeStyleId}
-          windowWidth={windowWidth}
-          shotCount={shots.length}
-          activeShot={activeShot}
-          selectedLayerIds={props.selectedLayerIds}
-          onSelectLayers={selectLayers}
-          onPatchAnnotation={props.onPatchAnnotation}
-          onPatchNode={props.onPatchNode}
-          onDeleteLayers={props.onDeleteLayers}
-          onMoveLayer={props.onMoveLayer}
-          onMoveLayers={props.onMoveLayers}
-          onGroupLayers={props.onGroupLayers}
-          onUngroupLayer={props.onUngroupLayer}
-          onChange={props.onChange}
-          onCompose={props.onCompose}
-          onPlace={props.onPlace}
-          onApplyStyle={props.onApplyStyle}
-          onSaveStyle={props.onSaveStyle}
-          onUpdateStyle={props.onUpdateStyle}
-          onPickBackgroundImage={props.onPickBackgroundImage}
           offset={narrow}
+          onDeselect={() => props.onSelectLayers(null, [], false)}
+          style={props.style}
+          layer={
+            props.selectedLayerIds.length > 0
+              ? {
+                  shot: activeShot,
+                  selectedIds: props.selectedLayerIds,
+                  onPatch: props.onPatchAnnotation,
+                  onDelete: props.onDeleteLayers,
+                  onMove: props.onMoveLayer,
+                  onGroup: props.onGroupLayers,
+                  onUngroup: props.onUngroupLayer,
+                }
+              : null
+          }
+          document={{
+            settings: scene.settings,
+            composition: scene.composition,
+            palette: scene.palette,
+            windowWidth,
+            combined: props.mode === 'combined',
+            activeShot,
+            onChange: props.onChange,
+            onCompose: props.onCompose,
+            onPlace: props.onPlace,
+            onPickBackgroundImage: props.onPickBackgroundImage,
+          }}
         />
       )}
-
-      <Filmstrip
-        shots={shots}
-        activeId={props.activeShotId}
-        selection={docked ? props.selection : undefined}
-        docked={docked}
-        onSelect={props.onSelectShot}
-        onAdd={props.onAddShot}
-        onReorder={props.onReorderShots}
-        output={props.output}
-        scale={props.scale}
-        onScale={props.onScale}
-        onFormat={(format) => props.onChange({ format })}
-        canUndo={props.canUndo}
-        canRedo={props.canRedo}
-        onUndo={props.onUndo}
-        onRedo={props.onRedo}
-        onNewSession={props.onNewSession}
-        copied={props.copied}
-        onCopy={props.onCopy}
-        onExport={props.onExport}
-        hint={
-          docked ? `${props.selection.length} of ${shots.length} shots in composition` : undefined
-        }
-      />
     </div>
   )
 }

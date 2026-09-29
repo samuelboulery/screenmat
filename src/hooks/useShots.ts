@@ -41,9 +41,14 @@ export type ShotsState = {
   selectedLayerId: string | null
   add: (images: HTMLImageElement[], names: string[]) => void
   replaceAll: (images: HTMLImageElement[], names: string[]) => void
-  select: (id: string, additive: boolean) => void
+  /** Fait entrer ou sortir un shot de la composition, sans changer l'actif :
+   *  cliquer une image ne vide plus jamais la sélection du lot. */
+  toggleMember: (id: string) => void
+  /** Remplace les membres de la composition. */
+  setMembers: (ids: readonly string[]) => void
   /** Rend un shot actif sans toucher à la sélection de calque. */
   focusShot: (id: string) => void
+  activate: (id: string) => void
   reorder: (from: number, to: number) => void
   /** Retouche la fenêtre d'un shot : taille et décalages dans le canvas. */
   place: (shotId: string, patch: Partial<Placement>) => void
@@ -103,16 +108,26 @@ export function useShots(): ShotsState {
     setSelectedLayerIds([])
   }, [])
 
-  const select = useCallback((id: string, additive: boolean) => {
-    setActiveShotId(id)
-    setSelectedLayerIds([])
-    setSelection((current) => {
-      if (!additive) return [id]
-      return current.includes(id) ? current.filter((item) => item !== id) : [...current, id]
-    })
+  const toggleMember = useCallback((id: string) => {
+    setSelection((current) =>
+      current.includes(id) ? current.filter((item) => item !== id) : [...current, id],
+    )
   }, [])
 
+  const setMembers = useCallback((ids: readonly string[]) => setSelection([...ids]), [])
+
   const focusShot = useCallback((id: string) => setActiveShotId(id), [])
+
+  /** Ouvre une image de la liste. Ses calques ne sont pas ceux de la
+   *  précédente : la sélection de calques repart à vide. */
+  const activate = useCallback(
+    (id: string) => {
+      if (id === activeShotId) return
+      setActiveShotId(id)
+      setSelectedLayerIds([])
+    },
+    [activeShotId],
+  )
 
   const reorder = useCallback((from: number, to: number) => {
     setShots((current) => {
@@ -315,7 +330,9 @@ export function useShots(): ShotsState {
     selectedLayerId: selectedLayerIds.length === 1 ? selectedLayerIds[0] : null,
     add,
     replaceAll,
-    select,
+    toggleMember,
+    setMembers,
+    activate,
     focusShot,
     reorder,
     place,

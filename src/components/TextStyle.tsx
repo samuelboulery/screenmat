@@ -52,13 +52,14 @@ export default function TextStyle({ annotation, accents, onPatch }: TextStylePro
           aria-label="Text"
           className="w-full resize-none rounded-md border border-hairline bg-sunken px-3 py-2 text-[12px] text-ink placeholder:text-dim"
         />
-        <Segmented options={FONTS} value={annotation.font} onPick={(font) => onPatch({ font })} />
+        <Segmented className="w-full" options={FONTS} value={annotation.font} onPick={(font) => onPatch({ font })} />
         <Segmented
+          className="w-full"
           options={WEIGHTS}
           value={String(annotation.weight)}
           onPick={(weight) => onPatch({ weight: Number(weight) })}
         />
-        <Segmented options={ALIGNS} value={annotation.align} onPick={(align) => onPatch({ align })} />
+        <Segmented className="w-full" options={ALIGNS} value={annotation.align} onPick={(align) => onPatch({ align })} />
         <Slider
           label="Size"
           value={annotation.size}

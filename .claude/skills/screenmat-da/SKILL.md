@@ -1,6 +1,6 @@
 ---
 name: screenmat-da
-description: Direction artistique « Papier technique » de screenmat (clair et sombre) — jetons et thème, recettes de sélection, icônes Lucide, typographie, rayons, carte des quatre écrans, raccourcis clavier, références visuelles. À invoquer AVANT de toucher à un composant, une couleur, un token, une icône, un écran, un panneau, un raccourci, un état sélectionné ou survolé, une taille de texte ou un espacement. Écrire de l'interface sans avoir lu ce skill fait diverger la DA au premier ajustement.
+description: Direction artistique « Papier technique » de screenmat (clair et sombre) — jetons et thème, recettes de sélection, icônes Lucide, typographie, rayons, espace de travail unique, raccourcis clavier, références visuelles. À invoquer AVANT de toucher à un composant, une couleur, un token, une icône, un écran, un panneau, un raccourci, un état sélectionné ou survolé, une taille de texte ou un espacement. Écrire de l'interface sans avoir lu ce skill fait diverger la DA au premier ajustement.
 ---
 
 # screenmat — direction artistique « Papier technique »
@@ -55,37 +55,37 @@ actions de fin de course. Un raccourci clavier (`⌘V`, `⌫`) s'écrit, il ne s
 dessine pas. Cinq noms de rayon (`--radius-xs|sm|md|lg|xl`) qui valent tous
 2 px : le nom dit le rôle, la valeur est celle du papier.
 
-## Écrans
+## L'espace de travail
 
-**Quatre destinations, un seul état** (`Screen`, dans `types.ts`) : `edit`,
-`batch`, `styles`, `history`. La barre haute de 58 px ne porte que l'identité et
-la navigation — deux groupes segmentés, `Edit | Batch` (le document) puis
-`Styles | History` (la bibliothèque), séparés par un espace et non par un trait.
-Aucune action n'y entre : sa largeur ne bouge donc plus d'un écran à l'autre.
+**Un seul écran de travail**, et l'écran d'import quand aucune image n'est
+ouverte. Plus de navigation : Edit, Batch, Styles et History ont fusionné.
 
-**Une action vit près de ce qu'elle manipule.** Copy et Export sont dans le
-filmstrip, avec les dimensions, undo/redo et la nouvelle session ; les actions
-de lot au pied du panneau Batch ; l'export et l'enregistrement d'un style dans
-l'écran Styles, chacun du côté de ce qu'il produit.
-
-| Écran | Rôle |
+| Zone | Rôle |
 |---|---|
-| Import | premier écran, dropzone + exports récents (déduit de « aucun shot ») |
-| Edit | embellir **et** annoter : rail d'instruments à gauche, inspecteur unique à droite, filmstrip en bas. Les compositions multi-shot (single/stack/side/tilt3d) s'y règlent aussi, filmstrip docké |
-| Styles | nommer et réutiliser un réglage complet, partage par `.json` |
-| Batch | appliquer un style à N shots, sortir un zip ; « Harmonize backgrounds » aligne l'intensité des fonds du lot sans toucher aux teintes |
-| History | retrouver un export passé et le réouvrir avec ses réglages |
+| Barre haute (58 px) | identité à gauche ; à droite `Styles ▾` (menu), `History` (tiroir), `Export 2× ▾` (bouton primaire + menu), Dev docs, thème |
+| Panneau gauche (240 px) | les images de la session — clic = ouvrir, jamais vider le lot —, `Separate / Combined`, puis les calques de l'image active, et la nouvelle session au pied |
+| Canvas | la barre d'outils flotte au-dessus, centrée sur la zone de dessin ; undo/redo et dimensions dessous |
+| Inspecteur droit (288 px) | **contextuel** : un calque sélectionné ⇒ ses réglages seuls, avec `← Document` ; rien de sélectionné ⇒ Frame, Canvas, Background, Composition (en combiné), Shot, puis la section Style si un style est appliqué |
 
-**Le rail gauche ne porte que des instruments** — ce qui laisse une trace sur le
-screenshot (`SEL TXT NUM ARR LIN BOX ELL RDC`). Les réglages du document sont
-des sections repliables de l'inspecteur, pas des outils. Le chrome d'annotation
-— cadres, poignées, caret — ne se dessine que quand un calque est sélectionné ou
+**Séparé ou combiné, sans champ de plus.** `layout: 'single'` est le mode
+séparé (un fichier par image, le lot sort en zip depuis le menu Export) ; toute
+autre disposition est le mode combiné, qui compose les images cochées. Le menu
+Export porte format, échelle, copie et — en séparé, à plusieurs images — le lot :
+ratios en plus, « Harmonize backgrounds », progression et annulation. Chaque
+fichier du lot entre dans l'historique.
+
+**Styles en menu** : appliquer, enregistrer, mettre à jour, importer/exporter en
+`.json`. Nom, filigrane et palette figée se règlent dans la section Style de
+l'inspecteur, là où l'effet se voit. **History en tiroir**, sur `<dialog>` natif.
+
+**La barre d'outils ne porte que des instruments** — ce qui laisse une trace sur
+le screenshot (`SEL TXT NUM ARR LIN BOX ELL RDC`). Le chrome d'annotation —
+cadres, poignées, caret — ne se dessine que quand un calque est sélectionné ou
 qu'un instrument de tracé est en main : avec `SEL` et rien de sélectionné, le
 canvas montre exactement ce que l'export produira, et `Escape` y ramène.
 
-Sous 1100 px : le rail passe en barre horizontale, l'inspecteur devient une
-feuille rétractable. Pas de version mobile — l'outil vit à côté d'un screenshot
-pris sur desktop.
+Sous 1100 px, l'inspecteur devient une feuille rétractable. Pas de version
+mobile — l'outil vit à côté d'un screenshot pris sur desktop.
 
 ## Raccourcis
 

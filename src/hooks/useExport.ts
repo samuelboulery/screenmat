@@ -74,7 +74,7 @@ export function useExport(
   return { status, error, copied, exportScene: run, copyScene: copy, fail: setError }
 }
 
-async function archive(
+export async function archive(
   scene: Scene,
   scale: number,
   blob: Blob,

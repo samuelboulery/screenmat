@@ -16,7 +16,7 @@ import type { Annotation, AnnotationKind, LayerNode, Shot } from '../types.ts'
 
 /* La pile de calques : arbre, glisser-déposer, œil et cadenas. Aucune
    dépendance — le glisser-déposer est celui du navigateur, comme dans
-   `Filmstrip`. */
+   la liste des images. */
 
 const KIND_NAME: Record<AnnotationKind, string> = {
   text: 'Label',

@@ -47,7 +47,7 @@ screenshot, des annotations, du floutage — le tout calculé dans le navigateur
 | **Compositions** | Jusqu'à 24 shots dans un même visuel : `single`, `stack`, `side` ou `tilt3d`, avec écartement, convergence et élévation. |
 | **Calques** | Un vrai arbre — groupes, réordonnancement, masquage, verrouillage, multi-sélection, annuler/rétablir. |
 | **Styles** | Enregistrer un jeu de réglages complet sous un nom, le rappeler depuis l'app, le CLI, MCP ou Node. Le partager, c'est exporter un `.json`. |
-| **Lot** | Une file de captures, un seul style, un `.zip` en sortie. |
+| **Lot** | Un dossier de captures gardées séparées, un seul style, un `.zip` en sortie depuis le menu Export. |
 | **Historique** | Les exports passés vivent dans IndexedDB avec leurs vignettes, réouvrables avec tous leurs réglages. |
 | **Export** | WebP par défaut (7 à 10× plus léger que le PNG à grain égal), PNG à la demande, en 1× / 2× / 3× — 1600, 3200 ou 4800 px de large. |
 

@@ -203,7 +203,7 @@ export default function App() {
   const problem = failure ?? exporter.error ?? library.error ?? batch.error
 
   return (
-    <div className="stage-glow relative h-full" {...input.dropHandlers}>
+    <div className="stage-grain relative h-full" {...input.dropHandlers}>
       <TopBar
         screen={screen}
         showNav={!empty}

@@ -1,20 +1,34 @@
 ---
 name: screenmat-da
-description: Direction artistique « Afterglow » de screenmat — palette et accent, recettes de sélection, icônes Lucide, typographie, rayons, carte des quatre écrans, raccourcis clavier, références visuelles. À invoquer AVANT de toucher à un composant, une couleur, un token, une icône, un écran, un panneau, un raccourci, un état sélectionné ou survolé, une taille de texte ou un espacement. Écrire de l'interface sans avoir lu ce skill fait diverger la DA au premier ajustement.
+description: Direction artistique « Papier technique » de screenmat (clair et sombre) — jetons et thème, recettes de sélection, icônes Lucide, typographie, rayons, carte des quatre écrans, raccourcis clavier, références visuelles. À invoquer AVANT de toucher à un composant, une couleur, un token, une icône, un écran, un panneau, un raccourci, un état sélectionné ou survolé, une taille de texte ou un espacement. Écrire de l'interface sans avoir lu ce skill fait diverger la DA au premier ajustement.
 ---
 
-# screenmat — direction artistique « Afterglow »
+# screenmat — direction artistique « Papier technique »
 
-Scène noire (`#07070A`), panneaux translucides flottants, un seul accent
-cyan→violet (`#7DE2FF` → `#A378FF`) réservé à **deux** usages : l'action
-primaire et la sélection courante. `#FF9A9A` est réservé au floutage et au
-destructif. Aucune ombre portée dans le chrome — la seule ombre du produit
-appartient à l'artwork.
+Encre sur papier en clair (`#F3F2EE` / `#111`), papier sur encre en sombre
+(`#121110` / `#EDEBE5`), trame de points discrète, rayons de 2 px. **Aucune
+couleur dans le chrome** : la couleur appartient à la capture et aux
+annotations. L'« accent » est l'encre du thème, réservé à **deux** usages :
+l'action primaire (aplat `bg-accent`) et la sélection courante. Le rouge
+(`--color-danger`) est réservé au floutage et au destructif. Les annotations
+sont ambre par défaut (`#FFD479`) : jamais la couleur de la sélection. Aucune
+ombre dans le chrome — la seule ombre du produit appartient à l'artwork.
+
+**Deux thèmes, un seul jeu de noms.** Les valeurs claires vivent dans
+`@theme` (`src/index.css`), le sombre les redéfinit sous
+`:root[data-theme='dark']`. Le thème est posé sur `<html>` avant le premier
+rendu par le script d'`index.html` (choix `sm-theme`, sinon le système), puis
+suivi par `useTheme`. Il ne touche jamais l'export : rien dans `src/lib/` ne lit
+un jeton du chrome. Pas de `text-white` ni de `bg-white/…` : `ink` est le
+contraste du thème, `ink/[.04]` le survol.
+
+**Une seule animation décorative : le reflet** (`sheen`), une bande qui
+traverse un bouton au survol. Primaire et secondaire, jamais ailleurs.
 
 ## Les deux recettes de sélection
 
 **Définies dans `src/components/ui.tsx` et nulle part ailleurs.** `SWITCH_ON`
-(`bg-raised text-white`) marque un *commutateur* — navigation, instrument,
+(`bg-raised text-ink`) marque un *commutateur* — navigation, instrument,
 ratio, format : il y en a toujours un d'allumé, l'accent y perdrait son sens.
 `SELECTED` marque un *contenu sélectionné* — shot, calque, style, preset : ce
 sur quoi la prochaine action portera, et c'est là que l'accent gagne sa place.
@@ -24,10 +38,12 @@ la DA au premier ajustement d'opacité.
 
 ## Typographie, icônes, rayons
 
-Deux familles : **Space Grotesk** (ce qu'un humain lit) et **JetBrains Mono**
-(ce qu'une machine a produit : labels de section, dimensions, seeds, noms de
-fichiers). Les deux sont embarquées en woff2 dans `public/fonts/` — l'app doit
-rester utilisable hors ligne. Tokens et échelle typographique : `src/index.css`.
+Trois familles, trois rôles : **Unbounded 800** pour les titres qui
+s'affichent en grand (`t-headline` : titre d'accueil, landing) et nulle part
+dans les panneaux ; **Space Grotesk** pour ce qu'un humain lit ;
+**JetBrains Mono** pour ce qu'une machine a produit (labels de section,
+dimensions, seeds, noms de fichiers). Les trois sont embarquées en woff2 dans
+`public/fonts/` — l'app doit rester utilisable hors ligne. Tokens et échelle typographique : `src/index.css`.
 
 Un seul jeu d'icônes, **Lucide**, importé par le seul `src/components/icons.tsx`
 — aucun autre fichier n'importe `lucide-react`. Taille (16 px, 20 px dans le
@@ -36,7 +52,8 @@ rail) et épaisseur du trait (1.5) sont posées une fois en CSS sur la classe
 Icône seule là où l'espace est compté et où le geste est évident (rail, œil et
 cadenas d'un calque, undo/redo) ; icône **et** mot sur la navigation et les
 actions de fin de course. Un raccourci clavier (`⌘V`, `⌫`) s'écrit, il ne se
-dessine pas. Cinq rayons, pas seize : `--radius-xs|sm|md|lg|xl`.
+dessine pas. Cinq noms de rayon (`--radius-xs|sm|md|lg|xl`) qui valent tous
+2 px : le nom dit le rôle, la valeur est celle du papier.
 
 ## Écrans
 

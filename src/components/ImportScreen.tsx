@@ -32,16 +32,16 @@ export default function ImportScreen({
     // l'écran, le titre passait derrière la barre dès que la fenêtre raccourcit.
     // Et `min-h` plutôt que `h` : un centrage flex qui déborde vers le haut
     // n'est rattrapable par aucun scroll.
-    <div className="stage-glow absolute inset-x-0 top-[58px] bottom-0 flex flex-col items-center justify-center-safe gap-11 overflow-y-auto px-5 py-8">
+    <div className="stage-grain absolute inset-x-0 top-[58px] bottom-0 flex flex-col items-center justify-center-safe gap-11 overflow-y-auto px-5 py-8">
       <div
         className={`flex min-h-[372px] w-[720px] max-w-full shrink-0 flex-col items-center justify-center gap-5 rounded-xl border border-dashed p-8 transition-colors duration-140 ${
-          dragging ? 'border-accent/45 bg-accent/5' : 'border-white/[.16] bg-white/[.02]'
+          dragging ? 'border-accent/45 bg-accent/5' : 'border-ink/[.16] bg-ink/[.02]'
         }`}
       >
         <span className="rounded-md border border-accent/30 bg-accent/[.08] px-4 py-3 font-mono text-[15px] text-accent-ink">
           ⌘ V
         </span>
-        <h1 className="t-display">Paste a screenshot</h1>
+        <h1 className="t-headline text-[34px]">Paste a screenshot</h1>
         <p className="text-[14px] text-ink-soft">
           or drop a file here — nothing leaves your browser
         </p>
@@ -81,7 +81,7 @@ export default function ImportScreen({
                 {/* Voile de lisibilité : sans lui, la métadonnée blanche
                     disparaît sur un screenshot clair. */}
                 <span className="absolute inset-x-0 bottom-0 h-9 bg-gradient-to-t from-stage/85 to-transparent" />
-                <span className="t-mono-micro absolute right-2 bottom-1.5 left-2 flex justify-between text-white/75">
+                <span className="t-mono-micro absolute right-2 bottom-1.5 left-2 flex justify-between text-ink/75">
                   <span className="truncate">{entry.name}</span>
                   <span>{entry.ratio}</span>
                 </span>
@@ -89,7 +89,7 @@ export default function ImportScreen({
             ) : (
               <div
                 key={`empty-${index}`}
-                className="h-[106px] rounded-md border border-hairline bg-white/[.03]"
+                className="h-[106px] rounded-md border border-hairline bg-ink/[.03]"
               />
             ),
           )}

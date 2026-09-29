@@ -20,7 +20,7 @@ const REDACTIONS: Array<{ value: RedactionMode; label: string }> = [
 
 /** Couleurs de la DA, toujours proposées. Les accents du screenshot viennent
  *  ensuite : une annotation assortie à l'image tient mieux dans le visuel. */
-const BASE_COLORS = ['#7DE2FF', '#A378FF', '#FF9A9A', '#FFD479', '#8CE99A', '#FFFFFF']
+const BASE_COLORS = ['#FFD479', '#FFFFFF', '#111111', '#FF5A4F', '#8CE99A', '#4D8BFF']
 
 type AnnotationStyleProps = {
   annotation: Annotation
@@ -88,7 +88,7 @@ export default function AnnotationStyle({
               le carré, invisible mais focalisable là où on le voit. */}
           <label
             title="Custom color"
-            className="relative flex size-10 items-center justify-center rounded-lg border border-dashed border-white/20 text-[10px] text-dim hover:border-white/35"
+            className="relative flex size-10 items-center justify-center rounded-lg border border-dashed border-ink/20 text-[10px] text-dim hover:border-ink/35"
           >
             <span aria-hidden>···</span>
             <input

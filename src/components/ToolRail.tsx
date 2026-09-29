@@ -53,8 +53,8 @@ export default function ToolRail({ active, onPick, horizontal = false }: ToolRai
               active === tool
                 ? SWITCH_ON
                 : tool === 'RDC'
-                  ? 'text-danger hover:bg-white/[.04]'
-                  : 'text-ink-soft hover:bg-white/[.04] hover:text-ink'
+                  ? 'text-danger hover:bg-ink/[.04]'
+                  : 'text-ink-soft hover:bg-ink/[.04] hover:text-ink'
             }`}
           >
             <Icon className="size-5" />

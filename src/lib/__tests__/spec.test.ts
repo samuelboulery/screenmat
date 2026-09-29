@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { parseScene } from '../spec.ts'
-import { ANNOTATION_LIMITS } from '../annotate.ts'
+import { ANNOTATION_ACCENT, ANNOTATION_LIMITS } from '../annotate.ts'
 import { DEFAULT_COMPOSITION, DEFAULT_PLACEMENT, DEFAULT_SETTINGS } from '../../types.ts'
 
 const minimal = { shots: [{ input: 'a.png' }] }
@@ -105,7 +105,7 @@ describe('parseScene — calques', () => {
       { kind: 'box', color: 'red' },
       { kind: 'box', color: '#ff0000' },
     ])
-    expect(scene.shots[0]?.layers[0]?.color).toBe('#7DE2FF')
+    expect(scene.shots[0]?.layers[0]?.color).toBe(ANNOTATION_ACCENT)
     expect(scene.shots[0]?.layers[1]?.color).toBe('#ff0000')
   })
 

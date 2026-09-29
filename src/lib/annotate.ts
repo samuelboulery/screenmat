@@ -9,8 +9,9 @@ import type { Annotation, AnnotationKind, FractionRect } from '../types.ts'
  *  dont `draft.ts`, `handles.ts` et `frame.ts` dépendent tous les trois. */
 export type Point = { x: number; y: number }
 
-/** Accent de la DA, couleur par défaut d'un calque. */
-export const ANNOTATION_ACCENT = '#7DE2FF'
+/** Couleur par défaut d'un calque : l'ambre, jamais l'encre de la sélection —
+ *  une annotation non sélectionnée ne doit pas ressembler à une sélection. */
+export const ANNOTATION_ACCENT = '#FFD479'
 
 /** Taille de police par défaut d'un callout, en fraction de la largeur de la
  *  fenêtre. */

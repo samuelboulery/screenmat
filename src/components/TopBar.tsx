@@ -1,5 +1,6 @@
-import { DevDocsIcon, LocalIcon, ScreenIcon } from './icons.tsx'
-import { Badge, ExternalLink, Segmented } from './ui.tsx'
+import { DevDocsIcon, LocalIcon, ScreenIcon, ThemeIcon } from './icons.tsx'
+import { useTheme } from '../hooks/useTheme.ts'
+import { Badge, ExternalLink, IconButton, Segmented } from './ui.tsx'
 import type { Screen } from '../types.ts'
 
 /* Les destinations gardent leur mot : un onglet de navigation se lit, il ne se
@@ -52,7 +53,7 @@ const WORDMARK = 'text-[15px] font-bold tracking-tight'
  */
 export default function TopBar({ screen, showNav = true, onScreen, onHome }: TopBarProps) {
   return (
-    <header className="relative z-20 flex h-[58px] items-center gap-4 border-b border-white/5 px-5">
+    <header className="relative z-20 flex h-[58px] items-center gap-4 border-b border-ink/5 px-5">
       {/* Sur l'écran d'import, la marque n'est pas un bouton : il n'y a nulle
           part où revenir, et un bouton sans effet est un mensonge. */}
       {showNav ? (
@@ -93,6 +94,15 @@ export default function TopBar({ screen, showNav = true, onScreen, onHome }: Top
         <DevDocsIcon />
         <span className={WORD}>Dev docs</span>
       </ExternalLink>
+      <ThemeToggle />
     </header>
   )
+}
+
+/** Clair ou sombre, pour le chrome seulement : l'export ne change pas. */
+function ThemeToggle() {
+  const { theme, toggle } = useTheme()
+  const Icon = ThemeIcon[theme]
+  const label = theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'
+  return <IconButton icon={Icon} label={label} onClick={toggle} />
 }

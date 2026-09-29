@@ -178,7 +178,7 @@ before writing a single one.
 | `text` | string | `""` | ≤ 280 characters. `kind=text`. |
 | `labelStyle` | `pill` `plain` `badge` | `pill` | |
 | `redaction` | `blur` `pixel` `solid` | `blur` | `kind=redaction`. |
-| `color` | `#RRGGBB` | `#7DE2FF` | Six hex digits, or the default. `red` is not a colour here. |
+| `color` | `#RRGGBB` | `#FFD479` | Six hex digits, or the default. `red` is not a colour here. |
 | `size` | number | `0.011` | 0.005 to 0.04 — font size. |
 | `strokeWidth` | number | `0.0022` | 0.0005 to 0.012 |
 | `radius` | number | `0.006` | 0 to 0.06 — box corners. |

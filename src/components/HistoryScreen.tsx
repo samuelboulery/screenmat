@@ -51,7 +51,7 @@ export default function HistoryScreen({
   }, [entries, filter, query, sort])
 
   return (
-    <div className="stage-glow absolute inset-x-0 top-[58px] bottom-0 flex flex-col gap-4 overflow-y-auto p-7">
+    <div className="stage-grain absolute inset-x-0 top-[58px] bottom-0 flex flex-col gap-4 overflow-y-auto p-7">
       <div className="flex items-center gap-4">
         <Segmented options={filters} value={filter} onPick={setFilter} />
         <div className="ml-auto flex items-center gap-3">
@@ -106,7 +106,7 @@ export default function HistoryScreen({
             {/* Voile de lisibilité : la métadonnée est blanche, les screenshots
                 clairs la rendraient illisible sans ça. */}
             <span className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-stage/85 to-transparent" />
-            <span className="t-mono-micro absolute right-3 bottom-2.5 left-3 flex justify-between text-white/75">
+            <span className="t-mono-micro absolute right-3 bottom-2.5 left-3 flex justify-between text-ink/75">
               <span className="truncate">{entry.name}</span>
               <span>
                 {entry.ratio} · {entry.scale}×

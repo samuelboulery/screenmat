@@ -66,12 +66,12 @@ export default function StylesScreen({
     // centrale tombait à 56 px et un tiers de l'aperçu sortait du scroll. En
     // dessous du point de rupture, elles s'empilent.
     <div
-      className={`stage-glow absolute inset-x-0 top-[58px] bottom-0 grid ${
+      className={`stage-grain absolute inset-x-0 top-[58px] bottom-0 grid ${
         narrow ? 'grid-cols-1 overflow-y-auto' : 'grid-cols-[236px_1fr_620px] overflow-hidden'
       }`}
     >
       <aside
-        className={`flex flex-col gap-2 border-white/5 p-5 ${
+        className={`flex flex-col gap-2 border-ink/5 p-5 ${
           narrow ? 'border-b' : 'overflow-y-auto border-r'
         }`}
       >
@@ -206,7 +206,7 @@ export default function StylesScreen({
       </div>
 
       <aside
-        className={`flex flex-col gap-4 border-white/5 p-7 ${
+        className={`flex flex-col gap-4 border-ink/5 p-7 ${
           narrow ? 'border-t' : 'overflow-y-auto border-l'
         }`}
       >

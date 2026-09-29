@@ -155,7 +155,7 @@ export default function EditorScreen(props: EditorScreenProps) {
   )
 
   return (
-    <div className="stage-glow absolute inset-x-0 top-[58px] bottom-0">
+    <div className="stage-grain absolute inset-x-0 top-[58px] bottom-0">
       <Preview
         scene={scene}
         inset={inset}

@@ -35,6 +35,7 @@ import {
   Layers,
   Lock,
   LockOpen,
+  Moon,
   MousePointer2,
   Palette,
   PanelRightClose,
@@ -50,6 +51,7 @@ import {
   Square,
   SquareAsterisk,
   SquareSlash,
+  Sun,
   Terminal,
   Trash2,
   TriangleAlert,
@@ -83,6 +85,8 @@ export const ScreenIcon = {
   history: History,
 } as const
 export const LocalIcon = ShieldCheck
+/** Bascule de thème : l'icône montre le thème vers lequel on va. */
+export const ThemeIcon = { light: Moon, dark: Sun } as const
 
 /* ── Outils ─────────────────────────────────────────────────────────────── */
 

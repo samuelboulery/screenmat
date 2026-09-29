@@ -103,7 +103,7 @@ export default function BatchScreen({
 
   return (
     <div
-      className={`stage-glow absolute inset-x-0 top-[58px] bottom-0 flex overflow-hidden ${
+      className={`stage-grain absolute inset-x-0 top-[58px] bottom-0 flex overflow-hidden ${
         narrow ? 'flex-col overflow-y-auto' : ''
       }`}
     >
@@ -116,9 +116,9 @@ export default function BatchScreen({
             aria-valuemin={0}
             aria-valuemax={total}
             aria-valuenow={rendered}
-            className="h-1 w-full max-w-[300px] overflow-hidden rounded-xs bg-white/[.09]"
+            className="h-1 w-full max-w-[300px] overflow-hidden rounded-xs bg-ink/[.09]"
           >
-            <div className="gradient-accent h-full" style={{ width: `${progress}%` }} />
+            <div className="bg-accent h-full" style={{ width: `${progress}%` }} />
           </div>
           <span className="font-mono text-[10px] text-dim">
             {rendered} / {total} rendered
@@ -138,7 +138,7 @@ export default function BatchScreen({
                 onClick={() => onToggleShot(shot.id)}
                 aria-pressed={picked}
                 className={`relative h-[148px] overflow-hidden rounded-lg border border-hairline text-left ${
-                  picked ? 'bg-sunken' : 'bg-white/[.04]'
+                  picked ? 'bg-sunken' : 'bg-ink/[.04]'
                 }`}
               >
                 {/* L'atténuation ne porte que sur l'image : posée sur le bouton,
@@ -163,7 +163,7 @@ export default function BatchScreen({
 
                 {status === 'rendering' && (
                   <span
-                    className="gradient-accent absolute bottom-0 left-0 h-0.5"
+                    className="bg-accent absolute bottom-0 left-0 h-0.5"
                     style={{ width: `${(item?.progress ?? 0) * 100}%` }}
                   />
                 )}
@@ -191,7 +191,7 @@ export default function BatchScreen({
 
       <Panel
         className={`space-y-5 overflow-y-auto rounded-none border-0 p-6 ${
-          narrow ? 'w-full border-t border-white/5' : 'w-[316px] shrink-0 border-l border-white/5'
+          narrow ? 'w-full border-t border-ink/5' : 'w-[316px] shrink-0 border-l border-ink/5'
         }`}
       >
         <Section title="Style applied" aside={<button type="button" onClick={onChangeStyle} className="t-ui-small text-accent hover:underline">Change</button>}>

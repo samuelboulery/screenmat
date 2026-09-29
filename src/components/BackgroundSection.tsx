@@ -8,9 +8,9 @@ import type { BackgroundKind, Palette, Settings } from '../types.ts'
    s'affiche pas. `paintBackground` (`lib/background.ts`) dit lequel lit quoi. */
 
 const BACKGROUNDS: Array<{ value: BackgroundKind; label: string; preview: string }> = [
-  { value: 'mesh', label: 'mesh', preview: 'radial-gradient(120% 120% at 20% 10%, #7DE2FF55, #A378FF33 45%, #14141B)' },
-  { value: 'gradient', label: 'gradient', preview: 'linear-gradient(140deg, #7DE2FF66, #A378FF44)' },
-  { value: 'solid', label: 'solid', preview: '#1B1B24' },
+  { value: 'mesh', label: 'mesh', preview: 'radial-gradient(120% 120% at 20% 10%, #A09C92, #48453F 45%, #1A1917)' },
+  { value: 'gradient', label: 'gradient', preview: 'linear-gradient(140deg, #A09C92, #2E2C28)' },
+  { value: 'solid', label: 'solid', preview: '#2E2C28' },
 ]
 
 type BackgroundSectionProps = {
@@ -70,14 +70,14 @@ export default function BackgroundSection({
           <span
             title={palette.base}
             style={{ background: palette.base }}
-            className="h-6 flex-1 rounded border border-white/10"
+            className="h-6 flex-1 rounded border border-ink/10"
           />
           {palette.accents.map((color) => (
             <span
               key={color}
               title={color}
               style={{ background: color }}
-              className="h-6 flex-1 rounded border border-white/10"
+              className="h-6 flex-1 rounded border border-ink/10"
             />
           ))}
         </div>

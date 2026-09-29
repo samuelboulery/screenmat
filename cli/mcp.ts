@@ -44,7 +44,7 @@ const layer = z.object({
     .enum(['blur', 'pixel', 'solid'])
     .optional()
     .describe('Mode de masquage, pour kind=redaction. Cuit dans les pixels : illisible à l’export.'),
-  color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional().describe('Hex à six chiffres, ex. #7DE2FF.'),
+  color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional().describe('Hex à six chiffres, ex. #FFD479.'),
   labelStyle: z.enum(['pill', 'plain', 'badge']).optional(),
   size: z.number().min(ANNOTATION_LIMITS.size.min).max(ANNOTATION_LIMITS.size.max).optional(),
   strokeWidth: z

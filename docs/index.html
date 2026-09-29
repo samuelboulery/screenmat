@@ -1,11 +1,29 @@
 <!doctype html>
-<html lang="en" class="dark">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <meta name="theme-color" content="#07070a" />
+    <meta name="theme-color" content="#f3f2ee" />
+    <!-- Thème posé avant le premier rendu, pour ne jamais flasher : le choix
+         mémorisé, sinon le système. `useTheme` prend la suite. -->
+    <script>
+      (function () {
+        var stored = null
+        try { stored = localStorage.getItem('sm-theme') } catch (e) { /* stockage bloqué : on suit le système */ }
+        var t = stored === 'light' || stored === 'dark' ? stored : matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+        var apply = function (t) {
+          document.documentElement.dataset.theme = t
+          document.querySelector('meta[name="theme-color"]').content = t === 'dark' ? '#121110' : '#f3f2ee'
+        }
+        apply(t)
+        // Pas de bascule ici : sans choix mémorisé, la doc suit le système en direct.
+        if (stored !== 'light' && stored !== 'dark') {
+          matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function (e) { apply(e.matches ? 'dark' : 'light') })
+        }
+      })()
+    </script>
     <link rel="preload" as="font" type="font/woff2" href="/fonts/space-grotesk-latin.woff2" crossorigin />
     <link rel="preload" as="font" type="font/woff2" href="/fonts/jetbrains-mono-latin.woff2" crossorigin />
     <!-- Titre, description, canonical et `og:` sont réécrits par document au

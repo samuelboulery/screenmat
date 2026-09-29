@@ -1,15 +1,28 @@
 <!doctype html>
-<html lang="en" class="dark">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <meta name="theme-color" content="#07070a" />
-    <!-- Les deux polices du texte courant. Les sous-ensembles `-ext` attendent
-         d'être réclamés : les précharger retarderait ceux-ci. -->
+    <meta name="theme-color" content="#f3f2ee" />
+    <!-- Thème posé avant le premier rendu, pour ne jamais flasher : le choix
+         mémorisé, sinon le système. `useTheme` prend la suite. -->
+    <script>
+      (function () {
+        var t = null
+        try { t = localStorage.getItem('sm-theme') } catch (e) { /* stockage bloqué : on suit le système */ }
+        if (t !== 'light' && t !== 'dark') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+        document.documentElement.dataset.theme = t
+        document.querySelector('meta[name="theme-color"]').content = t === 'dark' ? '#121110' : '#f3f2ee'
+      })()
+    </script>
+    <!-- Les polices du premier écran : texte courant et titre d'accueil. Les
+         sous-ensembles `-ext` attendent d'être réclamés : les précharger
+         retarderait ceux-ci. -->
     <link rel="preload" as="font" type="font/woff2" href="/fonts/space-grotesk-latin.woff2" crossorigin />
     <link rel="preload" as="font" type="font/woff2" href="/fonts/jetbrains-mono-latin.woff2" crossorigin />
+    <link rel="preload" as="font" type="font/woff2" href="/fonts/unbounded-800-latin.woff2" crossorigin />
     <title>screenmat</title>
     <meta name="description" content="Turn a raw screenshot into a shareable visual — macOS-style window, generative background, annotations, redaction. Runs entirely in the browser." />
     <!-- `%SITE_URL%` est substitué au build par `vite-docs-prerender.ts` : le

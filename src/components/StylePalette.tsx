@@ -73,9 +73,9 @@ export default function StylePalette({
                 ? `${MAX_PALETTE_ACCENTS} colors maximum`
                 : 'Add a color'
           }
-          className={`relative flex h-10 w-[54px] items-center justify-center rounded-md border border-dashed border-white/15 text-dim ${
+          className={`relative flex h-10 w-[54px] items-center justify-center rounded-md border border-dashed border-ink/15 text-dim ${
             palette && !full
-              ? 'hover:border-white/25 hover:text-ink-soft'
+              ? 'hover:border-ink/25 hover:text-ink-soft'
               : 'pointer-events-none opacity-40'
           }`}
         >
@@ -121,7 +121,7 @@ function ColorTile({
       <label
         title={`${label} — ${color}`}
         style={{ background: color }}
-        className="relative flex h-10 w-[54px] items-center justify-center rounded-md border border-white/10"
+        className="relative flex h-10 w-[54px] items-center justify-center rounded-md border border-ink/10"
       >
         <input
           type="color"

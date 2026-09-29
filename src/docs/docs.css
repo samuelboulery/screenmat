@@ -9,7 +9,8 @@
 
 body {
   font-size: 14px;
-  background-image: var(--stage-glow);
+  background-image: radial-gradient(var(--stage-dot) 1px, transparent 1px);
+  background-size: 16px 16px;
   background-attachment: fixed;
 }
 
@@ -131,7 +132,7 @@ li.is-open .toc-sub {
 .rail-foot a:hover,
 .rail-foot button:hover {
   color: var(--color-ink);
-  border-color: rgb(255 255 255 / 0.2);
+  border-color: color-mix(in srgb, var(--color-ink) 22%, transparent);
 }
 
 /* — Prose —————————————————————————————————————————————————————————— */
@@ -241,7 +242,7 @@ li.is-open .toc-sub {
 #doc a {
   color: var(--color-accent-ink);
   text-decoration: none;
-  border-bottom: 1px solid rgb(125 226 255 / 0.3);
+  border-bottom: 1px solid var(--color-hairline-strong);
 }
 
 #doc a:hover {
@@ -293,7 +294,7 @@ h4:hover .anchor,
 
 .page-copy:hover {
   color: var(--color-ink);
-  border-color: rgb(255 255 255 / 0.2);
+  border-color: color-mix(in srgb, var(--color-ink) 22%, transparent);
 }
 
 /* — Tableaux ——————————————————————————————————————————————————————— */
@@ -401,14 +402,13 @@ h4:hover .anchor,
   color: var(--color-accent);
 }
 .tok-str {
-  color: #b9e6c8;
+  color: var(--color-ink-soft);
 }
 .tok-num,
-.tok-lit {
-  color: var(--color-accent-2);
-}
+.tok-lit,
 .tok-kw {
-  color: var(--color-accent-2);
+  color: var(--color-ink);
+  font-weight: 600;
 }
 .tok-flag {
   color: var(--color-accent);
@@ -430,7 +430,7 @@ h4:hover .anchor,
   background: var(--color-sunken);
 }
 
-/* `#FF9A9A` est réservé au destructif et au floutage : un avertissement en
+/* Le rouge est réservé au destructif et au floutage : un avertissement en
    fait partie, une note et une astuce non. */
 .callout-warning {
   border-left-color: var(--color-danger);
@@ -456,7 +456,7 @@ h4:hover .anchor,
 
 .load-error {
   padding: 14px 16px;
-  border: 1px solid rgb(255 154 154 / 0.4);
+  border: 1px solid color-mix(in srgb, var(--color-danger) 40%, transparent);
   border-radius: var(--radius-md);
   color: var(--color-danger);
 }

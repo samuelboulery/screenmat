@@ -77,9 +77,10 @@
   transform: translateY(1px);
 }
 
-[data-hero-keys][data-ready='false'] .keycap[data-key] {
+/* Pendant l'intro, les touches de calque sont désactivées pour de vrai : un
+   bouton `disabled` ne se tabule pas et n'annonce rien qu'il ne ferait. */
+.keycap:disabled {
   opacity: 0.35;
-  pointer-events: none;
 }
 
 .theme-toggle svg {

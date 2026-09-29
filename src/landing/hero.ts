@@ -37,11 +37,19 @@ export function startHero(root: HTMLElement): void {
   let layers: Annotation[] = []
   let counts: Record<HeroKey, number> = { t: 0, a: 0, r: 0, b: 0 }
   let run = 0
+  let loads = 0
   let ready = false
+  let pending = 0
 
   const scene = () => heroScene(source!.image, source!.palette, layers)
   const say = (text: string) => (hint.textContent = text)
   const whole = () => ({ x: 0, y: 0, w: stage.width, h: stage.height })
+  const fail = (cause: unknown) => say(cause instanceof Error ? cause.message : 'The demo stopped.')
+  const start = () => void intro().catch(fail)
+  /** Un redimensionnement par frame au plus : trame et rendu coûtent cher. */
+  const schedule = () => {
+    if (!pending) pending = requestAnimationFrame(() => ((pending = 0), layout()))
+  }
 
   function dither() {
     if (!source) return
@@ -75,13 +83,18 @@ export function startHero(root: HTMLElement): void {
     await stage.tween(950, (k) => (stage.frame = k))
     if (!alive()) return
     caption.textContent = 'screenmat.webp · 3200 × 2400 · background from its own colours'
-    if (source!.demo) for (const key of ['r', 't', 'a'] as const) await add(key)
+    // `alive()` avant chaque calque : une autre capture a pu arriver entre-temps.
+    for (const key of source!.demo ? (['r', 't', 'a'] as const) : []) {
+      if (!alive()) return
+      await add(key)
+    }
     if (alive()) setReady(true)
   }
 
   function setReady(on: boolean) {
     ready = on
     keys.dataset.ready = String(on)
+    keys.querySelectorAll<HTMLButtonElement>('[data-key]').forEach((button) => (button.disabled = !on))
   }
 
   function add(key: HeroKey): Promise<void> {
@@ -97,32 +110,37 @@ export function startHero(root: HTMLElement): void {
 
   function press(key: HeroKey) {
     if (!ready) return
-    void add(key)
+    add(key).catch(fail)
     say(`${HERO_KEYS[key]} added${key === 'b' ? ' — baked into the pixels' : ''} · ⌫ to undo`)
   }
 
   function undo() {
     if (!ready || layers.length === 0) return
     layers = layers.slice(0, -1)
-    void crossfade()
+    crossfade().catch(fail)
   }
 
   async function use(blob: Blob, name: string, demo: boolean) {
+    // La démo arrivée après une capture collée ne la remplace pas ; de deux
+    // collages, le dernier gagne.
+    if (demo && source) return
+    const me = ++loads
     try {
       const image = await loadImage(blob)
+      if (me !== loads || (demo && source)) return
       source = { image, palette: extractPalette(image), blob, name, demo }
       proceed.hidden = demo
       if (!demo) say('Your screenshot, rendered locally. Try T A R B.')
-      void intro()
+      start()
     } catch (cause: unknown) {
       say(cause instanceof Error ? cause.message : 'That file could not be read as an image.')
     }
   }
 
-  wireInputs({ frame, keys, file, proceed, press, undo, replay: () => source && void intro(), use, say, source: () => source })
-  new ResizeObserver(() => layout()).observe(frame)
+  wireInputs({ frame, keys, file, proceed, press, undo, replay: () => source && start(), use, say, source: () => source })
+  new ResizeObserver(schedule).observe(frame)
   // Le thème change la trame : encre sur papier, papier sur encre.
-  new MutationObserver(() => layout()).observe(document.documentElement, { attributeFilter: ['data-theme'] })
+  new MutationObserver(schedule).observe(document.documentElement, { attributeFilter: ['data-theme'] })
 
   void fetch('/landing/demo.webp')
     .then((response) => {
@@ -185,7 +203,10 @@ function wireInputs(inputs: Inputs): void {
     event.preventDefault()
     take(picked)
   })
+  // Seul un dépôt de fichier nous regarde : un lien ou du texte glissé suit son cours.
+  const files = (event: DragEvent) => event.dataTransfer?.types.includes('Files') ?? false
   addEventListener('dragover', (event) => {
+    if (!files(event)) return
     event.preventDefault()
     frame.dataset.drop = ''
   })
@@ -193,6 +214,7 @@ function wireInputs(inputs: Inputs): void {
     if (!event.relatedTarget) delete frame.dataset.drop
   })
   addEventListener('drop', (event) => {
+    if (!files(event)) return
     event.preventDefault()
     delete frame.dataset.drop
     take(pickImage(event.dataTransfer?.items ?? null))

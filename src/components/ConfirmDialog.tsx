@@ -63,6 +63,7 @@ export function useConfirm(): {
     <dialog
       ref={ref}
       onClose={() => close(false)}
+      aria-label={request?.title ?? 'Confirm'}
       className="panel m-auto w-[380px] max-w-[calc(100vw-40px)] rounded-lg p-5 text-ink backdrop:bg-stage/70"
     >
       {request && (

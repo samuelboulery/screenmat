@@ -42,13 +42,27 @@ function openDb(): Promise<IDBDatabase> {
       if (!db.objectStoreNames.contains(HANDOFF)) db.createObjectStore(HANDOFF, { keyPath: 'id' })
     }
 
-    request.onsuccess = () => resolve(request.result)
+    // Un onglet encore ouvert sur l'ancienne version bloque la mise à niveau :
+    // sans ce rejet, tout appel attendrait pour toujours.
+    request.onblocked = () =>
+      reject(new Error('Close the other screenmat tabs, then reload: local storage is being updated.'))
+    request.onsuccess = () => {
+      const db = request.result
+      // À la prochaine montée de version, céder la place plutôt que la bloquer.
+      db.onversionchange = () => {
+        db.close()
+        connection = null
+      }
+      resolve(db)
+    }
     request.onerror = () =>
       reject(
         request.error ??
           new Error('Couldn’t open local storage. Private browsing blocks it on some browsers.'),
       )
   })
+  // Un échec ne se met pas en cache : l'appel suivant retente.
+  connection.catch(() => (connection = null))
 
   return connection
 }
@@ -63,8 +77,12 @@ function run<T>(
       new Promise<T>((resolve, reject) => {
         const transaction = db.transaction(store, mode)
         const request = action(transaction.objectStore(store))
-        request.onsuccess = () => resolve(request.result)
+        // Une écriture n'est acquise qu'au commit : quitter la page juste après
+        // un `onsuccess` pourrait l'annuler (le passage vers `/app/`).
+        if (mode === 'readwrite') transaction.oncomplete = () => resolve(request.result)
+        else request.onsuccess = () => resolve(request.result)
         request.onerror = () => reject(request.error ?? new Error(`Échec sur « ${store} »`))
+        transaction.onabort = () => reject(transaction.error ?? new Error(`Échec sur « ${store} »`))
       }),
   )
 }
@@ -163,18 +181,30 @@ export async function purgeOldest(targetBytes = QUOTA_WARNING_BYTES): Promise<nu
 
 export type Handoff = { blob: Blob; name: string }
 
+/** Au-delà, une capture jamais reprise n'est plus attendue : pas de surprise
+ *  des jours plus tard. */
+const HANDOFF_TTL = 5 * 60 * 1000
+
 /** Dépose la capture collée sur la landing, pour `/app/`. Par IndexedDB, jamais
  *  par le réseau ni par l'URL : l'image ne quitte pas le navigateur. */
 export function putHandoff(handoff: Handoff): Promise<unknown> {
-  return run(HANDOFF, 'readwrite', (store) => store.put({ id: HANDOFF_ID, ...handoff }))
+  return run(HANDOFF, 'readwrite', (store) => store.put({ id: HANDOFF_ID, at: Date.now(), ...handoff }))
 }
 
 /** La reprend et l'efface : un rechargement de l'éditeur ne la rouvre pas. */
 export async function takeHandoff(): Promise<Handoff | undefined> {
-  const found = await run<(Handoff & { id: string }) | undefined>(HANDOFF, 'readonly', (store) =>
-    store.get(HANDOFF_ID),
-  )
-  if (!found) return undefined
-  await run(HANDOFF, 'readwrite', (store) => store.delete(HANDOFF_ID))
+  // Lire et effacer dans la même transaction : deux onglets ne la reçoivent pas tous deux.
+  const db = await openDb()
+  const found = await new Promise<(Handoff & { at: number }) | undefined>((resolve, reject) => {
+    const transaction = db.transaction(HANDOFF, 'readwrite')
+    const store = transaction.objectStore(HANDOFF)
+    const request = store.get(HANDOFF_ID)
+    request.onsuccess = () => {
+      if (request.result) store.delete(HANDOFF_ID)
+    }
+    transaction.oncomplete = () => resolve(request.result)
+    transaction.onabort = () => reject(transaction.error ?? new Error('Could not read the handoff'))
+  })
+  if (!found || Date.now() - found.at > HANDOFF_TTL) return undefined
   return { blob: found.blob, name: found.name }
 }

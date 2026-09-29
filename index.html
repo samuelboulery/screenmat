@@ -83,16 +83,16 @@
         </div>
 
         <div data-hero class="flex min-w-0 flex-col gap-5" aria-label="Live demo">
-          <div data-hero-frame class="hero-frame" tabindex="0" aria-label="Demo frame — click, then press T, A, R or B">
+          <div data-hero-frame class="hero-frame" tabindex="0" role="application" aria-label="Demo frame — click, then press T, A, R or B">
             <canvas role="img" aria-label="A screenshot being framed by screenmat"></canvas>
             <div data-hero-marks></div>
           </div>
           <p data-hero-caption class="min-h-4 font-mono text-[12px] text-dim">raw.png</p>
           <div data-hero-keys data-ready="false" class="flex flex-wrap items-center gap-2.5">
-            <button type="button" class="keycap" data-key="t"><b>T</b>Text</button>
-            <button type="button" class="keycap" data-key="a"><b>A</b>Arrow</button>
-            <button type="button" class="keycap" data-key="r"><b>R</b>Box</button>
-            <button type="button" class="keycap" data-key="b"><b>B</b>Blur</button>
+            <button type="button" class="keycap" data-key="t" disabled><b>T</b>Text</button>
+            <button type="button" class="keycap" data-key="a" disabled><b>A</b>Arrow</button>
+            <button type="button" class="keycap" data-key="r" disabled><b>R</b>Box</button>
+            <button type="button" class="keycap" data-key="b" disabled><b>B</b>Blur</button>
             <span class="w-2"></span>
             <button type="button" class="keycap" data-paste><b>⌘V</b>Paste yours</button>
             <button type="button" class="keycap" data-pick>Choose a file</button>

@@ -32,8 +32,12 @@ function corners(box: Box, gap: number): [number, number][] {
   ]
 }
 
+/** Pose les équerres, animations en cours annulées : un rejeu ou un
+ *  redimensionnement ne s'empile pas sur des translations périmées. */
 function place(marks: HTMLElement[], box: Box, gap: number): void {
+  for (const mark of marks) for (const animation of mark.getAnimations()) animation.cancel()
   corners(box, gap).forEach(([x, y], i) => {
+    marks[i]!.style.opacity = '1'
     marks[i]!.style.left = `${x}px`
     marks[i]!.style.top = `${y}px`
   })
@@ -55,8 +59,12 @@ export function flyIn(marks: HTMLElement[], box: Box): Promise<unknown> {
       const dy = from[i]![1]! - (stage.top + mark.offsetTop)
       return mark.animate(
         [{ transform: `translate(${dx}px,${dy}px)`, opacity: 0 }, { opacity: 1, offset: 0.25 }, { transform: 'none', opacity: 1 }],
-        { duration: reduced() ? 0 : 950, delay: reduced() ? 0 : i * 70, easing: 'cubic-bezier(.16,.9,.3,1.12)', fill: 'forwards' },
-      ).finished
+        { duration: reduced() ? 0 : 950, delay: reduced() ? 0 : i * 70, easing: 'cubic-bezier(.16,.9,.3,1.12)', fill: 'backwards' },
+      // Annulée par un recalage : les équerres sont déjà à leur place, ce
+      // n'est pas une erreur.
+      ).finished.catch((error: unknown) => {
+        if (!(error instanceof DOMException && error.name === 'AbortError')) throw error
+      })
     }),
   )
 }
@@ -68,7 +76,7 @@ export function moveMarks(marks: HTMLElement[], box: Box, ms: number): void {
   marks.forEach((mark, i) =>
     mark.animate(
       [{ transform: `translate(${before[i]![0] - mark.offsetLeft}px,${before[i]![1] - mark.offsetTop}px)`, opacity: 1 }, { transform: 'none', opacity: 1 }],
-      { duration: reduced() ? 0 : ms, easing: 'cubic-bezier(.33,1,.68,1)', fill: 'forwards' },
+      { duration: reduced() ? 0 : ms, easing: 'cubic-bezier(.33,1,.68,1)' },
     ),
   )
 }

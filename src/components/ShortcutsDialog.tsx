@@ -30,7 +30,7 @@ export function useShortcutsPanel(): { open: () => void; dialog: ReactNode } {
   const dialog = (
     <dialog
       ref={ref}
-      aria-labelledby="shortcuts-title"
+      aria-label="Keyboard shortcuts"
       onClose={() => setShown(false)}
       // Clic sur le fond : la cible est le `<dialog>` lui-même.
       onClick={(event) => event.target === event.currentTarget && ref.current?.close()}
@@ -41,7 +41,7 @@ export function useShortcutsPanel(): { open: () => void; dialog: ReactNode } {
       {shown && (
         <div className="p-6">
           <div className="flex items-center justify-between">
-            <h2 id="shortcuts-title" className="t-card-title">Keyboard shortcuts</h2>
+            <h2 className="t-card-title">Keyboard shortcuts</h2>
             <IconButton icon={CancelIcon} label="Close" onClick={() => ref.current?.close()} />
           </div>
           <div className="mt-5 grid gap-x-8 gap-y-6 sm:grid-cols-2">

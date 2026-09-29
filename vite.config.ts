@@ -18,9 +18,10 @@ const SITE_URL = (process.env.SCREENMAT_SITE_URL ?? 'https://screenmat.vercel.ap
 export default defineConfig({
   plugins: [react(), tailwindcss(), docsPrerender({ siteUrl: SITE_URL })],
   build: {
-    // Deux pages : l'app, et le lecteur de documentation servi sur `/docs/`.
-    // Le contenu, lui, vit en Markdown dans `public/docs/` et se sert tel quel.
-    rollupOptions: { input: { main: 'index.html', docs: 'docs/index.html' } },
+    // Trois pages : la landing sur `/`, l'éditeur sur `/app/`, le lecteur de
+    // documentation sur `/docs/`. La landing est du HTML statique : rien à
+    // prérendre, elle est déjà le texte qu'un moteur lit.
+    rollupOptions: { input: { main: 'index.html', app: 'app/index.html', docs: 'docs/index.html' } },
   },
   test: {
     environment: 'node',

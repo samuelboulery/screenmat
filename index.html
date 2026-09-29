@@ -6,8 +6,8 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="theme-color" content="#f3f2ee" />
-    <!-- Thème posé avant le premier rendu, pour ne jamais flasher : le choix
-         mémorisé, sinon le système. `useTheme` prend la suite. -->
+    <!-- Thème posé avant le premier rendu, comme dans l'éditeur : le choix
+         mémorisé, sinon le système. `src/landing/main.ts` prend la suite. -->
     <script>
       (function () {
         var t = null
@@ -17,14 +17,11 @@
         document.querySelector('meta[name="theme-color"]').content = t === 'dark' ? '#121110' : '#f3f2ee'
       })()
     </script>
-    <!-- Les polices du premier écran : texte courant et titre d'accueil. Les
-         sous-ensembles `-ext` attendent d'être réclamés : les précharger
-         retarderait ceux-ci. -->
-    <link rel="preload" as="font" type="font/woff2" href="/fonts/space-grotesk-latin.woff2" crossorigin />
-    <link rel="preload" as="font" type="font/woff2" href="/fonts/jetbrains-mono-latin.woff2" crossorigin />
+    <!-- Le LCP est le titre, en Unbounded : sa police part la première. -->
     <link rel="preload" as="font" type="font/woff2" href="/fonts/unbounded-800-latin.woff2" crossorigin />
-    <title>screenmat</title>
-    <meta name="description" content="Turn a raw screenshot into a shareable visual — macOS-style window, generative background, annotations, redaction. Runs entirely in the browser." />
+    <link rel="preload" as="font" type="font/woff2" href="/fonts/space-grotesk-latin.woff2" crossorigin />
+    <title>screenmat — turn a screenshot into a shareable visual</title>
+    <meta name="description" content="Paste a screenshot: screenmat frames it, paints a background from its own colours, annotates, redacts and exports it — entirely in your browser. Also a CLI, a Node API and an MCP server." />
     <!-- `%SITE_URL%` est substitué au build par `vite-docs-prerender.ts` : le
          domaine n'est écrit qu'une fois, dans `vite.config.ts`. -->
     <link rel="canonical" href="%SITE_URL%/" />
@@ -54,29 +51,131 @@
       }
     </script>
   </head>
-  <body>
-    <div id="root"></div>
-    <!-- L'app est une coquille React par choix : ce bloc est le seul texte que
-         lisent un moteur de recherche et un lecteur sans JavaScript. -->
-    <noscript>
-      <main style="margin: 0 auto; max-width: 40rem; padding: 4rem 1.5rem; color: #eceef2; font-family: system-ui, sans-serif">
-        <h1>screenmat</h1>
-        <p>
-          Turn a raw screenshot into a shareable visual: a rounded macOS-style window, a generative background derived
-          from the screenshot's own colours, annotations, redaction, multi-shot compositions and high-resolution export.
-        </p>
-        <p>
-          Everything runs in your browser. No backend, no account, no upload — your images never leave the machine.
-          The only network call is a cookieless page counter. The same rendering engine is reachable from a Node API, a
-          command line and an MCP server.
-        </p>
-        <p>
-          The editor needs JavaScript. The <a href="/docs/">documentation</a> does not — start with the
-          <a href="/docs/overview/">overview</a>, or read <a href="/docs/llms.txt">llms.txt</a>.
-        </p>
-      </main>
-    </noscript>
-    <script type="module" src="/src/main.tsx"></script>
+  <body class="stage-grain landing-gutter">
+    <header class="mx-auto flex h-20 max-w-[1330px] items-center gap-8">
+      <a href="/" class="flex items-center gap-2.5 text-[17px] font-semibold tracking-tight">
+        <svg viewBox="0 0 32 32" class="size-7" aria-hidden="true"><path d="M7 13V7h6M19 7h6v6M25 19v6h-6M13 25H7v-6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="square" /></svg>
+        screenmat
+      </a>
+      <nav class="ml-auto flex items-center gap-6 text-[14px] text-ink-soft" aria-label="Sections">
+        <a href="#how" class="hover:text-ink max-md:hidden">How it works</a>
+        <a href="#dev" class="hover:text-ink max-md:hidden">Developers</a>
+        <a href="/docs/" class="hover:text-ink max-md:hidden">Docs</a>
+        <button type="button" data-theme-toggle class="theme-toggle grid size-9 place-items-center rounded-xs border border-hairline text-ink" aria-label="Switch theme"></button>
+        <a href="/app/" class="sheen bg-accent rounded-xs px-4 py-2.5 text-[14px] font-semibold whitespace-nowrap text-stage">Open the editor</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="mx-auto grid max-w-[1330px] items-center gap-12 py-10 md:min-h-[calc(100vh-80px)] md:grid-cols-[minmax(0,440px)_minmax(0,1fr)] lg:gap-18">
+        <div class="flex flex-col gap-6">
+          <span class="t-mono-label">Screenshot → shareable visual</span>
+          <h1 class="t-headline text-[clamp(30px,3vw,42px)] text-balance">Raw screenshot in. Shareable visual out.</h1>
+          <p class="max-w-[44ch] text-[17px] leading-relaxed text-ink-soft">
+            Paste a screenshot. screenmat frames it, paints a background from its own colours, lets you point at
+            things and blur the rest — then exports it. All in your browser.
+          </p>
+          <div class="flex flex-wrap items-center gap-3">
+            <a href="/app/" class="sheen bg-accent rounded-xs px-5 py-3 text-[14px] font-semibold text-stage">Open the editor</a>
+            <a href="#dev" class="sheen rounded-xs border border-hairline-strong px-4 py-2.5 text-[14px] text-ink">For developers</a>
+          </div>
+          <span class="font-mono text-[12px] text-dim">Runs in your browser · nothing is uploaded</span>
+        </div>
+
+        <div data-hero class="flex min-w-0 flex-col gap-5" aria-label="Live demo">
+          <div data-hero-frame class="hero-frame" tabindex="0" aria-label="Demo frame — click, then press T, A, R or B">
+            <canvas role="img" aria-label="A screenshot being framed by screenmat"></canvas>
+            <div data-hero-marks></div>
+          </div>
+          <p data-hero-caption class="min-h-4 font-mono text-[12px] text-dim">raw.png</p>
+          <div data-hero-keys data-ready="false" class="flex flex-wrap items-center gap-2.5">
+            <button type="button" class="keycap" data-key="t"><b>T</b>Text</button>
+            <button type="button" class="keycap" data-key="a"><b>A</b>Arrow</button>
+            <button type="button" class="keycap" data-key="r"><b>R</b>Box</button>
+            <button type="button" class="keycap" data-key="b"><b>B</b>Blur</button>
+            <span class="w-2"></span>
+            <button type="button" class="keycap" data-paste><b>⌘V</b>Paste yours</button>
+            <button type="button" class="keycap" data-pick>Choose a file</button>
+            <button type="button" class="keycap" data-replay aria-label="Replay the intro"><b>↻</b></button>
+            <button type="button" data-hero-continue hidden class="sheen bg-accent rounded-xs px-4 py-2.5 text-[13px] font-semibold text-stage">Continue in editor →</button>
+          </div>
+          <p data-hero-hint class="min-h-5 font-mono text-[12px] text-dim" aria-live="polite">Click the frame and press a key — or paste your own screenshot.</p>
+          <input type="file" accept="image/*" hidden />
+        </div>
+      </section>
+
+      <section id="how" class="mx-auto max-w-[1330px] border-t border-hairline py-20">
+        <span class="t-mono-label">How it works</span>
+        <h2 class="t-headline mt-4 text-[28px]">Three moves, no settings to learn.</h2>
+        <ol class="mt-10 grid gap-8 md:grid-cols-3">
+          <li class="flex flex-col gap-2">
+            <span class="font-mono text-[12px] text-dim">01 · ⌘V</span>
+            <h3 class="text-[18px] font-semibold">Paste</h3>
+            <p class="text-[15px] leading-relaxed text-ink-soft">A screenshot, or a folder of them. The background is drawn from its own dominant colours, so it looks right before you touch anything.</p>
+          </li>
+          <li class="flex flex-col gap-2">
+            <span class="font-mono text-[12px] text-dim">02 · T A R B</span>
+            <h3 class="text-[18px] font-semibold">Adjust</h3>
+            <p class="text-[15px] leading-relaxed text-ink-soft">Frame, corners, tilt. Text, arrows, boxes, numbered badges. Blur what should stay private — it is baked into the pixels, not laid on top.</p>
+          </li>
+          <li class="flex flex-col gap-2">
+            <span class="font-mono text-[12px] text-dim">03 · ⌘E</span>
+            <h3 class="text-[18px] font-semibold">Export</h3>
+            <p class="text-[15px] leading-relaxed text-ink-soft">WebP or PNG at 1×, 2× or 3× — up to 4800 px wide. A whole batch leaves as one zip, every image in the same style.</p>
+          </li>
+        </ol>
+      </section>
+
+      <section id="privacy" class="mx-auto grid max-w-[1330px] gap-8 border-t border-hairline py-20 md:grid-cols-[minmax(0,440px)_minmax(0,1fr)]">
+        <div>
+          <span class="t-mono-label">Privacy</span>
+          <h2 class="t-headline mt-4 text-[28px]">Your screenshot never leaves this tab.</h2>
+        </div>
+        <ul class="grid gap-4 text-[15px] leading-relaxed text-ink-soft sm:grid-cols-2">
+          <li><b class="font-semibold text-ink">No upload.</b> Every pixel is drawn by Canvas 2D in your browser.</li>
+          <li><b class="font-semibold text-ink">No account.</b> Styles and history live in this browser's storage.</li>
+          <li><b class="font-semibold text-ink">Works offline.</b> Fonts are bundled; nothing is fetched to render.</li>
+          <li><b class="font-semibold text-ink">One counter.</b> A cookieless page count from Cloudflare — no identifier, no image data.</li>
+        </ul>
+      </section>
+
+      <section id="dev" class="mx-auto grid max-w-[1330px] gap-8 border-t border-hairline py-20 md:grid-cols-[minmax(0,440px)_minmax(0,1fr)]">
+        <div class="flex flex-col gap-4">
+          <span class="t-mono-label">Developers</span>
+          <h2 class="t-headline text-[28px]">The same engine, from a script.</h2>
+          <p class="text-[15px] leading-relaxed text-ink-soft">
+            A CLI for build scripts, a Node API for docs generators, an MCP server for agents. One renderer behind all
+            three — the exact one this page just used. Tune a style by eye here, export it as JSON, call it by name there.
+          </p>
+          <a href="/docs/" class="w-fit text-[14px] text-ink underline underline-offset-3">Read the docs →</a>
+        </div>
+        <div class="grid min-w-0 gap-3">
+          <pre class="overflow-x-auto rounded-xs border border-hairline bg-panel-solid p-4 font-mono text-[12px] leading-relaxed"><span class="text-dim"># CLI</span>
+pnpm cli screenshot.png --frame macbook --ratio 16:9 --scale 3
+
+<span class="text-dim"># MCP — any client</span>
+claude mcp add screenmat -- node /path/to/screenmat/cli/mcp.ts
+
+<span class="text-dim"># Node</span>
+import { render } from 'screenmat/node'
+await render({ input: 'shot.png', style: 'docs' })</pre>
+        </div>
+      </section>
+
+      <section class="mx-auto flex max-w-[1330px] flex-col items-start gap-6 border-t border-hairline py-20">
+        <h2 class="t-headline text-[clamp(28px,3vw,40px)] text-balance">Paste your first screenshot.</h2>
+        <a href="/app/" class="sheen bg-accent rounded-xs px-5 py-3 text-[14px] font-semibold text-stage">Open the editor</a>
+      </section>
+    </main>
+
+    <footer class="mx-auto flex max-w-[1330px] flex-wrap gap-6 border-t border-hairline py-8 font-mono text-[12px] text-dim">
+      <span>screenmat · MIT</span>
+      <a href="/docs/" class="hover:text-ink">Docs</a>
+      <a href="/docs/llms.txt" class="hover:text-ink">llms.txt</a>
+      <a href="https://github.com/samuelboulery/screenmat" class="hover:text-ink">GitHub</a>
+    </footer>
+
+    <script type="module" src="/src/landing/main.ts"></script>
     <!-- Cloudflare Web Analytics : compteur de pages sans cookie ni identifiant. -->
     <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "1066d94e4b934c0daeaaa7f77fe5d984"}'></script>
   </body>

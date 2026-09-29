@@ -8,7 +8,7 @@ résolution.
 **Aucun backend, aucune base, aucun compte, aucun téléversement.** Tout le
 traitement d'image se fait dans le navigateur via Canvas 2D ; le seul appel
 réseau de l'app web est le compteur de pages Cloudflare Web Analytics, chargé
-depuis `index.html` ; les préférences vivent dans `localStorage`, les styles et
+par chaque page HTML ; les préférences vivent dans `localStorage`, les styles et
 l'historique dans IndexedDB. Partager un style = exporter un fichier `.json`.
 
 **Tech stack :** React 19 · TypeScript strict · Vite 8 · Tailwind CSS 4 (config
@@ -38,8 +38,13 @@ calques, `spec.ts` valide une donnée externe.
 
 Elle vit en Markdown dans **`public/docs/`** — source unique, en anglais, servie
 telle quelle (un modèle, `curl` ou GitHub la lisent) et mise en forme par la page
-`/docs` : seconde entrée Vite, `docs/index.html` + `src/docs/` (rendu Markdown
-maison, sans dépendance, sans `innerHTML`). Le lien vit en haut à droite de la
+`/docs` : entrée Vite `docs/index.html` + `src/docs/` (rendu Markdown
+maison, sans dépendance, sans `innerHTML`). Trois entrées en tout : la landing
+statique sur `/` (`index.html` + `src/landing/`, sans React, la vitrine charge
+`renderScene` après la première peinture), l'éditeur sur `/app/`
+(`app/index.html`), la doc. Une capture collée sur la landing passe à l'éditeur
+par IndexedDB (`putHandoff` / `takeHandoff`, `lib/store.ts`), jamais par le
+réseau ni l'URL. Le lien vit en haut à droite de la
 barre. `cli/README.md` n'est plus qu'un panneau indicateur : ne pas y remettre de
 référence, elle divergerait au premier flag ajouté. Un défaut ou une borne cité
 dans la doc se relit à la source avant d'être écrit.
@@ -85,7 +90,8 @@ pnpm mcp                # serveur MCP sur stdio
 ## Constraints
 
 - Aucun appel réseau hormis le beacon Cloudflare Web Analytics (un `<script
-  defer>` dans `index.html` et `docs/index.html`, sans cookie ni identifiant).
+  defer>` dans `index.html`, `app/index.html` et `docs/index.html`, sans cookie
+  ni identifiant).
   Aucune donnée d'image ne sort, aucune dépendance à un service distant pour le
   rendu : bloqué ou hors ligne, l'app fonctionne à l'identique, polices
   comprises. `cli/` n'appelle rien du tout.

@@ -1,13 +1,16 @@
 import type { HistoryEntry, Style } from '../types.ts'
 
 const DB_NAME = 'screenmat'
-const DB_VERSION = 1
+const DB_VERSION = 2
 
 const STYLES = 'styles'
 /** Métadonnées + vignette : ce que la grille d'historique affiche. */
 const HISTORY = 'history'
 /** Rendu final + screenshot source : lourd, chargé à la demande seulement. */
 const BLOBS = 'history-blobs'
+/** La capture passée de la landing à l'éditeur : une seule, lue une fois. */
+const HANDOFF = 'handoff'
+const HANDOFF_ID = 'pending'
 
 /** Au-delà, on prévient et on propose une purge des plus anciens. */
 export const QUOTA_WARNING_BYTES = 500 * 1024 * 1024
@@ -36,6 +39,7 @@ function openDb(): Promise<IDBDatabase> {
         db.createObjectStore(HISTORY, { keyPath: 'id' }).createIndex('createdAt', 'createdAt')
       }
       if (!db.objectStoreNames.contains(BLOBS)) db.createObjectStore(BLOBS, { keyPath: 'id' })
+      if (!db.objectStoreNames.contains(HANDOFF)) db.createObjectStore(HANDOFF, { keyPath: 'id' })
     }
 
     request.onsuccess = () => resolve(request.result)
@@ -153,4 +157,24 @@ export async function purgeOldest(targetBytes = QUOTA_WARNING_BYTES): Promise<nu
   }
 
   return removed
+}
+
+/* --- Passage landing → éditeur ------------------------------------------ */
+
+export type Handoff = { blob: Blob; name: string }
+
+/** Dépose la capture collée sur la landing, pour `/app/`. Par IndexedDB, jamais
+ *  par le réseau ni par l'URL : l'image ne quitte pas le navigateur. */
+export function putHandoff(handoff: Handoff): Promise<unknown> {
+  return run(HANDOFF, 'readwrite', (store) => store.put({ id: HANDOFF_ID, ...handoff }))
+}
+
+/** La reprend et l'efface : un rechargement de l'éditeur ne la rouvre pas. */
+export async function takeHandoff(): Promise<Handoff | undefined> {
+  const found = await run<(Handoff & { id: string }) | undefined>(HANDOFF, 'readonly', (store) =>
+    store.get(HANDOFF_ID),
+  )
+  if (!found) return undefined
+  await run(HANDOFF, 'readwrite', (store) => store.delete(HANDOFF_ID))
+  return { blob: found.blob, name: found.name }
 }

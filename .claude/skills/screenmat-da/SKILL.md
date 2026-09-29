@@ -17,7 +17,7 @@ ombre dans le chrome — la seule ombre du produit appartient à l'artwork.
 **Deux thèmes, un seul jeu de noms.** Les valeurs claires vivent dans
 `@theme` (`src/index.css`), le sombre les redéfinit sous
 `:root[data-theme='dark']`. Le thème est posé sur `<html>` avant le premier
-rendu par le script d'`index.html` (choix `sm-theme`, sinon le système), puis
+rendu par le script en tête de chaque page (`index.html`, `app/index.html`, `docs/index.html`) (choix `sm-theme`, sinon le système), puis
 suivi par `useTheme`. Il ne touche jamais l'export : rien dans `src/lib/` ne lit
 un jeton du chrome. Pas de `text-white` ni de `bg-white/…` : `ink` est le
 contraste du thème, `ink/[.04]` le survol.
@@ -132,6 +132,20 @@ le pose et ouvre la saisie sur place — `Entrée` va à la ligne, `⌘Entrée` 
 laissé vide supprime le calque. Ses bords règlent la largeur de retour à la
 ligne, son coin la taille. Toute la mise en page passe par `layoutText`
 (`lib/text.ts`) : le dessin et le cadre de sélection lisent la même mesure.
+
+## La landing
+
+`/` est une page statique (`index.html`, `src/landing/`), sans React : même
+jetons, mêmes polices, même reflet. Le titre en Unbounded est le LCP ; la
+vitrine « Signature » se charge après. Les équerres du logo partent des coins
+de la fenêtre, se referment sur la capture tramée (Bayer 4×4, encre sur papier
+en clair, papier sur encre en sombre), qui se développe de haut en bas, puis
+glisse à sa place dans le **vrai** rendu de `renderScene` — réglages par
+défaut de l'éditeur, rien d'autre. `T A R B` y posent de vrais calques (focus
+dans la vitrine), `⌫` annule, `↻` rejoue. Une capture collée ou déposée passe
+par la même séquence, puis « Continue in editor » l'emporte dans `/app/`. Mouvement
+réduit : l'état final directement. La capture de démo est un fichier,
+`public/landing/demo.webp`, généré par `docs/assets/landing-demo.ts`.
 
 ## Références visuelles
 

@@ -170,6 +170,18 @@ export function renderAnnotations(
   ctx.restore()
 }
 
+/** Remplit puis trace une forme fermée. L'ombre ne porte que sur le premier
+ *  des deux : doublée, celle du trait se poserait sur le fond. */
+function strokeAndFill(ctx: CanvasRenderingContext2D, annotation: Annotation): void {
+  const fill = fillStyle(annotation)
+  if (fill) {
+    ctx.fillStyle = fill
+    ctx.fill()
+    clearShadow(ctx)
+  }
+  ctx.stroke()
+}
+
 /** Remplissage translucide d'une forme fermée, `null` si le fill est nul. */
 function fillStyle(annotation: Annotation): string | null {
   if (annotation.fill <= 0) return null
@@ -188,12 +200,7 @@ function drawBox(
   ctx.beginPath()
   ctx.roundRect(x, y, w, h, Math.max(0, radius))
 
-  const fill = fillStyle(annotation)
-  if (fill) {
-    ctx.fillStyle = fill
-    ctx.fill()
-  }
-  ctx.stroke()
+  strokeAndFill(ctx, annotation)
 }
 
 function drawEllipse(ctx: CanvasRenderingContext2D, annotation: Annotation, rect: Rect): void {
@@ -202,12 +209,7 @@ function drawEllipse(ctx: CanvasRenderingContext2D, annotation: Annotation, rect
   ctx.beginPath()
   ctx.ellipse(x + w / 2, y + h / 2, w / 2, h / 2, 0, 0, Math.PI * 2)
 
-  const fill = fillStyle(annotation)
-  if (fill) {
-    ctx.fillStyle = fill
-    ctx.fill()
-  }
-  ctx.stroke()
+  strokeAndFill(ctx, annotation)
 }
 
 /** Trait simple. Le rect garde son signe : le sens du tracé est conservé. */

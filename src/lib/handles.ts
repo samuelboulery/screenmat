@@ -199,7 +199,8 @@ export function resizeText(
 ): Partial<Annotation> {
   const layout = layoutText(layer, box, measure)
   const width = layout.width / box.width
-  const floor = layer.size * 2
+  // La plaque et au moins un caractère : en deçà, le texte déborderait.
+  const floor = layer.size * (1 + (layer.background.on ? 2 * layer.background.padding : 0))
 
   if (handle === 'e' || handle === 'w') {
     const west = handle === 'w'

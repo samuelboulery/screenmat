@@ -61,8 +61,11 @@ export const measureText: Measure = (text, font, fontSize) => {
 export function loadTextFonts(): Promise<unknown> {
   if (typeof document === 'undefined' || !('fonts' in document)) return Promise.resolve()
   pending ??= Promise.all(
+    // Le texte d'essai couvre les deux sous-ensembles : sans lui, seule la
+    // face `latin` se charge, et « ł » ou « ő » tomberaient sur la police de
+    // secours à l'export.
     Object.values(TEXT_FAMILIES).flatMap((family) =>
-      [400, 700].map((weight) => document.fonts.load(`${weight} 16px ${family}`)),
+      [400, 700].map((weight) => document.fonts.load(`${weight} 16px ${family}`, 'aĀ')),
     ),
   ).then(
     () => {
@@ -94,10 +97,14 @@ function wrap(paragraph: string, start: number, max: number, width: (text: strin
   let line = ''
   let lineStart = start
   let cursor = start
+  let first = true
 
+  // Un mot vide est un espace de plus : le garder, sans quoi une indentation
+  // disparaîtrait du rendu et le caret ne la traverserait pas.
   for (const word of paragraph.split(' ')) {
-    const candidate = line ? `${line} ${word}` : word
-    if (line && width(candidate) > max) {
+    const candidate = first ? word : `${line} ${word}`
+    first = false
+    if (line.trim() && width(candidate) > max) {
       lines.push({ text: line, start: lineStart, width: width(line) })
       line = word
       lineStart = cursor
@@ -146,7 +153,8 @@ export function layoutText(
     lineHeight,
     padX,
     padY,
-    width: fixed > 0 ? fixed : inner + padX * 2,
+    // Un mot plus long que la ligne élargit la plaque plutôt que d'en déborder.
+    width: Math.max(fixed, inner + padX * 2),
     height: lines.length * lineHeight + padY * 2,
   }
 }

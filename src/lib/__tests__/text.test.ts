@@ -83,3 +83,15 @@ describe('resizeText', () => {
     expect(patch.rect?.w).toBeCloseTo(0.4, 9)
   })
 })
+
+describe('layoutText — cas limites', () => {
+  it('garde les espaces de tête, que le caret doit pouvoir traverser', () => {
+    expect(layoutText(label('  a'), box, measure).lines[0]?.text).toBe('  a')
+  })
+
+  it('élargit la plaque plutôt que de laisser déborder un mot trop long', () => {
+    const annotation = label('abcdefghij', { rect: { x: 0, y: 0, w: 0.03, h: 0 } })
+    const layout = layoutText(annotation, box, measure)
+    expect(layout.width).toBeGreaterThanOrEqual(100 + layout.padX * 2)
+  })
+})

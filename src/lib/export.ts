@@ -258,6 +258,9 @@ export async function runBatch(
   // Une erreur ne doit ni se perdre ni se signaler deux fois : un `throw` depuis
   // un encodage en vol n'a personne pour l'attendre au moment où il tombe.
   let failure: unknown = null
+  // Les polices d'abord : chaque rendu reste alors synchrone jusqu'à son
+  // encodage, et la sérialisation ci-dessous tient dès le premier item.
+  await loadTextFonts()
 
   for (const [index, job] of jobs.entries()) {
     if (options.shouldCancel?.() || failure) break

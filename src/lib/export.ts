@@ -89,7 +89,13 @@ export function exportFilename(name: string, scale: number, format: Format): str
  *  fichier porterait un nom que personne n'a vu à l'écran. */
 export function exportBaseName(settings: Pick<Settings, 'frame' | 'url'>, shotName: string): string {
   if (settings.frame === 'browser' && settings.url.trim()) return settings.url
-  return shotName.replace(/\.[a-z0-9]+$/i, '')
+  return stripExtension(shotName)
+}
+
+/** `Capture.png` → `Capture` : l'extension du fichier source n'a rien à faire
+ *  dans le nom du rendu. */
+function stripExtension(name: string): string {
+  return name.replace(/\.[a-z0-9]+$/i, '')
 }
 
 /** `{shot}-{ratio}@3x` → `01-16-9@3x.webp`. Le seul gabarit accepté. */
@@ -99,7 +105,7 @@ export function batchFilename(
   scale: number,
   format: Format,
 ): string {
-  return `${slug(shot)}-${ratio.replace(':', '-')}@${scale}x.${format}`
+  return `${slug(stripExtension(shot))}-${ratio.replace(':', '-')}@${scale}x.${format}`
 }
 
 export function humanSize(bytes: number): string {

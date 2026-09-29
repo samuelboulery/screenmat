@@ -94,6 +94,7 @@ export function useLibrary(): Library {
   const pickStyle = useCallback((id: string | null) => {
     setActiveStyleId(id)
     rememberStyle(id)
+    setRemembered(id)
   }, [])
 
   return {

@@ -93,17 +93,17 @@ export function parseScene(raw: string | unknown): SceneSpec {
     try {
       parsed = JSON.parse(raw)
     } catch {
-      throw new Error('Scène illisible : ce n’est pas du JSON')
+      throw new Error('Unreadable scene: not JSON')
     }
   }
 
   if (!isRecord(parsed)) {
-    throw new Error('Une scène est un objet JSON')
+    throw new Error('A scene is a JSON object')
   }
 
   const shots = parseShots(parsed.shots)
   if (shots.length === 0) {
-    throw new Error('Une scène a besoin d’au moins un shot avec un champ `input`')
+    throw new Error('A scene needs at least one shot with an `input` field')
   }
 
   return {

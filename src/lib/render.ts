@@ -294,7 +294,7 @@ export function renderScene(
 ): Geometry {
   const { shots, palette, settings, composition } = scene
   const first = shots[0]
-  if (!first) throw new Error('Scène sans screenshot')
+  if (!first) throw new Error('Scene has no screenshot')
 
   const geometry = computeGeometry(
     first.image.naturalWidth,

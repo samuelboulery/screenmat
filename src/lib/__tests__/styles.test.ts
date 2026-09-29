@@ -15,7 +15,7 @@ const wrap = (style: unknown) => JSON.stringify({ kind: 'screenmat-style', versi
 describe('parseStyle', () => {
   it('refuse ce qui n’est pas un style screenmat', () => {
     expect(() => parseStyle('pas du json')).toThrow(/JSON/)
-    expect(() => parseStyle('{"kind":"autre-chose"}')).toThrow(/style screenmat/)
+    expect(() => parseStyle('{"kind":"autre-chose"}')).toThrow(/screenmat style/)
     expect(() => parseStyle(JSON.stringify({ kind: 'screenmat-style' }))).toThrow()
   })
 

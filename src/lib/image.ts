@@ -20,7 +20,7 @@ export function isSupportedMark(blob: Blob): boolean {
  */
 export function loadImage(blob: Blob): Promise<HTMLImageElement> {
   if (!isSupportedImage(blob) && !isSupportedMark(blob)) {
-    return Promise.reject(new Error(`Format non supporté : ${blob.type || 'inconnu'}`))
+    return Promise.reject(new Error(`Unsupported format: ${blob.type || 'unknown'}`))
   }
 
   return new Promise((resolve, reject) => {
@@ -38,7 +38,7 @@ export function loadImage(blob: Blob): Promise<HTMLImageElement> {
 
     image.onerror = () => {
       URL.revokeObjectURL(url)
-      reject(new Error('Impossible de décoder cette image'))
+      reject(new Error('Could not decode this image'))
     }
 
     image.src = url

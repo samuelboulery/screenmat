@@ -87,11 +87,11 @@ export function parseStyle(raw: string): Style {
   try {
     parsed = JSON.parse(raw)
   } catch {
-    throw new Error('Fichier illisible : ce n’est pas du JSON')
+    throw new Error('Unreadable file: not JSON')
   }
 
   if (!isRecord(parsed) || parsed.kind !== 'screenmat-style' || !isRecord(parsed.style)) {
-    throw new Error('Ce fichier n’est pas un style screenmat')
+    throw new Error('This file is not a screenmat style')
   }
 
   const style = parsed.style

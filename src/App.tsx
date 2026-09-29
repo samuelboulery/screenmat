@@ -24,7 +24,7 @@ import { loadImage } from './lib/image.ts'
 import { buildBatchJobs } from './lib/export.ts'
 import { getHistoryBlobs } from './lib/store.ts'
 import { exportStyle, parseSettings } from './lib/styles.ts'
-import { type Format, type Ratio, type Screen } from './types.ts'
+import { DEFAULT_SETTINGS, type Format, type Ratio, type Screen } from './types.ts'
 
 /** Ce qu'un `<input type=file>` sert à choisir, selon le bouton cliqué. */
 type PickTarget = 'shot' | SideTarget
@@ -32,7 +32,9 @@ type PickTarget = 'shot' | SideTarget
 export default function App() {
   const [screen, setScreen] = useState<Screen>('edit')
   const [failure, setFailure] = useState<string | null>(null)
-  const [batchRatios, setBatchRatios] = useState<Ratio[]>(['16:9'])
+  // Le lot part du même ratio que l'éditeur : ouvrir Batch ne doit pas
+  // changer le cadrage de ce qu'on vient de régler.
+  const [batchRatios, setBatchRatios] = useState<Ratio[]>([DEFAULT_SETTINGS.ratio])
   const [harmonize, setHarmonize] = useState(false)
 
   const doc = useDocument()
@@ -182,7 +184,7 @@ export default function App() {
     shots.reset()
     batch.reset()
     doc.reset()
-    setBatchRatios(['16:9'])
+    setBatchRatios([DEFAULT_SETTINGS.ratio])
     setScreen('edit')
     setFailure(null)
   }, [shots, batch, doc, confirm])
@@ -216,10 +218,10 @@ export default function App() {
           <ImportScreen
             dragging={input.dragging}
             error={input.error}
-            hasLastStyle={Boolean(library.activeStyleId)}
+            hasLastStyle={Boolean(library.lastStyleId)}
             recents={library.history.slice(0, 4)}
             onPick={() => pick('shot')}
-            onUseLastStyle={() => library.activeStyleId && styles.apply(library.activeStyleId)}
+            onUseLastStyle={() => library.lastStyleId && styles.apply(library.lastStyleId)}
             onOpenRecent={(id) => void reopen(id)}
           />
         ) : screen === 'batch' ? (

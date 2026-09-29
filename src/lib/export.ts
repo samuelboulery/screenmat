@@ -38,11 +38,11 @@ export function canvasToBlob(canvas: HTMLCanvasElement, format: Format): Promise
         // dans les deux cas il ne faut pas livrer un fichier qui ment sur son
         // extension.
         if (!blob) {
-          reject(new Error(`Le navigateur n'a pas pu encoder le ${format.toUpperCase()}`))
+          reject(new Error(`This browser could not encode ${format.toUpperCase()}`))
           return
         }
         if (blob.type !== MIME[format]) {
-          reject(new Error(`${format.toUpperCase()} non supporté par ce navigateur`))
+          reject(new Error(`${format.toUpperCase()} is not supported by this browser`))
           return
         }
         resolve(blob)
@@ -81,8 +81,15 @@ export function slug(url: string): string {
   return cleaned.slice(0, 48) || 'screenmat'
 }
 
-export function exportFilename(url: string, scale: number, format: Format): string {
-  return `${slug(url)}-${scale}x.${format}`
+export function exportFilename(name: string, scale: number, format: Format): string {
+  return `${slug(name)}-${scale}x.${format}`
+}
+
+/** L'URL ne nomme le fichier que si le cadre navigateur l'affiche : sinon le
+ *  fichier porterait un nom que personne n'a vu à l'écran. */
+export function exportBaseName(settings: Pick<Settings, 'frame' | 'url'>, shotName: string): string {
+  if (settings.frame === 'browser' && settings.url.trim()) return settings.url
+  return shotName.replace(/\.[a-z0-9]+$/i, '')
 }
 
 /** `{shot}-{ratio}@3x` → `01-16-9@3x.webp`. Le seul gabarit accepté. */
@@ -97,8 +104,8 @@ export function batchFilename(
 
 export function humanSize(bytes: number): string {
   return bytes < 1024 * 1024
-    ? `${Math.round(bytes / 1024)} ko`
-    : `${(bytes / 1024 / 1024).toFixed(1)} Mo`
+    ? `${Math.round(bytes / 1024)} KB`
+    : `${(bytes / 1024 / 1024).toFixed(1)} MB`
 }
 
 /**
@@ -113,16 +120,21 @@ export function humanSize(bytes: number): string {
 export async function renderToBlob(scene: Scene, scale: number): Promise<Blob> {
   const canvas = document.createElement('canvas')
   const context = canvas.getContext('2d')
-  if (!context) throw new Error('Canvas 2D indisponible')
+  if (!context) throw new Error('Canvas 2D is unavailable')
 
   renderScene(context, scene, scale)
   return canvasToBlob(canvas, scene.settings.format)
 }
 
+export function sceneFilename(scene: Scene, scale: number): string {
+  const base = exportBaseName(scene.settings, scene.shots[0]?.name ?? '')
+  return exportFilename(base, scale, scene.settings.format)
+}
+
 /** Rend puis télécharge. Le chemin nominal du bouton « Export ». */
 export async function exportScene(scene: Scene, scale: number): Promise<Blob> {
   const blob = await renderToBlob(scene, scale)
-  triggerDownload(blob, exportFilename(scene.settings.url, scale, scene.settings.format))
+  triggerDownload(blob, sceneFilename(scene, scale))
   return blob
 }
 
@@ -133,7 +145,7 @@ export async function exportScene(scene: Scene, scale: number): Promise<Blob> {
  */
 export async function copyScene(scene: Scene, scale: number): Promise<void> {
   if (typeof ClipboardItem === 'undefined' || !navigator.clipboard?.write) {
-    throw new Error('Presse-papier image non supporté par ce navigateur')
+    throw new Error('Copying images is not supported by this browser')
   }
 
   const png: Scene = { ...scene, settings: { ...scene.settings, format: 'png' } }

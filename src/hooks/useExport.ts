@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { nextId } from '../lib/annotate.ts'
-import { copyScene, exportFilename, exportScene, humanSize } from '../lib/export.ts'
+import { copyScene, exportScene, humanSize, sceneFilename } from '../lib/export.ts'
 import { makeThumbnail } from '../lib/image.ts'
 import type { HistoryEntry, Scene } from '../types.ts'
 
@@ -40,7 +40,7 @@ export function useExport(
       try {
         const blob = await exportScene(scene, scale)
         // Le nom affiché doit être celui du fichier réellement écrit.
-        const name = exportFilename(scene.settings.url, scale, scene.settings.format)
+        const name = sceneFilename(scene, scale)
         setStatus(`${name} — ${humanSize(blob.size)}`)
         await archive(scene, scale, blob, styleId, remember)
       } catch (cause: unknown) {

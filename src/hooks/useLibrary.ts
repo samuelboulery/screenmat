@@ -6,6 +6,10 @@ import type { HistoryEntry, Style } from '../types.ts'
 export type Library = {
   styles: Style[]
   activeStyleId: string | null
+  /** Dernier style appliqué lors d'une session précédente. Il n'est **pas**
+   *  actif au lancement : ses réglages ne sont pas chargés, et « Update »
+   *  écraserait alors le style avec les défauts. */
+  lastStyleId: string | null
   history: store.HistoryMeta[]
   bytes: number
   /** IndexedDB indisponible (mode privé strict, contexte non sécurisé…). */
@@ -25,6 +29,7 @@ export type Library = {
 export function useLibrary(): Library {
   const [styles, setStyles] = useState<Style[]>([])
   const [activeStyleId, setActiveStyleId] = useState<string | null>(null)
+  const [remembered, setRemembered] = useState<string | null>(null)
   const [history, setHistory] = useState<store.HistoryMeta[]>([])
   const [bytes, setBytes] = useState(0)
   const [error, setError] = useState<string | null>(null)
@@ -44,12 +49,10 @@ export function useLibrary(): Library {
         setHistory(page)
         setBytes(total)
 
-        const remembered = lastStyleId()
-        if (remembered && saved.some((style) => style.id === remembered)) {
-          setActiveStyleId(remembered)
-        }
+        const last = lastStyleId()
+        if (last && saved.some((style) => style.id === last)) setRemembered(last)
       } catch (cause: unknown) {
-        if (alive) setError(cause instanceof Error ? cause.message : 'Stockage local indisponible')
+        if (alive) setError(cause instanceof Error ? cause.message : 'Local storage is unavailable')
       }
     }
 
@@ -71,6 +74,7 @@ export function useLibrary(): Library {
     await store.deleteStyle(id)
     setStyles((current) => current.filter((style) => style.id !== id))
     setActiveStyleId((current) => (current === id ? null : current))
+    setRemembered((current) => (current === id ? null : current))
   }, [])
 
   const addHistory = useCallback(async (entry: HistoryEntry) => {
@@ -95,6 +99,7 @@ export function useLibrary(): Library {
   return {
     styles,
     activeStyleId,
+    lastStyleId: remembered,
     history,
     bytes,
     error,

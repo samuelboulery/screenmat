@@ -21,10 +21,10 @@ import type {
 /** Exporté : l'écran Styles règle le même cadre, et la liste ne doit pas
  *  exister en double. */
 export const FRAMES: Array<{ value: FrameStyle; label: string }> = [
+  { value: 'none', label: 'none' },
   { value: 'browser', label: 'browser' },
   { value: 'macbook', label: 'mac' },
   { value: 'iphone', label: 'phone' },
-  { value: 'none', label: 'none' },
 ]
 
 /** Les ratios restent en mono : c'est une donnée, pas une action. */

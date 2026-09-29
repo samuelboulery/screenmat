@@ -13,7 +13,7 @@ import {
 } from './ui.tsx'
 import type { Format, QueueItem, Ratio, Shot, Style } from '../types.ts'
 
-const RATIOS: Ratio[] = ['16:9', '4:3', '1:1', '9:16']
+const RATIOS: Ratio[] = ['4:3', '1:1', '16:9', '9:16']
 
 /** Ligne à cocher du panneau : un ratio, une option. Même ligne et même case
  *  que partout ailleurs — `Row` porte la recette de sélection. */

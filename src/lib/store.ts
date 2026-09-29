@@ -23,7 +23,7 @@ function openDb(): Promise<IDBDatabase> {
 
   connection = new Promise((resolve, reject) => {
     if (typeof indexedDB === 'undefined') {
-      reject(new Error('IndexedDB indisponible : styles et historique désactivés'))
+      reject(new Error('IndexedDB is unavailable: styles and history are disabled'))
       return
     }
 

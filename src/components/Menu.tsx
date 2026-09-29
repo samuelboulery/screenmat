@@ -41,6 +41,8 @@ export default function Menu({
     }
     const escape = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return
+      // Un seul `Escape`, une seule chose fermée : pas de désélection derrière.
+      event.stopPropagation()
       setOpen(false)
       button.current?.focus()
     }
@@ -53,14 +55,21 @@ export default function Menu({
   }, [open])
 
   return (
-    <div ref={root} className="relative">
+    <div
+      ref={root}
+      className="relative"
+      // Tab qui sort du menu le referme : ouvert sans focus, il couvrirait le canvas.
+      onBlur={(event) => {
+        if (!root.current?.contains(event.relatedTarget as Node | null)) setOpen(false)
+      }}
+    >
       <button
         ref={button}
         type="button"
         title={label}
         aria-label={label}
         aria-expanded={open}
-        aria-controls={id}
+        aria-controls={open ? id : undefined}
         onClick={() => setOpen((value) => !value)}
         className={triggerClassName}
       >

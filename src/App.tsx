@@ -11,7 +11,8 @@ import TopBar from './components/TopBar.tsx'
 import { Button, ErrorNote } from './components/ui.tsx'
 import { useBatch } from './hooks/useBatch.ts'
 import { useDocument } from './hooks/useDocument.ts'
-import { archive, useExport } from './hooks/useExport.ts'
+import { useBatchExport } from './hooks/useBatchExport.ts'
+import { useExport } from './hooks/useExport.ts'
 import { useImageInput } from './hooks/useImageInput.ts'
 import { useDocumentHistory } from './hooks/useHistory.ts'
 import { useLayerActions } from './hooks/useLayerActions.ts'
@@ -24,10 +25,8 @@ import { useShots } from './hooks/useShots.ts'
 import { useSideFile, type SideTarget } from './hooks/useSideFile.ts'
 import { useNarrow, useShortcuts } from './hooks/useShortcuts.ts'
 import { loadImage } from './lib/image.ts'
-import { buildBatchJobs } from './lib/export.ts'
 import { getHistoryBlobs } from './lib/store.ts'
 import { exportStyle, parseSettings } from './lib/styles.ts'
-import type { Ratio } from './types.ts'
 
 /** Ce qu'un `<input type=file>` sert à choisir, selon le bouton cliqué. */
 type PickTarget = 'shot' | SideTarget
@@ -35,10 +34,6 @@ type PickTarget = 'shot' | SideTarget
 export default function App() {
   const [failure, setFailure] = useState<string | null>(null)
   const [historyOpen, setHistoryOpen] = useState(false)
-  /** Ratios du lot. `null` ⇒ celui de l'éditeur : ouvrir le menu d'export ne
-   *  doit pas changer le cadrage de ce qu'on vient de régler. */
-  const [batchRatios, setBatchRatios] = useState<Ratio[] | null>(null)
-  const [harmonize, setHarmonize] = useState(false)
 
   const doc = useDocument()
   const { settings, setSettings, composition, setComposition, scale, setScale, patch, compose } = doc
@@ -89,23 +84,16 @@ export default function App() {
     if (scene) void exporter.copyScene(scene, scale)
   }, [scene, scale, exporter])
 
-  const ratios = batchRatios ?? [settings.ratio]
-
-  /** Toutes les images, une par fichier, dans un zip. Chaque fichier entre
-   *  dans l'historique comme un export simple. */
-  const exportAll = useCallback(() => {
-    if (!scene) return
-    const jobs = buildBatchJobs(scene, shots.shots, ratios, scale, activeStyle?.palette, harmonize)
-    const styleId = library.activeStyleId
-    void batch.start(
-      jobs,
-      shots.shots.map((shot) => shot.id),
-      (job, blob) =>
-        void archive(job.scene, job.scale, blob, styleId, library.addHistory).catch((cause: unknown) =>
-          setFailure(cause instanceof Error ? cause.message : 'Could not save the export to history'),
-        ),
-    )
-  }, [scene, shots.shots, ratios, scale, activeStyle, harmonize, batch, library])
+  const batchExport = useBatchExport({
+    scene,
+    shots: shots.shots,
+    scale,
+    ratio: settings.ratio,
+    palette: activeStyle?.palette,
+    batch,
+    library,
+    onError: setFailure,
+  })
 
   /* --- Annulation et raccourcis ----------------------------------------- */
 
@@ -157,10 +145,22 @@ export default function App() {
   const reopen = useCallback(
     async (id: string) => {
       const entry = library.history.find((item) => item.id === id)
+      // Rouvrir remplace la session : même garde que « New session ».
+      const replacing = shots.shots.length > 0
+      if (
+        replacing &&
+        !(await confirm({
+          title: 'Replace the current images?',
+          body: 'Reopening this export closes the images and layers you are working on.',
+          action: 'Reopen',
+        }))
+      )
+        return
       try {
         const blobs = await getHistoryBlobs(id)
-        if (!entry || !blobs) return
+        if (!entry || !blobs) throw new Error('This export is no longer in the history')
         shots.replaceAll([await loadImage(blobs.source)], [entry.name])
+        batch.reset()
       } catch (cause: unknown) {
         setFailure(cause instanceof Error ? cause.message : 'Could not reopen this export')
         return
@@ -170,7 +170,7 @@ export default function App() {
       // `rgba(NaN, …)` au rendu. IndexedDB est une frontière, comme un import.
       setSettings(parseSettings(entry.settings))
     },
-    [library.history, shots, setSettings],
+    [library.history, shots, setSettings, confirm, batch],
   )
 
   const purge = () =>
@@ -208,7 +208,7 @@ export default function App() {
     shots.reset()
     batch.reset()
     doc.reset()
-    setBatchRatios(null)
+    batchExport.reset()
     setFailure(null)
   }, [shots, batch, doc, confirm])
 
@@ -245,25 +245,7 @@ export default function App() {
           onFormat={(format) => patch({ format })}
           onExport={onExport}
           onCopy={onCopy}
-          batch={
-            separateBatch
-              ? {
-                  count: shots.shots.length,
-                  running: batch.running,
-                  rendered: batch.rendered,
-                  total: batch.total,
-                  ratios,
-                  harmonize,
-                  onToggleRatio: (ratio) =>
-                    setBatchRatios(
-                      ratios.includes(ratio) ? ratios.filter((item) => item !== ratio) : [...ratios, ratio],
-                    ),
-                  onHarmonize: setHarmonize,
-                  onExportAll: exportAll,
-                  onCancel: batch.cancel,
-                }
-              : null
-          }
+          batch={separateBatch ? { ...batchExport.controls, count: shots.shots.length } : null}
         />
       )}
     </>

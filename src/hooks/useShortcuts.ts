@@ -105,6 +105,9 @@ export function useShortcuts(shortcuts: Shortcuts, enabled = true): (event: KeyE
     const onKeyDown = (event: KeyboardEvent) => {
       if (isTyping(event.target)) return
       if (!event.metaKey && !event.ctrlKey) return
+      // Un `<dialog>` modal rend la page inerte au clic, pas au clavier :
+      // ⌘Z derrière le tiroir annulerait sur un document qu'on ne voit pas.
+      if (document.querySelector('dialog[open]')) return
       handleModified(event, current.current)
     }
 

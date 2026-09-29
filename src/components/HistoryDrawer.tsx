@@ -58,9 +58,14 @@ export default function HistoryDrawer({
     <dialog
       ref={ref}
       onClose={onClose}
+      // Clic sur le fond : la cible est le `<dialog>` lui-même, le contenu le
+      // remplit entièrement.
+      onClick={(event) => event.target === event.currentTarget && onClose()}
       aria-label="History"
       className="panel fixed inset-y-0 right-0 left-auto m-0 bg-panel-solid h-full max-h-none w-[min(640px,100vw)] max-w-none rounded-none border-y-0 border-r-0 p-0 text-ink backdrop:bg-stage/60"
     >
+      {/* Fermé, rien de monté : aucune miniature chargée pour rien. */}
+      {open && (
       <div className="flex h-full flex-col gap-4 overflow-y-auto p-6">
         <div className="flex items-center gap-3">
           <h2 className="t-mono-label">History — {entries.length}</h2>
@@ -178,6 +183,7 @@ export default function HistoryDrawer({
           </p>
         )}
       </div>
+      )}
     </dialog>
   )
 }

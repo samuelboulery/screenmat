@@ -2,9 +2,7 @@ import { useRef } from 'react'
 import LayersPanel, { type LayersPanelProps } from './LayersPanel.tsx'
 import { AddIcon, NewSessionIcon } from './icons.tsx'
 import { CheckBox, IconButton, Panel, SELECTED, Section, Segmented } from './ui.tsx'
-import type { QueueItem, Shot } from '../types.ts'
-
-export type OutputMode = 'separate' | 'combined'
+import type { OutputMode, QueueItem, Shot } from '../types.ts'
 
 const MODES = [
   { value: 'separate', label: 'Separate', title: 'One file per image' },

@@ -1,7 +1,6 @@
 import { useCallback, useRef } from 'react'
-import type { OutputMode } from '../components/ImagesPanel.tsx'
 import type { ShotsState } from './useShots.ts'
-import type { Composition, LayoutKind } from '../types.ts'
+import type { Composition, LayoutKind, OutputMode } from '../types.ts'
 
 /**
  * Séparé ou combiné. Aucun champ de plus dans le document : `layout: 'single'`

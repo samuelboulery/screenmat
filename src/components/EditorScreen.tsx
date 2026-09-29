@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react'
-import ImagesPanel, { type OutputMode } from './ImagesPanel.tsx'
+import ImagesPanel from './ImagesPanel.tsx'
 import { CloseSheetIcon, OpenSheetIcon, RedoIcon, UndoIcon } from './icons.tsx'
 import Inspector from './Inspector.tsx'
 import Preview, { type Editing } from './Preview.tsx'
@@ -12,6 +12,7 @@ import type {
   AnnotationKind,
   Composition,
   FractionRect,
+  OutputMode,
   Placement,
   QueueItem,
   Scene,

@@ -11,6 +11,10 @@ export type BackgroundKind = 'mesh' | 'gradient' | 'solid' | 'image'
 /** Disposition multi-shot. `single` n'affiche que le shot actif. */
 export type LayoutKind = 'single' | 'stack' | 'side' | 'tilt3d'
 
+/** Séparé : une image, un fichier (`layout === 'single'`). Combiné : les
+ *  images cochées font une seule scène. Déduit du layout, jamais stocké. */
+export type OutputMode = 'separate' | 'combined'
+
 export type AnnotationKind =
   | 'text'
   | 'badge'

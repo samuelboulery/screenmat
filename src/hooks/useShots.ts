@@ -109,8 +109,14 @@ export function useShots(): ShotsState {
   }, [])
 
   const toggleMember = useCallback((id: string) => {
+    // Le dernier membre reste : une composition vide retomberait en silence sur
+    // la première image, que la liste montrerait pourtant décochée.
     setSelection((current) =>
-      current.includes(id) ? current.filter((item) => item !== id) : [...current, id],
+      current.includes(id)
+        ? current.length > 1
+          ? current.filter((item) => item !== id)
+          : current
+        : [...current, id],
     )
   }, [])
 
@@ -312,6 +318,10 @@ export function useShots(): ShotsState {
     setShots(next)
     const alive = new Set(next.flatMap((shot) => nodeIds(shot.layers)))
     setSelectedLayerIds((current) => current.filter((id) => alive.has(id)))
+    // Annuler un ajout d'images ne doit pas laisser d'identifiants morts.
+    const shotIds = new Set(next.map((shot) => shot.id))
+    setSelection((current) => current.filter((id) => shotIds.has(id)))
+    setActiveShotId((current) => (shotIds.has(current) ? current : (next[0]?.id ?? '')))
   }, [])
 
   const reset = useCallback(() => {

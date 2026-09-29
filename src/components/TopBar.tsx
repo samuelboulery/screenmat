@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { DevDocsIcon, LocalIcon, ThemeIcon } from './icons.tsx'
+import { DevDocsIcon, LocalIcon, ShortcutsIcon, ThemeIcon } from './icons.tsx'
 import { useTheme } from '../hooks/useTheme.ts'
 import { Badge, ExternalLink, IconButton } from './ui.tsx'
 
@@ -10,6 +10,8 @@ const WORD = 'max-[1180px]:hidden'
 type TopBarProps = {
   /** Styles, History et Export — absents tant qu'aucune image n'est ouverte. */
   actions?: ReactNode
+  /** Le panneau des raccourcis — le même que la touche `?`. */
+  onHelp: () => void
 }
 
 /**
@@ -17,7 +19,7 @@ type TopBarProps = {
  * (Styles, History), l'export, la porte machine et le thème. Il n'y a plus
  * d'écrans entre lesquels naviguer : l'espace de travail est unique.
  */
-export default function TopBar({ actions }: TopBarProps) {
+export default function TopBar({ actions, onHelp }: TopBarProps) {
   return (
     <header className="relative z-20 flex h-[58px] items-center gap-4 border-b border-ink/5 px-5">
       <span className="text-[15px] font-bold tracking-tight">screenmat</span>
@@ -40,6 +42,7 @@ export default function TopBar({ actions }: TopBarProps) {
           <DevDocsIcon />
           <span className={WORD}>Dev docs</span>
         </ExternalLink>
+        <IconButton icon={ShortcutsIcon} label="Keyboard shortcuts" shortcut="?" onClick={onHelp} />
         <ThemeToggle />
       </div>
     </header>

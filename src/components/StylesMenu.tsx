@@ -1,11 +1,47 @@
+import { useEffect, useRef } from 'react'
 import Menu from './Menu.tsx'
-import { AddIcon, ExpandedIcon, JsonIcon, PickFileIcon, SaveStyleIcon, StylesIcon } from './icons.tsx'
+import { AddIcon, ExpandedIcon, JsonIcon, PickFileIcon, StylesIcon, UpdateStyleIcon } from './icons.tsx'
 import { Button, MonoLabel, Row, buttonClass } from './ui.tsx'
-import type { Style } from '../types.ts'
+import { BASE_WIDTH, renderScene } from '../lib/render.ts'
+import type { Scene, Style } from '../types.ts'
+
+/** Largeur de la miniature, en pixels CSS. */
+const THUMB = 56
+
+/**
+ * Le style appliqué à l'image en cours, en petit — par `renderScene`, comme
+ * tout le reste : une miniature qui ne passerait pas par le moteur mentirait
+ * sur le rendu.
+ */
+function StyleThumb({ scene, style }: { scene: Scene; style: Style }) {
+  const ref = useRef<HTMLCanvasElement>(null)
+
+  useEffect(() => {
+    const ctx = ref.current?.getContext('2d')
+    if (!ctx) return
+    const thumb: Scene = {
+      shots: scene.shots.slice(0, 1),
+      palette: style.palette ?? scene.palette,
+      settings: style.settings,
+      composition: { ...scene.composition, layout: 'single' },
+      backgroundImage: scene.backgroundImage,
+    }
+    try {
+      renderScene(ctx, thumb, (THUMB * devicePixelRatio) / BASE_WIDTH)
+    } catch (error) {
+      // Un fond `image` sans image chargée : la case reste vide, le style marche.
+      console.warn('[styles] miniature impossible', style.name, error)
+    }
+  }, [scene, style])
+
+  return <canvas ref={ref} aria-hidden className="w-14 shrink-0 rounded-xs bg-sunken" />
+}
 
 type StylesMenuProps = {
   styles: readonly Style[]
   active: Style | null
+  /** La scène en cours, pour les miniatures. */
+  scene: Scene
   onApply: (id: string) => void
   onSave: () => void
   onUpdate: () => void
@@ -22,6 +58,7 @@ type StylesMenuProps = {
 export default function StylesMenu({
   styles,
   active,
+  scene,
   onApply,
   onSave,
   onUpdate,
@@ -59,6 +96,7 @@ export default function StylesMenu({
                     close()
                   }}
                 >
+                  <StyleThumb scene={scene} style={style} />
                   <span className="t-ui truncate">{style.name}</span>
                 </Row>
               ))}
@@ -68,7 +106,7 @@ export default function StylesMenu({
           <div className="grid gap-1.5 border-t border-hairline pt-3">
             {active && (
               <Button onClick={onUpdate} className="justify-start">
-                <SaveStyleIcon />
+                <UpdateStyleIcon />
                 <span className="truncate">Update “{active.name}”</span>
               </Button>
             )}

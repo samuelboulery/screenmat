@@ -96,12 +96,23 @@ annuler · `⇧⌘Z` refaire · `⌘D` dupliquer · `⌘A` tout sélectionner ·
 
 Les **touches nues** n'existent que quand le canvas a le focus — il l'a par
 défaut dès qu'un shot est chargé, et le reprend après un choix d'outil ou une
-saisie : les outils `V T N A L R O B` (table `TOOL_KEYS`, `ToolRail.tsx`) ·
+saisie : les outils `V T N A L R O B` (table `TOOL_KEYS`, `lib/tools.ts`) ·
 `⇧R` régénérer le fond · `1/2/3` échelle d'export · `Delete` supprimer ·
 `Escape` désélectionner, puis revenir à `V` · `←↑→↓` déplacer (`⇧` = pas ×5). Les poser sur `window` avec `preventDefault()` tuait le
 défilement aux flèches de tout panneau, et WCAG 2.1.4 exige de pouvoir couper,
 remapper, ou n'activer qu'au focus un raccourci à touche unique. `useShortcuts`
 rend le handler du canvas, il ne l'installe pas.
+
+**Se découvrir sans visite guidée.** Une seule table fait foi : `SHORTCUTS`
+(`useShortcuts.ts`) plus `TOOL_KEYS`. Le panneau `?` (touche nue, ou bouton
+clavier de la barre haute) ne lit qu'elles ; une touche ajoutée à un handler sans
+l'être là est introuvable, et un test refuse deux sens pour une même touche.
+Les barres (outils, barre haute, barre basse) portent une vraie infobulle
+`Tooltip` — nom puis touche en `<kbd>`, au survol après 300 ms, au focus clavier
+tout de suite ; ailleurs, `title` natif, faute de portail. Au premier import,
+trois astuces (`T`, glisser, `⌘E`) au-dessus de la barre basse, fermées une fois
+pour toutes (`sm-tips-seen`). Enregistrer ou mettre à jour un style s'accuse
+dans la ligne d'état.
 
 `⇧` **pendant un tracé** aimante une flèche ou un trait aux multiples de 45° —
 horizontales, verticales et diagonales parfaites — et carre une surface. En

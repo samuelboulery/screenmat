@@ -1,10 +1,11 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useConfirm } from './components/ConfirmDialog.tsx'
 import EditorScreen from './components/EditorScreen.tsx'
 import ExportMenu from './components/ExportMenu.tsx'
 import HistoryDrawer from './components/HistoryDrawer.tsx'
 import { HistoryIcon } from './components/icons.tsx'
 import ImportScreen from './components/ImportScreen.tsx'
+import { useShortcutsPanel } from './components/ShortcutsDialog.tsx'
 import StyleSection from './components/StyleSection.tsx'
 import StylesMenu from './components/StylesMenu.tsx'
 import TopBar from './components/TopBar.tsx'
@@ -34,6 +35,14 @@ type PickTarget = 'shot' | SideTarget
 export default function App() {
   const [failure, setFailure] = useState<string | null>(null)
   const [historyOpen, setHistoryOpen] = useState(false)
+  /** Accusé de réception bref, dans la ligne d'état : enregistrer un style ne
+   *  change presque rien à l'écran, il faut le dire. */
+  const [note, setNote] = useState<string | null>(null)
+  useEffect(() => {
+    if (!note) return
+    const timer = setTimeout(() => setNote(null), 2400)
+    return () => clearTimeout(timer)
+  }, [note])
 
   const doc = useDocument()
   const { settings, setSettings, composition, setComposition, scale, setScale, patch, compose } = doc
@@ -43,6 +52,7 @@ export default function App() {
   const batch = useBatch()
   const narrow = useNarrow()
   const { confirm, dialog } = useConfirm()
+  const help = useShortcutsPanel()
   const output = useOutputMode(composition, compose, shots)
 
   const onImages = useCallback(
@@ -111,6 +121,7 @@ export default function App() {
       onScale: setScale,
       onUndo: history.undo,
       onRedo: history.redo,
+      onHelp: help.open,
     },
     shots.shots.length > 0,
   )
@@ -220,13 +231,20 @@ export default function App() {
 
   const actions = (
     <>
-      {!empty && (
+      {scene && (
         <StylesMenu
           styles={library.styles}
           active={activeStyle}
+          scene={scene}
           onApply={styles.apply}
-          onSave={styles.save}
-          onUpdate={styles.update}
+          onSave={() => {
+            styles.save()
+            setNote('Style saved — name it under Style in the inspector')
+          }}
+          onUpdate={() => {
+            styles.update()
+            setNote(`“${activeStyle?.name}” updated`)
+          }}
           onImport={() => pick('style')}
           onExport={exportStyle}
         />
@@ -253,14 +271,15 @@ export default function App() {
 
   return (
     <div className="stage-grain relative h-full" {...input.dropHandlers}>
-      <TopBar actions={actions} />
+      <TopBar actions={actions} onHelp={help.open} />
 
       <main>
         {empty ? (
           <ImportScreen
             dragging={input.dragging}
             error={input.error}
-            hasLastStyle={Boolean(library.lastStyleId)}
+            lastStyle={library.styles.find((style) => style.id === library.lastStyleId)?.name ?? null}
+            lastStyleArmed={Boolean(activeStyle) && activeStyle?.id === library.lastStyleId}
             recents={library.history.slice(0, 4)}
             onPick={() => pick('shot')}
             onUseLastStyle={() => library.lastStyleId && styles.apply(library.lastStyleId)}
@@ -339,11 +358,12 @@ export default function App() {
         role="status"
         className="absolute bottom-[76px] left-1/2 z-30 -translate-x-1/2 font-mono text-[10px] whitespace-nowrap text-dim"
       >
-        {!problem && (exporter.copied ? 'Copied to clipboard' : (exporter.status ?? ''))}
+        {!problem && (note ?? (exporter.copied ? 'Copied to clipboard' : (exporter.status ?? '')))}
       </p>
 
       {/* Un seul dialogue de confirmation pour toute l'app. */}
       {dialog}
+      {help.dialog}
 
       {/* Déclenchés par un bouton : les laisser dans l'ordre de tabulation
           n'offrirait qu'un focus invisible sur 1 px. */}

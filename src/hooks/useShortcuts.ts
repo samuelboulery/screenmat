@@ -18,7 +18,57 @@ export type Shortcuts = {
   onSelectAll: () => void
   onGroup: () => void
   onUngroup: () => void
+  /** Le panneau des raccourcis, sur `?`. */
+  onHelp: () => void
 }
+
+export type ShortcutEntry = { keys: string; label: string }
+
+/**
+ * La table des raccourcis, source unique du panneau `?`. Les outils n'y sont
+ * pas : `TOOL_KEYS` (`ToolRail.tsx`) les porte, et le panneau les lit là.
+ * Une ligne ajoutée à un handler sans l'être ici est un raccourci introuvable.
+ */
+export const SHORTCUTS: { title: string; hint: string; items: ShortcutEntry[] }[] = [
+  {
+    title: 'Everywhere',
+    hint: 'With a modifier key',
+    items: [
+      { keys: '⌘V', label: 'Paste a screenshot' },
+      { keys: '⌘E', label: 'Export' },
+      { keys: '⌘C', label: 'Copy the image' },
+      { keys: '⌘Z', label: 'Undo' },
+      { keys: '⇧⌘Z', label: 'Redo' },
+      { keys: '⌘D', label: 'Duplicate layer' },
+      { keys: '⌘A', label: 'Select all layers' },
+      { keys: '⌘G', label: 'Group' },
+      { keys: '⇧⌘G', label: 'Ungroup' },
+      { keys: '⌘↑ ⌘↓', label: 'Move in the layer stack' },
+    ],
+  },
+  {
+    title: 'On the canvas',
+    hint: 'Single keys, when the canvas has focus',
+    items: [
+      { keys: '⇧R', label: 'New background' },
+      { keys: '1 2 3', label: 'Export scale' },
+      { keys: '⌫', label: 'Delete layer' },
+      { keys: '← ↑ → ↓', label: 'Nudge — ⇧ for ×5' },
+      { keys: 'Esc', label: 'Deselect, then back to Select' },
+      { keys: '?', label: 'This panel' },
+    ],
+  },
+  {
+    title: 'With the mouse',
+    hint: 'Gestures on the canvas',
+    items: [
+      { keys: '⇧ drag', label: 'Snap to 45°, keep proportions' },
+      { keys: '⇧ click', label: 'Add to the selection' },
+      { keys: '⌥ drag', label: 'Move a whole image' },
+      { keys: 'Double-click', label: 'Edit a text · lock a tool' },
+    ],
+  },
+]
 
 /** Direction de chaque flèche du clavier. */
 const ARROWS: Record<string, [number, number]> = {
@@ -66,7 +116,7 @@ function handleModified(event: KeyEvent, shortcuts: Shortcuts): void {
 }
 
 /** Les touches nues : elles n'existent que quand le canvas a le focus. */
-function handleBare(event: KeyEvent, shortcuts: Shortcuts): void {
+export function handleBare(event: KeyEvent, shortcuts: Shortcuts): void {
   const arrow = ARROWS[event.key]
 
   if (event.key === 'Escape') shortcuts.onEscape()
@@ -76,6 +126,7 @@ function handleBare(event: KeyEvent, shortcuts: Shortcuts): void {
   else if (event.key === '1' || event.key === '2' || event.key === '3')
     shortcuts.onScale(Number(event.key))
   else if (event.key === 'Delete' || event.key === 'Backspace') shortcuts.onDelete()
+  else if (event.key === '?') shortcuts.onHelp()
   else return
 
   event.preventDefault()
@@ -86,7 +137,7 @@ function handleBare(event: KeyEvent, shortcuts: Shortcuts): void {
  *
  * - **Global** : les combinaisons à modificateur, posées sur `window`. Elles
  *   n'entrent en conflit avec rien et WCAG 2.1.4 ne les vise pas.
- * - **Au focus** : les touches nues (`⇧R`, `1/2/3`, flèches, `⌫`, `Escape`),
+ * - **Au focus** : les touches nues (`⇧R`, `1/2/3`, flèches, `⌫`, `Escape`, `?`),
  *   renvoyées comme handler à poser sur le canvas. Les poser sur `window` avec
  *   `preventDefault()` tuait le défilement aux flèches de tout panneau, et 2.1.4
  *   exige de pouvoir couper, remapper, ou n'activer qu'au focus un raccourci à

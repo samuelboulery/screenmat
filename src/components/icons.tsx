@@ -2,10 +2,10 @@ import {
   AppWindow,
   Archive,
   ArrowDown,
-  ArrowLeft,
   ArrowDownLeft,
   ArrowDownNarrowWide,
   ArrowDownRight,
+  ArrowLeft,
   ArrowUp,
   ArrowUpLeft,
   ArrowUpNarrowWide,
@@ -31,6 +31,7 @@ import {
   History,
   Image,
   ImagePlus,
+  Keyboard,
   Laptop,
   Layers,
   Lock,
@@ -42,6 +43,7 @@ import {
   PanelRightOpen,
   Plus,
   Redo2,
+  RefreshCw,
   Rotate3d,
   Search,
   ShieldCheck,
@@ -62,7 +64,7 @@ import {
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { AnnotationKind, FrameStyle, LayoutKind, RedactionMode, WatermarkPosition } from '../types.ts'
-import type { Tool } from './ToolRail.tsx'
+import type { Tool } from '../lib/tools.ts'
 
 /* Le jeu d'icônes de l'app, en un seul endroit. Rien n'importe `lucide-react`
    ailleurs : la cohérence du jeu se juge en relisant ce fichier, pas en
@@ -167,6 +169,7 @@ export {
   FilePlus2 as NewSessionIcon,
   FolderOpen as PickFileIcon,
   Image as ImageIcon,
+  Keyboard as ShortcutsIcon,
   ImagePlus as NewShotIcon,
   Lock as LockedIcon,
   LockOpen as UnlockedIcon,
@@ -174,6 +177,9 @@ export {
   PanelRightOpen as OpenSheetIcon,
   Plus as AddIcon,
   Redo2 as RedoIcon,
+  /* Mettre à jour un style n'est pas en créer un : une flèche qui tourne, pas
+     le signet de « Start from last style ». */
+  RefreshCw as UpdateStyleIcon,
   Search as SearchIcon,
   Shuffle as ShuffleIcon,
   Check as CheckIcon,

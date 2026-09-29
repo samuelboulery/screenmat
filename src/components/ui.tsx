@@ -1,5 +1,6 @@
 import type { ButtonHTMLAttributes, ComponentProps, ReactNode } from 'react'
 import { CheckIcon, CollapsedIcon, type LucideIcon } from './icons.tsx'
+import Tooltip, { ariaKeys } from './Tooltip.tsx'
 
 /* Composants de base de la DA « Papier technique ». L'accent est l'encre du
    thème, sans teinte, et ne marque que deux choses : l'action primaire et la
@@ -81,6 +82,8 @@ export function IconButton({
   label,
   active,
   tone,
+  shortcut,
+  tipSide,
   className = '',
   ...rest
 }: Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'aria-label' | 'title'> & {
@@ -88,20 +91,32 @@ export function IconButton({
   label: string
   active?: boolean
   tone?: 'danger'
+  /** Présent ⇒ vraie infobulle avec la touche, au lieu du `title` natif.
+   *  Réservé aux barres : l'infobulle n'échappe pas à un parent en `overflow`. */
+  shortcut?: string
+  tipSide?: 'top' | 'bottom'
 }) {
   const color = tone === 'danger' ? 'text-danger' : active ? 'text-ink' : 'text-ink-soft'
 
-  return (
+  const button = (
     <button
       type="button"
-      title={label}
+      title={shortcut ? undefined : label}
       aria-label={label}
+      aria-keyshortcuts={shortcut && ariaKeys(shortcut)}
       aria-pressed={active}
       className={`flex size-8 shrink-0 items-center justify-center rounded-md transition-colors duration-140 hover:bg-ink/[.04] hover:text-ink disabled:opacity-40 disabled:hover:bg-transparent ${color} ${className}`}
       {...rest}
     >
       <Icon />
     </button>
+  )
+  return shortcut ? (
+    <Tooltip label={label} shortcut={shortcut} side={tipSide}>
+      {button}
+    </Tooltip>
+  ) : (
+    button
   )
 }
 

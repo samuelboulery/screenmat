@@ -1,9 +1,11 @@
 import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react'
+import FirstTips from './FirstTips.tsx'
 import ImagesPanel from './ImagesPanel.tsx'
 import { CloseSheetIcon, OpenSheetIcon, RedoIcon, UndoIcon } from './icons.tsx'
 import Inspector from './Inspector.tsx'
 import Preview, { type Editing } from './Preview.tsx'
-import ToolRail, { toolForKey, type Tool } from './ToolRail.tsx'
+import ToolRail from './ToolRail.tsx'
+import { toolForKey, type Tool } from '../lib/tools.ts'
 import { IconButton, Panel } from './ui.tsx'
 import { displayOrder, findAnnotation } from '../lib/tree.ts'
 import type { NodePatch } from '../hooks/useShots.ts'
@@ -222,10 +224,11 @@ export default function EditorScreen(props: EditorScreenProps) {
       <div className="pointer-events-none absolute inset-x-0 top-4 z-10 flex justify-center" style={center}>
         <ToolRail active={tool} locked={locked} onPick={pickTool} onLock={lockTool} />
       </div>
-      <div className="pointer-events-none absolute inset-x-0 bottom-4 z-10 flex justify-center" style={center}>
+      <div className="pointer-events-none absolute inset-x-0 bottom-4 z-10 flex flex-col items-center gap-2" style={center}>
+        <FirstTips />
         <Panel className="pointer-events-auto flex items-center gap-1 rounded-lg px-2 py-1.5">
-          <IconButton icon={UndoIcon} label="Undo (⌘Z)" disabled={!props.canUndo} onClick={props.onUndo} />
-          <IconButton icon={RedoIcon} label="Redo (⇧⌘Z)" disabled={!props.canRedo} onClick={props.onRedo} />
+          <IconButton icon={UndoIcon} label="Undo" shortcut="⌘Z" tipSide="top" disabled={!props.canUndo} onClick={props.onUndo} />
+          <IconButton icon={RedoIcon} label="Redo" shortcut="⇧⌘Z" tipSide="top" disabled={!props.canRedo} onClick={props.onRedo} />
           {props.output && (
             <span className="t-mono-micro px-2 whitespace-nowrap text-dim">
               {props.output.width} × {props.output.height}

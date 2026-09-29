@@ -41,6 +41,29 @@ export const ANNOTATION_DEFAULTS = {
   opacity: 1,
 } as const
 
+type AnnotationDefaults = {
+  -readonly [K in keyof typeof ANNOTATION_DEFAULTS]: (typeof ANNOTATION_DEFAULTS)[K] extends string
+    ? string
+    : (typeof ANNOTATION_DEFAULTS)[K] extends boolean
+      ? boolean
+      : number
+}
+
+/** Ce qui distingue un type d'un autre au moment de le poser : une flèche se
+ *  lit de loin, un cadre s'adoucit. Le reste vient d'`ANNOTATION_DEFAULTS`. */
+const DEFAULTS_BY_KIND: Partial<Record<AnnotationKind, Partial<AnnotationDefaults>>> = {
+  arrow: { strokeWidth: 0.004, arrowHead: 0.016 },
+  line: { strokeWidth: 0.003 },
+  box: { strokeWidth: 0.003, radius: 0.012 },
+  ellipse: { strokeWidth: 0.003 },
+}
+
+/** Valeurs de départ d'un type de calque. Source unique : la création dans
+ *  l'éditeur et la lecture d'une scène externe (`spec.ts`) passent par ici. */
+export function defaultsFor(kind: AnnotationKind): AnnotationDefaults {
+  return { ...ANNOTATION_DEFAULTS, ...DEFAULTS_BY_KIND[kind] }
+}
+
 /** Bornes des réglages, partagées par l'inspecteur et les tests. */
 export const ANNOTATION_LIMITS = {
   size: { min: 0.005, max: 0.04, step: 0.001 },
@@ -83,7 +106,7 @@ export function createAnnotation(kind: AnnotationKind, rect: FractionRect): Anno
     labelStyle: 'pill',
     size: DEFAULT_LABEL_SIZE,
     redaction: 'blur',
-    ...ANNOTATION_DEFAULTS,
+    ...defaultsFor(kind),
   }
 }
 
@@ -209,6 +232,17 @@ export function bounds(annotation: Annotation, box: WindowBox): Rect {
     w: normalized.w + margin * 2,
     h: normalized.h + margin * 2,
   }
+}
+
+/** Boîte englobante de plusieurs calques, en pixels du canvas. */
+export function unionBounds(annotations: readonly Annotation[], box: WindowBox): Rect | null {
+  if (annotations.length === 0) return null
+  const areas = annotations.map((annotation) => bounds(annotation, box))
+  const x = Math.min(...areas.map((area) => area.x))
+  const y = Math.min(...areas.map((area) => area.y))
+  const right = Math.max(...areas.map((area) => area.x + area.w))
+  const bottom = Math.max(...areas.map((area) => area.y + area.h))
+  return { x, y, w: right - x, h: bottom - y }
 }
 
 /** Distance d'un point au segment [a, b]. */

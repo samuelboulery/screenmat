@@ -30,9 +30,10 @@ const ARROWS: Record<string, [number, number]> = {
 
 /** Ce qu'un handler lit d'une touche — vrai de l'événement DOM comme du
  *  synthétique React, sans importer ni l'un ni l'autre. */
-type KeyEvent = {
+export type KeyEvent = {
   key: string
   shiftKey: boolean
+  altKey?: boolean
   metaKey: boolean
   ctrlKey: boolean
   preventDefault: () => void
@@ -70,7 +71,8 @@ function handleBare(event: KeyEvent, shortcuts: Shortcuts): void {
 
   if (event.key === 'Escape') shortcuts.onEscape()
   else if (arrow) shortcuts.onNudge(arrow[0], arrow[1], event.shiftKey)
-  else if (event.key === 'r' || event.key === 'R') shortcuts.onShuffle()
+  // ⇧R : `r` nu choisit l'outil Box, comme dans tout éditeur.
+  else if (event.shiftKey && event.key.toLowerCase() === 'r') shortcuts.onShuffle()
   else if (event.key === '1' || event.key === '2' || event.key === '3')
     shortcuts.onScale(Number(event.key))
   else if (event.key === 'Delete' || event.key === 'Backspace') shortcuts.onDelete()
@@ -84,7 +86,7 @@ function handleBare(event: KeyEvent, shortcuts: Shortcuts): void {
  *
  * - **Global** : les combinaisons à modificateur, posées sur `window`. Elles
  *   n'entrent en conflit avec rien et WCAG 2.1.4 ne les vise pas.
- * - **Au focus** : les touches nues (`r`, `1/2/3`, flèches, `⌫`, `Escape`),
+ * - **Au focus** : les touches nues (`⇧R`, `1/2/3`, flèches, `⌫`, `Escape`),
  *   renvoyées comme handler à poser sur le canvas. Les poser sur `window` avec
  *   `preventDefault()` tuait le défilement aux flèches de tout panneau, et 2.1.4
  *   exige de pouvoir couper, remapper, ou n'activer qu'au focus un raccourci à

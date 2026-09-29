@@ -1,21 +1,24 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import SelectionOverlay, { ShotRing } from './SelectionOverlay.tsx'
+import SelectionLayer from './SelectionLayer.tsx'
 import TextInput, { useCaretBlink } from './TextInput.tsx'
-import {
-  bounds,
-  createAnnotation,
-  overlaps,
-  rectFromPoints,
-  toFractions,
-  type Point,
-} from '../lib/annotate.ts'
-import { draftRect, withDraft } from '../lib/draft.ts'
-import { applyHandle, type Handle } from '../lib/handles.ts'
+import { toFractions, unionBounds, type Point } from '../lib/annotate.ts'
+import { draftRect } from '../lib/draft.ts'
+import { describeScene, marqueeStyle } from '../lib/describe.ts'
+import { marqueeCatch, paintDraft, type Drag } from '../lib/gesture.ts'
+import { applyHandle, resizeGroup, scaleLayer, type Handle } from '../lib/handles.ts'
 import { inWindow, layerAt, windowAt, type Target } from '../lib/hit.ts'
-import { pointAt, useCanvasScene, type Inset } from '../hooks/useCanvasScene.ts'
 import type { Geometry } from '../lib/render.ts'
 import { expandSelection, flatten } from '../lib/tree.ts'
-import { DEFAULT_PLACEMENT, type AnnotationKind, type FractionRect, type Placement, type Scene } from '../types.ts'
+import { pointAt, useCanvasScene, type Inset } from '../hooks/useCanvasScene.ts'
+import { useAltKey, useFrameThrottle } from '../hooks/usePointerInput.ts'
+import {
+  DEFAULT_PLACEMENT,
+  type Annotation,
+  type AnnotationKind,
+  type FractionRect,
+  type Placement,
+  type Scene,
+} from '../types.ts'
 
 export type { Inset }
 
@@ -37,7 +40,8 @@ type PreviewProps = {
   /** `additive` ⇒ ⇧ ou ⌘ : le calque entre ou sort du lot. */
   onSelect?: (shotId: string | null, ids: string[], additive: boolean) => void
   onTranslate?: (shotId: string, ids: readonly string[], dx: number, dy: number) => void
-  onResize?: (shotId: string, id: string, rect: FractionRect) => void
+  /** Poignées : un calque change de rect — et de taille, à plusieurs. */
+  onPatch?: (shotId: string, id: string, patch: Partial<Annotation>) => void
   /** Retouche la fenêtre d'un shot : ⌥ + glisser la déplace dans le canvas. */
   onPlace?: (shotId: string, patch: Partial<Placement>) => void
   onEdit?: (editing: Editing | null) => void
@@ -48,22 +52,6 @@ type PreviewProps = {
    *  absent ⇒ aperçu inerte, comme sur l'écran Styles. */
   onKeys?: (event: React.KeyboardEvent) => void
 }
-
-type Drag =
-  | { mode: 'draw'; kind: AnnotationKind; target: Target; from: Point; to: Point; shift: boolean }
-  | { mode: 'marquee'; target: Target; from: Point; to: Point; additive: boolean }
-  | { mode: 'move'; ids: string[]; target: Target; from: Point; to: Point }
-  | { mode: 'shot'; shotId: string; origin: Placement; target: Target; from: Point; to: Point }
-  | {
-      mode: 'resize'
-      id: string
-      target: Target
-      origin: FractionRect
-      kind: AnnotationKind
-      handle: Handle
-      from: Point
-      to: Point
-    }
 
 /**
  * Rendu live. La preview n'a pas de code de dessin à elle : elle appelle
@@ -83,7 +71,7 @@ export default function Preview({
   onCreate,
   onSelect,
   onTranslate,
-  onResize,
+  onPatch,
   onPlace,
   onEdit,
   onEditText,
@@ -91,12 +79,14 @@ export default function Preview({
   onKeys,
 }: PreviewProps) {
   const [drag, setDrag] = useState<Drag | null>(null)
-  /** ⌥ enfoncé : le curseur annonce qu'un glisser déplacera la fenêtre. */
-  const [altPressed, setAltPressed] = useState(false)
+  /** Calque sous le curseur, outil Sélection en main et sans geste en cours. */
+  const [hover, setHover] = useState<{ annotation: Annotation; target: Target } | null>(null)
   /** Dernière position d'un déplacement, en px canvas. */
   const lastPoint = useRef<Point | null>(null)
   const blink = useCaretBlink(editing !== null)
   const interactive = tool !== null
+  /** ⌥ enfoncé : le curseur annonce qu'un glisser déplacera la fenêtre. */
+  const altPressed = useAltKey(interactive && Boolean(onPlace))
 
   /** La scène telle qu'elle doit être peinte : brouillon du tracé en cours et
    *  caret de saisie compris. L'export, lui, part de `scene` intacte. */
@@ -104,15 +94,8 @@ export default function Preview({
     const withCaret: Scene = editing
       ? { ...scene, editing: { id: editing.id, caret: editing.caret, blink } }
       : scene
-
-    if (drag?.mode !== 'draw') return withCaret
-
-    const box = drag.target.box
-    const rect = draftRect(drag.kind, inWindow(box, drag.from), inWindow(box, drag.to), drag.shift)
-    if (!rect) return withCaret
-
-    return withDraft(withCaret, drag.target.shotId, createAnnotation(drag.kind, toFractions(rect, box)))
-  }, [scene, drag, editing, blink, inWindow])
+    return paintDraft(withCaret, drag)
+  }, [scene, drag, editing, blink])
 
   const { canvasRef, boxRef, geometry, ratio, error } = useCanvasScene(painted, inset, onGeometry)
 
@@ -122,22 +105,6 @@ export default function Preview({
   useEffect(() => {
     if (editable) canvasRef.current?.focus()
   }, [editable, canvasRef])
-
-  // `⌥` se lit sur `window` : sans clic préalable, le canvas ne verrait rien du
-  // modificateur, et le curseur mentirait sur ce que le prochain geste fait.
-  useEffect(() => {
-    if (!interactive || !onPlace) return
-    const sync = (event: KeyboardEvent) => setAltPressed(event.altKey)
-    const clear = () => setAltPressed(false)
-    window.addEventListener('keydown', sync)
-    window.addEventListener('keyup', sync)
-    window.addEventListener('blur', clear)
-    return () => {
-      window.removeEventListener('keydown', sync)
-      window.removeEventListener('keyup', sync)
-      window.removeEventListener('blur', clear)
-    }
-  }, [interactive, onPlace])
 
   const targetWindow = (point: Point) => windowAt(scene, geometry, point, selectedShotId)
   const pick = (point: Point) => layerAt(scene, geometry, point)
@@ -155,6 +122,13 @@ export default function Preview({
     return flatten(selectedShot?.layers ?? []).filter((annotation) => ids.has(annotation.id))
   }, [selectedShot, selectedIds])
 
+  /** Boîte englobante d'une sélection multiple, en fractions de la fenêtre. */
+  const groupRect = useMemo(() => {
+    if (chosen.length < 2 || !selectedBox) return null
+    const area = unionBounds(chosen, selectedBox)
+    return area ? toFractions(area, selectedBox) : null
+  }, [chosen, selectedBox])
+
   const commitEdit = useCallback(() => onEdit?.(null), [onEdit])
 
   const onPointerDown = (event: React.PointerEvent) => {
@@ -164,6 +138,7 @@ export default function Preview({
 
     event.currentTarget.setPointerCapture(event.pointerId)
     lastPoint.current = point
+    setHover(null)
     if (editing) commitEdit()
 
     // ⌥ + glisser déplace la fenêtre elle-même. Le modificateur n'est pas un
@@ -229,12 +204,19 @@ export default function Preview({
   /** Saisie d'une poignée : le drag part de la sélection courante. */
   const onGrabHandle = (handle: Handle, event: React.PointerEvent) => {
     const only = chosen.length === 1 ? chosen[0] : null
-    if (!only || !selectedShot || !geometry) return
+    if (chosen.length === 0 || !selectedShot || !geometry) return
     const point = pointAt(event, canvasRef.current, geometry)
     if (!point) return
 
     event.stopPropagation()
     event.currentTarget.setPointerCapture(event.pointerId)
+    const target = { shotId: selectedShot.id, box: selectedBox ?? geometry.windows[0] }
+
+    if (!only) {
+      if (!groupRect) return
+      setDrag({ mode: 'group', origins: chosen, target, rect: groupRect, handle, from: point, to: point })
+      return
+    }
 
     setDrag({
       mode: 'resize',
@@ -248,48 +230,16 @@ export default function Preview({
     })
   }
 
-  /**
-   * Un geste ne se traite qu'une fois par frame. Une souris à 1000 Hz émettait
-   * autant de `pointermove`, et chacun coûtait trois passes de rendu React —
-   * l'état du glissement, l'état du document, la pile d'annulation — pour un
-   * canvas qui, lui, ne se redessine que 60 fois par seconde.
-   *
-   * La frame en vol garde la fermeture du rendu où elle a été planifiée. C'est
-   * sans conséquence : tout ce qui bouge d'un `pointermove` à l'autre se lit
-   * dans une ref (`lastPoint`) ou se réécrit entièrement (`to`), et le reste du
-   * glissement — origine, cible, poignée — est fixé à sa saisie.
-   */
-  const pending = useRef<{ point: Point; shift: boolean } | null>(null)
-  const frame = useRef<number | null>(null)
-
-  const flushMove = () => {
-    if (frame.current !== null) {
-      cancelAnimationFrame(frame.current)
-      frame.current = null
-    }
-    const next = pending.current
-    pending.current = null
-    if (next) applyMove(next.point, next.shift)
-  }
-
-  useEffect(() => () => {
-    if (frame.current !== null) cancelAnimationFrame(frame.current)
-  }, [])
-
   const onPointerMove = (event: React.PointerEvent) => {
-    if (!drag || !geometry) return
+    if (!geometry) return
     const point = pointAt(event, canvasRef.current, geometry)
+    if (!drag) {
+      trackHover(point)
+      return
+    }
     if (!point) return
 
-    pending.current = { point, shift: event.shiftKey }
-    if (frame.current === null) {
-      frame.current = requestAnimationFrame(() => {
-        frame.current = null
-        const next = pending.current
-        pending.current = null
-        if (next) applyMove(next.point, next.shift)
-      })
-    }
+    moves.schedule({ point, shift: event.shiftKey })
   }
 
   const applyMove = (point: Point, shift: boolean) => {
@@ -339,17 +289,37 @@ export default function Preview({
       return
     }
 
-    onResize?.(
-      drag.target.shotId,
-      drag.id,
-      applyHandle(drag.origin, drag.handle, delta, shift, drag.kind),
+    if (drag.mode === 'group') {
+      const next = resizeGroup(drag.rect, drag.handle, delta)
+      for (const origin of drag.origins) {
+        onPatch?.(drag.target.shotId, origin.id, scaleLayer(origin, drag.rect, next))
+      }
+      return
+    }
+
+    onPatch?.(drag.target.shotId, drag.id, {
+      rect: applyHandle(drag.origin, drag.handle, delta, shift, drag.kind),
+    })
+  }
+
+  // Tout ce qui bouge d'un `pointermove` à l'autre se lit dans une ref
+  // (`lastPoint`) ou se réécrit entièrement (`to`) : une frame par geste suffit.
+  const moves = useFrameThrottle<{ point: Point; shift: boolean }>((next) => applyMove(next.point, next.shift))
+
+  /** Survol : ce qu'un clic attraperait se dessine d'un trait fin. Un état
+   *  inchangé n'est pas réécrit, sans quoi chaque pixel de souris coûterait un
+   *  rendu React. */
+  const trackHover = (point: Point | null) => {
+    const hit = point && tool === 'select' ? pick(point) : null
+    setHover((current) =>
+      current?.annotation.id === hit?.annotation.id ? current : hit ? { annotation: hit.annotation, target: hit.target } : null,
     )
   }
 
   const onPointerUp = () => {
     // Le dernier point ne doit pas mourir dans une frame jamais tirée : sans ça,
     // un geste bref relâché avant la première frame se croirait long de zéro.
-    flushMove()
+    moves.flush()
 
     const end = lastPoint.current
     lastPoint.current = null
@@ -364,10 +334,7 @@ export default function Preview({
 
     if (drag.mode === 'marquee') {
       const shot = scene.shots.find((item) => item.id === drag.target.shotId)
-      const area = rectFromPoints(inWindow(box, drag.from), inWindow(box, to))
-      const caught = flatten(shot?.layers ?? [], { skipHidden: true, skipLocked: true })
-        .filter((annotation) => overlaps(bounds(annotation, box), area))
-        .map((annotation) => annotation.id)
+      const caught = marqueeCatch(shot?.layers ?? [], box, drag.from, to)
       // Le rectangle ajoute, il ne bascule pas : repasser sur un calque déjà
       // pris ne doit pas le retirer du lot.
       if (caught.length > 0) {
@@ -393,7 +360,16 @@ export default function Preview({
         paddingBottom: inset.bottom,
       }}
     >
-      <div className="relative">
+      {/* Le geste se suit sur le conteneur, pas sur le canvas : une poignée
+          capture le pointeur, et ses `pointermove` ne remonteraient jamais
+          jusqu'au canvas, qui n'est pas son ancêtre. */}
+      <div
+        className="relative"
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+        onPointerLeave={() => setHover(null)}
+      >
         <canvas
           ref={canvasRef}
           // `application` plutôt que `img` quand le canvas prend des touches :
@@ -404,9 +380,6 @@ export default function Preview({
           tabIndex={editable ? 0 : undefined}
           onKeyDown={onKeys}
           onPointerDown={onPointerDown}
-          onPointerMove={onPointerMove}
-          onPointerUp={onPointerUp}
-          onPointerCancel={onPointerUp}
           className={`block touch-none rounded-sm ${
             !interactive
               ? ''
@@ -415,7 +388,9 @@ export default function Preview({
                 : altPressed && onPlace
                   ? 'cursor-grab'
                   : tool === 'select'
-                    ? 'cursor-default'
+                    ? hover
+                      ? 'cursor-move'
+                      : 'cursor-default'
                     : 'cursor-crosshair'
           }`}
         />
@@ -427,27 +402,18 @@ export default function Preview({
           />
         )}
 
-        {/* En layout `single` il n'y a qu'une fenêtre : un anneau permanent
-            autour d'elle serait du bruit, pas un repère. */}
-        {scene.shots.length > 1 && selectedBox && geometry && ratio > 0 && (
-          <ShotRing box={selectedBox} ratio={ratio} radius={geometry.radius} />
-        )}
-
-        {!drawing &&
-          selectedBox &&
-          ratio > 0 &&
-          chosen.map((annotation) => (
-            <SelectionOverlay
-              key={annotation.id}
-              annotation={annotation}
-              box={selectedBox}
-              ratio={ratio}
-              // Redimensionner à plusieurs demanderait une boîte englobante et
-              // une mise à l'échelle relative de chaque rect.
-              // ponytail: poignées sur la sélection unitaire seulement.
-              onGrab={chosen.length === 1 ? onGrabHandle : undefined}
-            />
-          ))}
+        <SelectionLayer
+          multiShot={scene.shots.length > 1}
+          box={selectedBox}
+          radius={geometry?.radius ?? 0}
+          ratio={ratio}
+          chosen={chosen}
+          groupRect={groupRect}
+          hover={hover && { annotation: hover.annotation, box: hover.target.box }}
+          drawing={drawing}
+          dragging={drag !== null}
+          onGrab={onGrabHandle}
+        />
 
         {/* Le rendu a jeté : le canvas garde la dernière image aboutie, ou
             reste noir. Sans ce mot, l'écran ne dit rien de ce qui s'est passé. */}
@@ -473,28 +439,4 @@ export default function Preview({
       </div>
     </div>
   )
-}
-
-/**
- * Le nom accessible du visuel. Un `<canvas>` n'a pas de contenu à lire : sans
- * cette phrase, le sujet même du produit n'existe pas pour un lecteur d'écran.
- * Elle dit ce qui a été réglé, pas ce qui a été peint.
- */
-function describeScene(scene: Scene): string {
-  const layers = scene.shots.reduce((total, shot) => total + flatten(shot.layers).length, 0)
-  const parts = [
-    scene.shots.length > 1 ? `${scene.shots.length} shots` : '1 shot',
-    scene.settings.frame === 'none' ? 'no frame' : `${scene.settings.frame} frame`,
-    `${scene.settings.background} background`,
-  ]
-  if (layers > 0) parts.push(layers > 1 ? `${layers} layers` : '1 layer')
-  return `Export preview — ${parts.join(', ')}`
-}
-
-/** Le rectangle de sélection en px CSS. Il n'appartient pas au visuel : il est
- *  tracé dans l'espace de l'écran, sans passer par la fenêtre. */
-function marqueeStyle(from: Point, to: Point, ratio: number) {
-  if (ratio === 0) return null
-  const area = rectFromPoints(from, to)
-  return { left: area.x * ratio, top: area.y * ratio, width: area.w * ratio, height: area.h * ratio }
 }

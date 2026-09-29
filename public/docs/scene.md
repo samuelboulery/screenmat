@@ -180,9 +180,9 @@ before writing a single one.
 | `redaction` | `blur` `pixel` `solid` | `blur` | `kind=redaction`. |
 | `color` | `#RRGGBB` | `#FFD479` | Six hex digits, or the default. `red` is not a colour here. |
 | `size` | number | `0.011` | 0.005 to 0.04 — font size. |
-| `strokeWidth` | number | `0.0022` | 0.0005 to 0.012 |
-| `radius` | number | `0.006` | 0 to 0.06 — box corners. |
-| `arrowHead` | number | `0.012` | 0.004 to 0.04 |
+| `strokeWidth` | number | `0.004` arrow · `0.003` line, box, ellipse · `0.0022` otherwise | 0.0005 to 0.012 |
+| `radius` | number | `0.012` box · `0.006` otherwise | 0 to 0.06 — box corners. |
+| `arrowHead` | number | `0.016` arrow · `0.012` otherwise | 0.004 to 0.04 |
 | `fill` | number | `0` | 0 to 1. `0` is outline only. |
 | `opacity` | number | `1` | 0.1 to 1 |
 | `invert` | boolean | `false` | Flips a label's ink and plate. |

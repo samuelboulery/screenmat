@@ -1,5 +1,5 @@
 import { isPoint, isSegment, type Point } from './annotate.ts'
-import type { AnnotationKind, FractionRect } from '../types.ts'
+import type { Annotation, AnnotationKind, FractionRect } from '../types.ts'
 
 /* Géométrie des poignées de sélection. Logique pure : les poignées elles-mêmes
    sont en DOM (`SelectionOverlay`) et ne sortent jamais dans l'export. */
@@ -8,6 +8,11 @@ export type Handle = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w' | 'start'
 
 const AREA_HANDLES: readonly Handle[] = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w']
 const SEGMENT_HANDLES: readonly Handle[] = ['start', 'end']
+/** Une sélection multiple ne se tire que par ses coins : elle garde toujours
+ *  ses proportions, un bord n'aurait donc rien à faire seul. */
+export const GROUP_HANDLES: readonly Handle[] = ['nw', 'ne', 'se', 'sw']
+/** En deçà, la sélection s'écraserait en un point impossible à rattraper. */
+const MIN_GROUP_SCALE = 0.05
 
 /** Curseur CSS de chaque poignée. */
 export const HANDLE_CURSOR: Record<Handle, string> = {
@@ -127,6 +132,45 @@ function applySegmentHandle(
   const vector = { w: rect.w + delta.x, h: rect.h + delta.y }
   const final = shift ? snapTo45(vector.w, vector.h) : vector
   return { x: rect.x, y: rect.y, w: final.w, h: final.h }
+}
+
+/** Boîte englobante d'une sélection multiple, tirée par un coin. Toujours
+ *  homothétique, et jamais retournée : passer le coin opposé l'arrête au
+ *  plancher plutôt que de renverser chaque calque. */
+export function resizeGroup(rect: FractionRect, handle: Handle, delta: Point): FractionRect {
+  const next = applyHandle(rect, handle, delta, true, 'box')
+  const ratio = rect.w > 0 ? next.w / rect.w : next.h / rect.h
+  const scale = Math.max(MIN_GROUP_SCALE, Number.isFinite(ratio) ? ratio : 1)
+  const w = rect.w * scale
+  const h = rect.h * scale
+  return {
+    x: handle.includes('w') ? rect.x + rect.w - w : rect.x,
+    y: handle.includes('n') ? rect.y + rect.h - h : rect.y,
+    w,
+    h,
+  }
+}
+
+/** Reporte l'homothétie `from → to` sur un calque : son rect suit, son signe
+ *  reste (une flèche pointe toujours du même côté), et la taille d'un texte ou
+ *  d'un badge grandit avec le reste. Le trait, lui, ne bouge pas. */
+export function scaleLayer(
+  layer: Pick<Annotation, 'kind' | 'rect' | 'size'>,
+  from: FractionRect,
+  to: FractionRect,
+): Pick<Annotation, 'rect' | 'size'> {
+  const ratio = from.w > 0 ? to.w / from.w : to.h / from.h
+  const scale = Math.max(MIN_GROUP_SCALE, Number.isFinite(ratio) ? ratio : 1)
+  const { rect } = layer
+  return {
+    rect: {
+      x: to.x + (rect.x - from.x) * scale,
+      y: to.y + (rect.y - from.y) * scale,
+      w: rect.w * scale,
+      h: rect.h * scale,
+    },
+    size: isPoint(layer.kind) ? layer.size * scale : layer.size,
+  }
 }
 
 /** Déplacement au clavier, en fractions de la largeur de la fenêtre. */

@@ -12,7 +12,26 @@ export type Tool = 'SEL' | 'TXT' | 'NUM' | 'ARR' | 'LIN' | 'BOX' | 'ELL' | 'RDC'
 
 export const TOOLS: Tool[] = ['SEL', 'TXT', 'NUM', 'ARR', 'LIN', 'BOX', 'ELL', 'RDC']
 
-const TITLES: Record<Tool, string> = {
+/** Touche nue de chaque outil — celles de Figma là où elles existent. `R`
+ *  prend la Box, le fond se régénère donc à `⇧R`. */
+export const TOOL_KEYS: Record<Tool, string> = {
+  SEL: 'V',
+  TXT: 'T',
+  NUM: 'N',
+  ARR: 'A',
+  LIN: 'L',
+  BOX: 'R',
+  ELL: 'O',
+  RDC: 'B',
+}
+
+/** L'outil d'une touche nue, en minuscule ou non. */
+export function toolForKey(key: string): Tool | null {
+  const upper = key.toUpperCase()
+  return TOOLS.find((tool) => TOOL_KEYS[tool] === upper) ?? null
+}
+
+export const TOOL_TITLES: Record<Tool, string> = {
   SEL: 'Select',
   TXT: 'Text label',
   ARR: 'Arrow',
@@ -25,12 +44,15 @@ const TITLES: Record<Tool, string> = {
 
 type ToolRailProps = {
   active: Tool
+  /** L'outil reste en main après usage : double-clic sur le rail. */
+  locked: boolean
   onPick: (tool: Tool) => void
+  onLock: (tool: Tool) => void
   /** Rail horizontal sous la barre haute, en dessous de 1100 px. */
   horizontal?: boolean
 }
 
-export default function ToolRail({ active, onPick, horizontal = false }: ToolRailProps) {
+export default function ToolRail({ active, locked, onPick, onLock, horizontal = false }: ToolRailProps) {
   return (
     <Panel
       className={
@@ -41,15 +63,19 @@ export default function ToolRail({ active, onPick, horizontal = false }: ToolRai
     >
       {TOOLS.map((tool) => {
         const Icon: LucideIcon = TOOL_ICON[tool]
+        const title = `${TOOL_TITLES[tool]} · ${TOOL_KEYS[tool]}`
+        const held = locked && active === tool
         return (
           <button
             key={tool}
             type="button"
-            title={TITLES[tool]}
-            aria-label={TITLES[tool]}
+            title={held ? `${title} (locked — click to release)` : `${title} — double-click to lock`}
+            aria-label={held ? `${TOOL_TITLES[tool]}, locked` : TOOL_TITLES[tool]}
+            aria-keyshortcuts={TOOL_KEYS[tool]}
             aria-pressed={active === tool}
             onClick={() => onPick(tool)}
-            className={`flex size-11 items-center justify-center rounded-md transition-colors duration-140 ${
+            onDoubleClick={() => onLock(tool)}
+            className={`relative flex size-11 items-center justify-center rounded-md transition-colors duration-140 ${
               active === tool
                 ? SWITCH_ON
                 : tool === 'RDC'
@@ -58,6 +84,8 @@ export default function ToolRail({ active, onPick, horizontal = false }: ToolRai
             }`}
           >
             <Icon className="size-5" />
+            {/* Verrou : un point d'encre au coin, comme la pastille de Figma. */}
+            {held && <span aria-hidden className="absolute right-1 bottom-1 size-1 rounded-full bg-ink" />}
           </button>
         )
       })}

@@ -131,9 +131,11 @@ width. Write a pixel value anywhere and the two stop matching.
 | Setting | Default | Roughly |
 | --- | --- | --- |
 | `size` | `0.011` | Body text, readable at any export scale. |
-| `strokeWidth` | `0.0022` | A hairline outline. |
-| `arrowHead` | `0.012` | About the height of a line of text. |
-| `radius` | `0.006` | A softly rounded box. |
+| `strokeWidth` | `0.004` arrow · `0.003` line, box, ellipse | A stroke that reads at a glance. |
+| `arrowHead` | `0.016` | A little taller than a line of text. |
+| `radius` | `0.012` | A softly rounded box. |
+
+Defaults depend on the kind — [the layer table](#scene-layers) lists them per field.
 
 ## Rotation
 

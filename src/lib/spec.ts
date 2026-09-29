@@ -12,7 +12,7 @@
  * main. Chaque champ est vérifié, borné, et retombe sur sa valeur par défaut.
  */
 import {
-  ANNOTATION_DEFAULTS,
+  defaultsFor,
   ANNOTATION_LIMITS,
   DEFAULT_LABEL_SIZE,
   nextId,
@@ -166,7 +166,7 @@ function parseLayers(value: unknown): Annotation[] {
 function parseAnnotation(value: Record<string, unknown>): Annotation {
   const kind = oneOf(value.kind, ANNOTATION_KINDS, 'box')
   const limits = ANNOTATION_LIMITS
-  const d = ANNOTATION_DEFAULTS
+  const d = defaultsFor(kind)
 
   return {
     id: nextId(kind),

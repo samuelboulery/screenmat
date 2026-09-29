@@ -3,7 +3,7 @@ import Filmstrip from './Filmstrip.tsx'
 import { CloseSheetIcon, OpenSheetIcon } from './icons.tsx'
 import Inspector from './Inspector.tsx'
 import Preview, { type Editing } from './Preview.tsx'
-import ToolRail, { type Tool } from './ToolRail.tsx'
+import ToolRail, { toolForKey, type Tool } from './ToolRail.tsx'
 import { displayOrder, findAnnotation } from '../lib/tree.ts'
 import type { NodePatch } from '../hooks/useShots.ts'
 import type {
@@ -86,6 +86,9 @@ export type EditorScreenProps = {
 export default function EditorScreen(props: EditorScreenProps) {
   const { scene, shots, narrow } = props
   const [tool, setTool] = useState<Tool>('SEL')
+  /** Outil verrouillé (double-clic sur le rail) : il reste en main après un
+   *  tracé. Sinon, comme dans Figma, on revient à la sélection. */
+  const [locked, setLocked] = useState(false)
   const [sheetOpen, setSheetOpen] = useState(false)
   const [editing, setEditing] = useState<Editing | null>(null)
   /** Point d'ancrage d'une sélection de plage (⇧-clic dans le panneau). */
@@ -107,7 +110,39 @@ export default function EditorScreen(props: EditorScreenProps) {
 
   const activeShot = shots.find((shot) => shot.id === props.activeShotId) ?? shots[0] ?? null
 
-  const { onCreateAnnotation, onDeleteLayers, onSelectLayers } = props
+  const { onCreateAnnotation, onDeleteLayers, onSelectLayers, onKeys } = props
+
+  const pickTool = useCallback((next: Tool) => {
+    setTool(next)
+    setLocked(false)
+  }, [])
+
+  const lockTool = useCallback((next: Tool) => {
+    setTool(next)
+    setLocked(true)
+  }, [])
+
+  /** Touches nues propres à l'éditeur, avant celles de l'app : le choix d'un
+   *  outil, et le dernier cran d'`Escape` — sortir de la saisie (géré par le
+   *  champ), puis désélectionner (l'app), puis revenir à la sélection. */
+  const keys = useCallback(
+    (event: React.KeyboardEvent) => {
+      const bare = !event.metaKey && !event.ctrlKey && !event.altKey && !event.shiftKey
+      const picked = bare ? toolForKey(event.key) : null
+      if (picked) {
+        event.preventDefault()
+        pickTool(picked)
+        return
+      }
+      if (event.key === 'Escape' && props.selectedLayerIds.length === 0 && tool !== 'SEL') {
+        event.preventDefault()
+        pickTool('SEL')
+        return
+      }
+      onKeys(event)
+    },
+    [onKeys, pickTool, props.selectedLayerIds.length, tool],
+  )
 
   /** Fin de saisie : un label resté vide ne laisse pas de calque fantôme. */
   const closeEdit = useCallback(
@@ -126,9 +161,10 @@ export default function EditorScreen(props: EditorScreenProps) {
     (shotId: string, kind: AnnotationKind, rect: FractionRect) => {
       const id = onCreateAnnotation(shotId, kind, rect)
       if (kind === 'text') setEditing({ shotId, id, caret: 0 })
+      if (!locked) setTool('SEL')
       return id
     },
-    [onCreateAnnotation],
+    [onCreateAnnotation, locked],
   )
 
   /** ⇧-clic dans le panneau : la plage se lit dans l'ordre affiché, que seul
@@ -159,7 +195,7 @@ export default function EditorScreen(props: EditorScreenProps) {
       <Preview
         scene={scene}
         inset={inset}
-        onKeys={props.onKeys}
+        onKeys={keys}
         tool={ANNOTATION_KIND[tool]}
         selectedIds={props.selectedLayerIds}
         selectedShotId={props.activeShotId}
@@ -171,12 +207,12 @@ export default function EditorScreen(props: EditorScreenProps) {
         }}
         onTranslate={props.onTranslateLayers}
         onPlace={props.onPlace}
-        onResize={(shotId, id, rect) => props.onPatchAnnotation(shotId, id, { rect })}
+        onPatch={props.onPatchAnnotation}
         onEdit={closeEdit}
         onEditText={(shotId, id, text) => props.onPatchAnnotation(shotId, id, { text })}
       />
 
-      <ToolRail active={tool} onPick={setTool} horizontal={narrow} />
+      <ToolRail active={tool} locked={locked} onPick={pickTool} onLock={lockTool} horizontal={narrow} />
 
       {/* Sous 1100 px l'inspecteur devient une feuille rétractable ancrée à
           droite : il n'y a plus la place de le laisser flotter en permanence. */}

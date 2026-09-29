@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import {
+  ANNOTATION_DEFAULTS,
+  ANNOTATION_LIMITS,
   badgeNumbers,
   bounds,
   createAnnotation,
+  defaultsFor,
   hitTest,
   normalizeRect,
   toFractions,
@@ -173,5 +176,25 @@ describe('createAnnotation', () => {
     expect(annotation.strokeWidth).toBeGreaterThan(0)
     expect(annotation.opacity).toBe(1)
     expect(annotation.fill).toBe(0)
+  })
+})
+
+describe('defaultsFor', () => {
+  it('donne à chaque type ses propres valeurs de départ', () => {
+    const arrow = createAnnotation('arrow', { x: 0, y: 0, w: 0.1, h: 0.1 })
+    const box = createAnnotation('box', { x: 0, y: 0, w: 0.1, h: 0.1 })
+    const line = createAnnotation('line', { x: 0, y: 0, w: 0.1, h: 0.1 })
+    expect(arrow.strokeWidth).toBeGreaterThan(line.strokeWidth)
+    expect(box.radius).toBeGreaterThan(ANNOTATION_DEFAULTS.radius)
+    expect(defaultsFor('redaction')).toEqual(ANNOTATION_DEFAULTS)
+  })
+
+  it('reste dans les bornes que l’inspecteur propose', () => {
+    for (const kind of ['text', 'badge', 'arrow', 'line', 'box', 'ellipse', 'redaction'] as const) {
+      const d = defaultsFor(kind)
+      expect(d.strokeWidth).toBeLessThanOrEqual(ANNOTATION_LIMITS.strokeWidth.max)
+      expect(d.radius).toBeLessThanOrEqual(ANNOTATION_LIMITS.radius.max)
+      expect(d.arrowHead).toBeLessThanOrEqual(ANNOTATION_LIMITS.arrowHead.max)
+    }
   })
 })

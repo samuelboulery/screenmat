@@ -1,4 +1,5 @@
-import { isPoint, isSegment, type Point } from './annotate.ts'
+import { ANNOTATION_LIMITS, isPoint, isSegment, type Point } from './annotate.ts'
+import { clamp } from './parse.ts'
 import type { Annotation, AnnotationKind, FractionRect } from '../types.ts'
 
 /* Géométrie des poignées de sélection. Logique pure : les poignées elles-mêmes
@@ -169,7 +170,11 @@ export function scaleLayer(
       w: rect.w * scale,
       h: rect.h * scale,
     },
-    size: isPoint(layer.kind) ? layer.size * scale : layer.size,
+    // La taille reste dans les bornes de l'inspecteur : un groupe étiré ne doit
+    // pas produire une valeur que le curseur ne sait pas afficher.
+    size: isPoint(layer.kind)
+      ? clamp(layer.size * scale, ANNOTATION_LIMITS.size.min, ANNOTATION_LIMITS.size.max)
+      : layer.size,
   }
 }
 

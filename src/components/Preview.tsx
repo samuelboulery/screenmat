@@ -47,7 +47,7 @@ type PreviewProps = {
   onEdit?: (editing: Editing | null) => void
   onEditText?: (shotId: string, id: string, text: string) => void
   onGeometry?: (geometry: Geometry) => void
-  /** Touches nues du canvas (`r`, `1/2/3`, flèches, `⌫`). Présent ⇒ le canvas
+  /** Touches nues du canvas (outils, `⇧R`, `1/2/3`, flèches, `⌫`). Présent ⇒ le canvas
    *  entre dans l'ordre de tabulation et devient la surface d'édition clavier ;
    *  absent ⇒ aperçu inerte, comme sur l'écran Styles. */
   onKeys?: (event: React.KeyboardEvent) => void
@@ -80,7 +80,7 @@ export default function Preview({
 }: PreviewProps) {
   const [drag, setDrag] = useState<Drag | null>(null)
   /** Calque sous le curseur, outil Sélection en main et sans geste en cours. */
-  const [hover, setHover] = useState<{ annotation: Annotation; target: Target } | null>(null)
+  const [hover, setHover] = useState<{ id: string; target: Target } | null>(null)
   /** Dernière position d'un déplacement, en px canvas. */
   const lastPoint = useRef<Point | null>(null)
   const blink = useCaretBlink(editing !== null)
@@ -100,11 +100,13 @@ export default function Preview({
   const { canvasRef, boxRef, geometry, ratio, error } = useCanvasScene(painted, inset, onGeometry)
 
   // Le canvas est la surface d'édition clavier : lui donner le focus dès qu'il
-  // en devient une, sans quoi `r` ou les flèches exigeraient un clic préalable.
+  // en devient une, sans quoi un outil ou les flèches exigeraient un clic
+  // préalable. Et le lui rendre après un choix d'outil au rail ou une saisie :
+  // sans quoi `V`, `R` ou `Escape` tomberaient sur un bouton qui les ignore.
   const editable = Boolean(onKeys)
   useEffect(() => {
-    if (editable) canvasRef.current?.focus()
-  }, [editable, canvasRef])
+    if (editable && !editing) canvasRef.current?.focus()
+  }, [editable, editing, tool, canvasRef])
 
   const targetWindow = (point: Point) => windowAt(scene, geometry, point, selectedShotId)
   const pick = (point: Point) => layerAt(scene, geometry, point)
@@ -128,6 +130,15 @@ export default function Preview({
     const area = unionBounds(chosen, selectedBox)
     return area ? toFractions(area, selectedBox) : null
   }, [chosen, selectedBox])
+
+  // Le calque survolé se relit dans la scène : après un undo ou une retouche à
+  // l'inspecteur, le contour suit sans attendre le prochain mouvement.
+  const hovered =
+    hover && tool === 'select'
+      ? (flatten(scene.shots.find((shot) => shot.id === hover.target.shotId)?.layers ?? []).find(
+          (annotation) => annotation.id === hover.id,
+        ) ?? null)
+      : null
 
   const commitEdit = useCallback(() => onEdit?.(null), [onEdit])
 
@@ -221,7 +232,7 @@ export default function Preview({
     setDrag({
       mode: 'resize',
       id: only.id,
-      target: { shotId: selectedShot.id, box: selectedBox ?? geometry.windows[0] },
+      target,
       origin: only.rect,
       kind: only.kind,
       handle,
@@ -312,7 +323,7 @@ export default function Preview({
   const trackHover = (point: Point | null) => {
     const hit = point && tool === 'select' ? pick(point) : null
     setHover((current) =>
-      current?.annotation.id === hit?.annotation.id ? current : hit ? { annotation: hit.annotation, target: hit.target } : null,
+      current?.id === hit?.annotation.id ? current : hit ? { id: hit.annotation.id, target: hit.target } : null,
     )
   }
 
@@ -373,7 +384,7 @@ export default function Preview({
         <canvas
           ref={canvasRef}
           // `application` plutôt que `img` quand le canvas prend des touches :
-          // c'est ce qui fait passer `r`, les flèches et `⌫` au travers du mode
+          // c'est ce qui fait passer les outils, les flèches et `⌫` au travers du mode
           // navigation d'un lecteur d'écran plutôt que de les lui laisser.
           role={editable ? 'application' : 'img'}
           aria-label={describeScene(scene)}
@@ -388,7 +399,7 @@ export default function Preview({
                 : altPressed && onPlace
                   ? 'cursor-grab'
                   : tool === 'select'
-                    ? hover
+                    ? hovered
                       ? 'cursor-move'
                       : 'cursor-default'
                     : 'cursor-crosshair'
@@ -409,7 +420,7 @@ export default function Preview({
           ratio={ratio}
           chosen={chosen}
           groupRect={groupRect}
-          hover={hover && { annotation: hover.annotation, box: hover.target.box }}
+          hover={hovered && hover && { annotation: hovered, box: hover.target.box }}
           drawing={drawing}
           dragging={drag !== null}
           onGrab={onGrabHandle}

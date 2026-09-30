@@ -14,7 +14,7 @@ screenshot, des annotations, du floutage — le tout calculé dans le navigateur
 
 [English](README.md) · Français
 
-<img src="docs/assets/hero.webp" alt="L'éditeur screenmat, mis en scène par screenmat lui-même" width="900">
+<img src="docs/assets/hero.fr.webp" alt="L'éditeur screenmat, mis en scène par screenmat lui-même" width="900">
 
 </div>
 
@@ -49,16 +49,17 @@ screenshot, des annotations, du floutage — le tout calculé dans le navigateur
 | **Styles** | Enregistrer un jeu de réglages complet sous un nom, le rappeler depuis l'app, le CLI, MCP ou Node. Le partager, c'est exporter un `.json`. |
 | **Lot** | Un dossier de captures gardées séparées, un seul style, un `.zip` en sortie depuis le menu Export. |
 | **Historique** | Les exports passés vivent dans IndexedDB avec leurs vignettes, réouvrables avec tous leurs réglages. |
+| **Langues** | L'interface en anglais et en français — un bouton `EN` / `FR` dans la barre haute, la langue du navigateur tant qu'aucun choix n'est fait. La landing existe sur `/` et sur `/fr/`. La porte machine et sa documentation restent en anglais. |
 | **Export** | WebP par défaut (7 à 10× plus léger que le PNG à grain égal), PNG à la demande, en 1× / 2× / 3× — 1600, 3200 ou 4800 px de large. |
 
 ### Avant · après
 
 | Le screenshot brut | Le même, mis en scène et annoté |
 | --- | --- |
-| <img src="docs/assets/before.webp" alt="Un screenshot brut, sans retouche" width="420"> | <img src="docs/assets/annotated.webp" alt="Le même screenshot avec fond génératif, badges, appel de texte et floutage cuit" width="420"> |
+| <img src="docs/assets/before.fr.webp" alt="Un screenshot brut, sans retouche" width="420"> | <img src="docs/assets/annotated.fr.webp" alt="Le même screenshot avec fond génératif, badges, appel de texte et floutage cuit" width="420"> |
 
-Des badges, une flèche d'appel et un flou sur la barre d'adresse — le flou est
-dans les pixels, pas posé par-dessus.
+Des badges, une flèche d'appel et un flou sur les e-mails des clients — le flou
+est dans les pixels, pas posé par-dessus.
 
 ## Démarrer
 
@@ -145,10 +146,14 @@ unique ne vole une frappe à un panneau.
 | `⌘G` / `⇧⌘G` | Grouper · dégrouper |
 | `⌘↑` / `⌘↓` | Monter ou descendre le calque dans la pile |
 | `⌘V` | Coller une capture |
+| `V` `T` `N` `A` `L` `R` `O` `B` | Outils : sélection, texte, pastille, flèche, trait, rectangle, ellipse, floutage |
 | `⇧R` | Mélanger — nouveau seed, nouveau fond |
 | `1` `2` `3` | Échelle d'export |
 | Flèches (`⇧` pour un grand pas) | Déplacer la sélection |
 | `⌫` · `Échap` | Supprimer · désélectionner |
+| `⌥` glisser | Dupliquer un calque · déplacer toute l'image |
+| `Espace` glisser | Recadrer un screenshot rogné dans son cadre |
+| `?` | Tous les raccourcis, dans un panneau |
 
 ## La confidentialité par construction
 
@@ -169,6 +174,8 @@ l'API Node et le serveur MCP ne font eux aucun appel réseau.
 src/lib/          le moteur : logique pure et Canvas 2D, sans import React
 src/components/   l'interface, un composant PascalCase par fichier
 src/hooks/        les hooks use*
+src/lib/i18n/     les textes de l'interface, un dictionnaire anglais et un français par zone
+src/landing/      la landing statique, traduite vers /fr/ au build
 cli/              la porte machine : api.ts, main.ts (CLI), mcp.ts (serveur MCP)
 public/docs/      la source de la documentation, en Markdown
 ```

@@ -10,7 +10,7 @@
   "shots": [
     {
       "name": "annotated",
-      "input": "./before.webp",
+      "input": "./before.fr.webp",
       "layers": [
         {
           "kind": "redaction",
@@ -25,7 +25,7 @@
         },
         {
           "kind": "text",
-          "text": "Redaction is baked into the pixels",
+          "text": "Le floutage est cuit dans les pixels",
           "labelStyle": "pill",
           "color": "#FF5A36",
           "rect": {

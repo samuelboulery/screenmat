@@ -8,7 +8,8 @@
  * qui tourne en preview, à l'export web et ici. La règle « un seul moteur »
  * tient par construction, pas par vigilance.
  */
-import { createCanvas, DOMMatrix, Image, ImageData, Path2D } from '@napi-rs/canvas'
+import { fileURLToPath } from 'node:url'
+import { createCanvas, DOMMatrix, GlobalFonts, Image, ImageData, Path2D } from '@napi-rs/canvas'
 
 /** Le seul élément que `src/lib/` demande à `document`. Un `<canvas>` de napi
  *  expose `width`, `height` et `getContext('2d')` — tout ce que le moteur
@@ -43,13 +44,27 @@ g.Path2D ??= Path2D
 g.Image ??= Image
 g.ImageData ??= ImageData
 
-/* Les polices système sont chargées d'office par Skia : la pile `MONO` de
- * `lib/layers.ts` et `lib/frame.ts` résout Menlo ou SF Mono sans rien déclarer.
+/* Les polices d'un calque texte sont celles de l'app, embarquées dans
+ * `public/fonts/` : les enregistrer ici donne au CLI le même texte que la
+ * preview, sans rien attendre de la machine hôte. La pile `MONO` de
+ * `lib/layers.ts` et `lib/frame.ts` (barre d'URL, badges) reste sur les
+ * polices système, chargées d'office par Skia.
  *
- * ponytail: on fait confiance à la machine hôte. Un conteneur nu, sans aucune
- * monospace installée, dessinerait l'URL et les labels dans la police par
- * défaut sans le dire. Embarquer un `.ttf` dans `cli/fonts/` et l'enregistrer
- * par `GlobalFonts.register` le jour où le CLI tourne en CI. */
+ * ponytail: Skia ne lit que l'instance par défaut d'une police variable — les
+ * graisses 500 à 700 sont synthétisées. Embarquer des instances statiques si
+ * l'écart avec le navigateur devient visible. */
+const FONTS = new URL('../public/fonts/', import.meta.url)
+for (const [file, family] of [
+  ['space-grotesk-latin.woff2', 'Space Grotesk'],
+  ['space-grotesk-latin-ext.woff2', 'Space Grotesk'],
+  ['jetbrains-mono-latin.woff2', 'JetBrains Mono'],
+  ['jetbrains-mono-latin-ext.woff2', 'JetBrains Mono'],
+] as const) {
+  const path = fileURLToPath(new URL(file, FONTS))
+  // Une police manquante ne doit pas produire, en silence, un texte dans une
+  // autre police que celle de la preview.
+  if (!GlobalFonts.registerFromPath(path, family)) throw new Error(`Font not found: ${path}`)
+}
 
 /** Vrai si le build de Skia embarqué sait encoder en WebP. Vérifié une fois :
  *  un `.webp` qui contient du PNG est un fichier qui ment sur son extension —

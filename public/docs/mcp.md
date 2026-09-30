@@ -56,7 +56,7 @@ Renders one or more screenshots and writes a file.
 
 | Parameter | Type | Notes |
 | --- | --- | --- |
-| `shots` | array, 1 to 24 | `{ input: string, layers?: Layer[] }`. Up to 64 layers per shot. |
+| `shots` | array, 1 to 24 | `{ input: string, layers?: Layer[], placement?, pan? }`. Up to 64 layers per shot. |
 | `output` | string | Optional. Default `<input>-screenmat.<format>`, resolved under the write root. |
 | `style` | string | Optional. A name from `screenmat_list_styles`. |
 | `settings` | object | Optional. See below. |
@@ -64,7 +64,7 @@ Renders one or more screenshots and writes a file.
 | `scale` | `1` \| `2` \| `3` | Optional, default `2`. |
 
 `settings` accepts `frame`, `ratio`, `padding`, `radius`, `rotateY`, `titleBar`,
-`background`, `theme`, `url`, `shadow`, `grain`, `seed`, `format` — the same
+`deviceRatio`, `screenRatio`, `islandSide`, `background`, `theme`, `url`, `shadow`, `grain`, `seed`, `format` — the same
 values and bounds as the [CLI flags](#cli-options). `composition.layout` is one
 of `single`, `stack`, `side`, `tilt3d`, and `spread` runs 0 to 1.
 
@@ -74,13 +74,21 @@ A `Layer` is a subset of the [scene layer](#scene-layers):
 | --- | --- | --- |
 | `kind` | `text` `badge` `arrow` `line` `box` `ellipse` `redaction` | Required. |
 | `rect` | `{ x, y, w?, h? }` | Required. Fractions of the **window width**. `w` and `h` are signed and default to 0. |
-| `text` | string, ≤ 280 | `kind=text` only. |
+| `text` | string, ≤ 280 | `kind=text` only. `\n` breaks lines; `rect.w > 0` wraps at that width. |
 | `redaction` | `blur` `pixel` `solid` | `kind=redaction` only. |
+| `redactionShape` | `rect` `ellipse` | `kind=redaction` only. The ellipse is inscribed in `rect`. |
 | `color` | `#RRGGBB` | Six hex digits. |
-| `labelStyle` | `pill` `plain` `badge` | |
-| `size` | 0.005 to 0.04 | Font size, fraction of the window width. |
+| `font` | `sans` `mono` | `kind=text` only. |
+| `weight` | 400 to 700 | |
+| `align` | `left` `center` `right` | |
+| `background` | `{ on?, color?, opacity? }` | Plate behind a text. Default on, `#000000` at 0.85. |
+| `shadow` | 0 to 1 | Text defaults to 0.4, shapes to 0. |
+| `size` | 0.005 to 0.08 | Font size, fraction of the window width. |
 | `strokeWidth` | 0.0005 to 0.012 | |
 | `fill` | 0 to 1 | Fill opacity. `0` means outline only. |
+| `fillColor` | `#RRGGBB` | `box`, `ellipse`. Defaults to `color`. |
+| `stroke` | boolean | `box`, `ellipse`. `false` needs `fill > 0`. |
+| `strokeOpacity` | 0 to 1 | `box`, `ellipse`. Outline opacity, default `1`. |
 | `opacity` | 0.1 to 1 | |
 
 Unlike a scene file, the MCP schema does not expose `radius`, `arrowHead`,
@@ -106,17 +114,21 @@ height of the title bar.
 | Parameter | Type | Notes |
 | --- | --- | --- |
 | `input` | string | Required. Path to the screenshot. |
-| `settings` | object | Optional: `frame`, `ratio`, `padding`, `radius`, `rotateY`, `titleBar`. |
+| `settings` | object | Optional: `frame`, `ratio`, `padding`, `radius`, `rotateY`, `titleBar`, `deviceRatio`, `screenRatio`. |
+| `pan` | `{ x?, y? }` | Optional, 0 to 1 per axis. The same `pan` as the shot you will render. |
 
 Only geometry settings are accepted here — those are the ones that move the
 screenshot inside its window. Grain, seed or format would not change the answer,
 and exposing them would suggest otherwise.
+
+With `settings: { "frame": "browser" }`:
 
 ```json
 {
   "imageWidth": 2880,
   "imageHeight": 1800,
   "screen": { "x": 0, "y": 0.035, "w": 1, "h": 0.625 },
+  "source": { "x": 0, "y": 0, "w": 2880, "h": 1800 },
   "titleBar": 0.035,
   "canvas": { "width": 1600, "height": 1200 }
 }
@@ -145,7 +157,7 @@ settings — see [Styles](#styles).
 
 ```text
 1. screenmat_list_styles     → is there a house style? → "docs"
-2. screenmat_inspect         → screen.y = 0.0405, screen.h = 0.625
+2. screenmat_inspect         → screen.y = 0.011, screen.h = 0.61125
 3. screenmat_render          → style "docs", one arrow, one redaction
                              → /project/docs/images/login-screenmat.webp
 ```

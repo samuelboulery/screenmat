@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { parseScene } from '../spec.ts'
-import { ANNOTATION_LIMITS } from '../annotate.ts'
+import { panFromText, parseScene } from '../spec.ts'
+import { ANNOTATION_ACCENT, ANNOTATION_LIMITS } from '../annotate.ts'
 import { DEFAULT_COMPOSITION, DEFAULT_PLACEMENT, DEFAULT_SETTINGS } from '../../types.ts'
 
 const minimal = { shots: [{ input: 'a.png' }] }
@@ -58,6 +58,23 @@ describe('parseScene — composition et placement', () => {
     )
   })
 
+  it('centre le screenshot dans son écran par défaut, et borne sa position', () => {
+    const scene = parseScene({
+      shots: [
+        { input: 'a.png' },
+        { input: 'b.png', pan: { x: 9, y: -1 } },
+        { input: 'c.png', pan: { x: 0.25 } },
+        { input: 'd.png', pan: 'en haut' },
+      ],
+    })
+    expect(scene.shots.map((shot) => shot.pan)).toEqual([
+      { x: 0.5, y: 0.5 },
+      { x: 1, y: 0 },
+      { x: 0.25, y: 0.5 },
+      { x: 0.5, y: 0.5 },
+    ])
+  })
+
   it('valide le placement d’un shot champ par champ', () => {
     const scene = parseScene({
       shots: [
@@ -105,7 +122,7 @@ describe('parseScene — calques', () => {
       { kind: 'box', color: 'red' },
       { kind: 'box', color: '#ff0000' },
     ])
-    expect(scene.shots[0]?.layers[0]?.color).toBe('#7DE2FF')
+    expect(scene.shots[0]?.layers[0]?.color).toBe(ANNOTATION_ACCENT)
     expect(scene.shots[0]?.layers[1]?.color).toBe('#ff0000')
   })
 
@@ -135,5 +152,104 @@ describe('parseScene — filigrane et palette', () => {
   it('ignore une palette dont la base n’est pas un hex', () => {
     expect(parseScene({ ...minimal, palette: { base: 'bleu' } }).palette).toBeUndefined()
     expect(parseScene({ ...minimal, palette: { base: '#101010' } }).palette?.base).toBe('#101010')
+  })
+})
+
+describe('parseScene — texte', () => {
+  const text = (layer: object) =>
+    parseScene({ shots: [{ input: 'a.png', layers: [{ kind: 'text', text: 'Hi', ...layer }] }] }).shots[0]
+      ?.layers[0]
+
+  it('pose un texte neuf blanc, sur plaque noire, en Space Grotesk', () => {
+    const layer = text({})
+    expect(layer?.font).toBe('sans')
+    expect(layer?.background.on).toBe(true)
+    expect(layer?.background.color).toBe('#000000')
+    expect(layer?.color).toBe('#FFFFFF')
+  })
+
+  it('relit un ancien label `pill` : plaque allumée, police mono, taille d’origine', () => {
+    const layer = text({ labelStyle: 'pill', color: '#7DE2FF' })
+    expect(layer?.background.on).toBe(true)
+    expect(layer?.font).toBe('mono')
+    expect(layer?.color).toBe('#7DE2FF')
+    expect(layer?.size).toBe(0.011)
+  })
+
+  it('relit un ancien label `plain` sans plaque', () => {
+    expect(text({ labelStyle: 'plain' })?.background.on).toBe(false)
+  })
+
+  it('relit un ancien label inversé : la plaque prend la couleur, le texte l’encre lisible', () => {
+    const layer = text({ labelStyle: 'pill', invert: true, color: '#FFD479' })
+    expect(layer?.background.color).toBe('#FFD479')
+    expect(layer?.background.opacity).toBe(1)
+    expect(layer?.color).toBe('#000000')
+  })
+
+  it('borne et valide une plaque fournie', () => {
+    const layer = text({ background: { on: false, color: 'rouge', opacity: 4, padding: -1 } })
+    expect(layer?.background.on).toBe(false)
+    expect(layer?.background.color).toBe('#000000')
+    expect(layer?.background.opacity).toBe(1)
+    expect(layer?.background.padding).toBe(0)
+  })
+
+  it('accepte le multi-ligne, l’alignement et la graisse', () => {
+    const layer = text({ text: 'a\nb', align: 'center', weight: 700, font: 'mono' })
+    expect(layer?.text).toBe('a\nb')
+    expect(layer?.align).toBe('center')
+    expect(layer?.weight).toBe(700)
+    expect(layer?.font).toBe('mono')
+  })
+})
+
+describe('panFromText', () => {
+  it('lit « x,y »', () => {
+    expect(panFromText('0.25, 1')).toEqual({ x: 0.25, y: 1 })
+  })
+
+  it('borne à 0..1', () => {
+    expect(panFromText('-3,7')).toEqual({ x: 0, y: 1 })
+  })
+
+  it.each(['0.5,', ',1', '0.3', 'abc,0.2', '0,0,0', ''])('refuse « %s » plutôt que de cadrer ailleurs', (text) => {
+    expect(() => panFromText(text)).toThrow(/--pan/)
+  })
+})
+
+describe('parseScene — forme du floutage, fond et contour', () => {
+  const layer = (value: Record<string, unknown>) =>
+    parseScene({ shots: [{ input: 'a.png', layers: [value] }] }).shots[0].layers?.[0]
+
+  it('lit la forme d’un floutage, rectangle quand elle manque ou ment', () => {
+    expect(layer({ kind: 'redaction', redactionShape: 'ellipse' })).toMatchObject({ redactionShape: 'ellipse' })
+    expect(layer({ kind: 'redaction' })).toMatchObject({ redactionShape: 'rect' })
+    expect(layer({ kind: 'redaction', redactionShape: 'star' })).toMatchObject({ redactionShape: 'rect' })
+  })
+
+  it('donne au fond la couleur du trait quand il n’a pas la sienne', () => {
+    // Une scène d'avant la dissociation : `fill` seul, une seule couleur.
+    expect(layer({ kind: 'box', color: '#112233', fill: 0.15 })).toMatchObject({
+      fill: 0.15,
+      fillColor: '#112233',
+      stroke: true,
+    })
+    expect(layer({ kind: 'box', color: '#112233', fillColor: 'red' })).toMatchObject({ fillColor: '#112233' })
+  })
+
+  it('lit un fond et un contour dissociés', () => {
+    expect(layer({ kind: 'ellipse', color: '#112233', fillColor: '#445566', fill: 1, stroke: false })).toMatchObject({
+      color: '#112233',
+      fillColor: '#445566',
+      stroke: false,
+    })
+  })
+
+  it('borne la transparence du contour, pleine par défaut', () => {
+    expect(layer({ kind: 'box' })).toMatchObject({ strokeOpacity: 1 })
+    expect(layer({ kind: 'box', strokeOpacity: 0.4 })).toMatchObject({ strokeOpacity: 0.4 })
+    expect(layer({ kind: 'box', strokeOpacity: 7 })).toMatchObject({ strokeOpacity: 1 })
+    expect(layer({ kind: 'box', strokeOpacity: 'half' })).toMatchObject({ strokeOpacity: 1 })
   })
 })

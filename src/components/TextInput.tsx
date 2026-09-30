@@ -17,8 +17,9 @@ export function useCaretBlink(active: boolean): boolean {
 }
 
 /* Capture clavier de la saisie de texte. Le champ est invisible : ce qu'on voit
-   est le vrai label dessiné par `renderScene`, caret compris. Passer par un
-   `input` réel donne l'IME, la dictée et le clavier mobile sans les réécrire. */
+   est le vrai texte dessiné par `renderScene`, caret compris. Passer par un
+   `textarea` réel donne l'IME, la dictée, le clavier mobile et Entrée pour une
+   nouvelle ligne, sans les réécrire. `⌘Entrée` ou `Escape` valident. */
 
 type TextInputProps = {
   /** Le calque en cours d'édition. Absent ⇒ il vient d'être supprimé. */
@@ -29,7 +30,7 @@ type TextInputProps = {
 }
 
 export default function TextInput({ annotation, onText, onCaret, onCommit }: TextInputProps) {
-  const ref = useRef<HTMLInputElement>(null)
+  const ref = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
     const input = ref.current
@@ -40,21 +41,26 @@ export default function TextInput({ annotation, onText, onCaret, onCommit }: Tex
 
   if (!annotation) return null
 
-  const report = (input: HTMLInputElement) => onCaret(input.selectionStart ?? input.value.length)
+  const report = (input: HTMLTextAreaElement) => onCaret(input.selectionStart ?? input.value.length)
 
   return (
-    <input
+    <textarea
       ref={ref}
       value={annotation.text}
       aria-label="Layer text"
-      className="absolute left-0 top-0 size-0 border-0 p-0 opacity-0"
+      // Pas de 0 × 0 : un `textarea` sans surface laisse son caret en tête, et
+      // chaque frappe s'écrivait à l'envers. Une vraie boîte, invisible et
+      // hors d'atteinte du pointeur.
+      className="pointer-events-none absolute left-0 top-0 h-8 w-40 resize-none border-0 p-0 opacity-0"
       onChange={(event) => {
         onText(event.target.value)
         report(event.target)
       }}
       onSelect={(event) => report(event.currentTarget)}
+      onKeyUp={(event) => report(event.currentTarget)}
       onKeyDown={(event) => {
-        if (event.key === 'Enter' || event.key === 'Escape') {
+        const submit = event.key === 'Enter' && (event.metaKey || event.ctrlKey)
+        if (submit || event.key === 'Escape') {
           event.preventDefault()
           onCommit()
         }

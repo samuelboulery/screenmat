@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { createCanvas } from '@napi-rs/canvas'
+import { createCanvas, loadImage } from '@napi-rs/canvas'
+import { readFile, stat } from 'node:fs/promises'
 import { BASE_WIDTH, inspect, render } from '../api.ts'
+import { DITHERS, isDither } from '../../src/lib/dithered.ts'
+import { SERIES } from '../../src/lib/series.ts'
+import { WALLPAPERS, wallpaperPath } from '../../src/lib/wallpapers.ts'
 
 /** Un screenshot minuscule, généré en mémoire : le rendu ne dépend pas d'un
  *  fichier de fixture, et le test reste rapide. */
@@ -112,6 +116,66 @@ describe('render — annotations', () => {
   })
 })
 
+describe('render — centrage du texte', () => {
+  type Box = { left: number; top: number; right: number; bottom: number }
+  type Match = (r: number, g: number, b: number, x: number, y: number) => boolean
+
+  async function pixels(buffer: Buffer) {
+    const image = await loadImage(buffer)
+    const canvas = createCanvas(image.width, image.height)
+    const ctx = canvas.getContext('2d')
+    ctx.drawImage(image, 0, 0)
+    return { data: ctx.getImageData(0, 0, image.width, image.height).data, width: image.width, height: image.height }
+  }
+
+  /** Boîte des pixels de `area` qui passent `match`. */
+  function inkBox(image: Awaited<ReturnType<typeof pixels>>, area: Box, match: Match): Box {
+    const box = { left: Infinity, top: Infinity, right: -Infinity, bottom: -Infinity }
+    for (let y = area.top; y < area.bottom; y += 1) {
+      for (let x = area.left; x < area.right; x += 1) {
+        const i = (y * image.width + x) * 4
+        if (!match(image.data[i], image.data[i + 1], image.data[i + 2], x, y)) continue
+        box.left = Math.min(box.left, x)
+        box.right = Math.max(box.right, x + 1)
+        box.top = Math.min(box.top, y)
+        box.bottom = Math.max(box.bottom, y + 1)
+      }
+    }
+    return box
+  }
+
+  const center = (box: Box) => ({ x: (box.left + box.right) / 2, y: (box.top + box.bottom) / 2 })
+
+  it.each([1, 3])('centre l’encre du chiffre dans sa pastille à l’échelle %i', async (scale) => {
+    const { buffer } = await render({
+      shots: [{
+        input: shot,
+        layers: [{ kind: 'badge', color: '#FF00FF', size: 0.08, rect: { x: 0.4, y: 0.35, w: 0, h: 0 } }],
+      }],
+      settings: { format: 'png' },
+      scale,
+    })
+
+    const image = await pixels(buffer)
+    const whole = { left: 0, top: 0, right: image.width, bottom: image.height }
+    const disc = inkBox(image, whole, (r, g, b) => r > 200 && g < 80 && b > 200)
+    const middle = center(disc)
+    // Le chiffre : ce qui, bien à l'intérieur du disque, n'est plus magenta.
+    const reach = ((disc.right - disc.left) / 2) * 0.8
+    const digit = center(
+      inkBox(
+        image,
+        disc,
+        (r, g, b, x, y) => Math.hypot(x + 0.5 - middle.x, y + 0.5 - middle.y) < reach && !(r > 128 && g < 128 && b > 128),
+      ),
+    )
+
+    // Un pixel à l'échelle 1 : l'écart d'avant la correction en valait près de deux.
+    expect(Math.abs(digit.x - middle.x)).toBeLessThan(scale)
+    expect(Math.abs(digit.y - middle.y)).toBeLessThan(scale)
+  }, 20_000)
+})
+
 describe('inspect', () => {
   it('rend le rapport du screenshot, barre de titre exclue', async () => {
     const result = await inspect(shot)
@@ -128,6 +192,61 @@ describe('inspect', () => {
   })
 })
 
+describe('inspect — cadres et recadrage', () => {
+  it('donne à l’écran d’un Mac le rapport du screenshot, image entière visible', async () => {
+    const result = await inspect(shot, { frame: 'macbook' })
+    expect(result.screen.h / result.screen.w).toBeCloseTo(300 / 400, 3)
+    expect(result.source.x).toBeCloseTo(0, 2)
+    expect(result.source.w).toBeCloseTo(400, 2)
+    expect(result.source.h).toBeCloseTo(300, 2)
+  })
+
+  it('publie la part visible du screenshot quand le ratio est verrouillé', async () => {
+    const centered = await inspect(shot, { screenRatio: '1:1' })
+    expect(centered.source).toEqual({ x: 50, y: 0, w: 300, h: 300 })
+
+    const left = await inspect(shot, { screenRatio: '1:1' }, { x: 0, y: 0.5 })
+    expect(left.source.x).toBe(0)
+  })
+})
+
+describe('render — floutage et recadrage', () => {
+  /** Moitié gauche rouge, moitié droite bleue. */
+  function split(): Buffer {
+    const canvas = createCanvas(400, 300)
+    const ctx = canvas.getContext('2d')
+    ctx.fillStyle = '#ff0000'
+    ctx.fillRect(0, 0, 200, 300)
+    ctx.fillStyle = '#0000ff'
+    ctx.fillRect(200, 0, 200, 300)
+    return canvas.toBuffer('image/png')
+  }
+
+  it('floute ce que l’écran montre, pas ce que l’image entière aurait montré', async () => {
+    // Écran carré, image 4:3 poussée à droite : on voit les colonnes 100 à 400.
+    // À 40 % de l'écran tombe la colonne 220, bleue. Un floutage qui relirait
+    // l'image étirée y poserait la colonne 160, rouge — il cacherait autre chose
+    // que ce qu'on voit, et laisserait croire que la donnée est couverte.
+    const { buffer, width, height } = await render({
+      shots: [{
+        input: split(),
+        pan: { x: 1, y: 0.5 },
+        layers: [{ kind: 'redaction', redaction: 'pixel', rect: { x: 0, y: 0, w: 1, h: 1 } }],
+      }],
+      settings: { format: 'png', frame: 'none', ratio: '1:1', screenRatio: '1:1', padding: 0.1, shadow: 0 },
+      scale: 1,
+    })
+
+    const image = await loadImage(buffer)
+    const canvas = createCanvas(width, height)
+    const ctx = canvas.getContext('2d')
+    ctx.drawImage(image, 0, 0)
+    const [r, , b] = ctx.getImageData(Math.round(width * 0.42), Math.round(height / 2), 1, 1).data
+    expect(b).toBeGreaterThan(200)
+    expect(r).toBeLessThan(50)
+  })
+})
+
 describe('render — cache du fond', () => {
   /** Chaque réglage qui touche au fond doit invalider le cache. Un champ oublié
    *  dans la clé fige le fond : le curseur bouge, l'image ne suit pas. */
@@ -140,9 +259,29 @@ describe('render — cache du fond', () => {
     contrast: { contrast: 1.6 },
     grain: { grain: 0.9 },
     seed: { seed: 42 },
+    palette: { palette: { base: '#101018', accents: ['#ff5500'] } },
+    'tahoe-dark': { background: 'tahoe-dark' },
+    'sonoma-light': { background: 'sonoma-light' },
+    bayer: { background: 'bayer' },
+    halftone: { background: 'halftone' },
+    scanlines: { background: 'scanlines' },
   } as const
 
   const base = { seed: 5 } as const
+
+  // La trame a ses propres réglages : ils ne valent que pour la série tramée.
+  for (const background of SERIES.dither) {
+    if (!isDither(background)) throw new Error(`${background} n’est pas une trame`)
+    for (const [nom, patch] of Object.entries({ ditherCell: { ditherCell: 0.02 }, ditherAngle: { ditherAngle: 10 } })) {
+      // Une trame alignée sur sa grille n'a pas d'angle à lire.
+      if (nom === 'ditherAngle' && !DITHERS[background].angle) continue
+      it(`invalide le cache quand \`${nom}\` change (${background})`, async () => {
+        const plain = await render({ input: shot, settings: { ...base, background }, scale: 1 })
+        const changed = await render({ input: shot, settings: { ...base, background, ...patch }, scale: 1 })
+        expect(changed.buffer.equals(plain.buffer)).toBe(false)
+      })
+    }
+  }
 
   it('rejoue le même fichier quand rien ne change', async () => {
     const a = await render({ input: shot, settings: base, scale: 1 })
@@ -177,4 +316,76 @@ describe('render — cache du fond', () => {
     const two = await render({ input: shot, settings: base, scale: 2 })
     expect(two.width).toBe(one.width * 2)
   })
+})
+
+describe('render — fonds d’écran', () => {
+  it('embarque un fichier et une vignette par fond, sans alourdir le dépôt', async () => {
+    expect(SERIES.windows).toHaveLength(6)
+    for (const kind of WALLPAPERS) {
+      const full = await stat(new URL(`../../public/${wallpaperPath(kind, 'full')}`, import.meta.url))
+      const thumb = await stat(new URL(`../../public/${wallpaperPath(kind, 'thumb')}`, import.meta.url))
+      expect(full.size, kind).toBeLessThanOrEqual(600 * 1024)
+      expect(thumb.size, kind).toBeLessThanOrEqual(12 * 1024)
+    }
+  })
+
+  it('recadre chaque fond en 16:10, vignette comprise', async () => {
+    for (const kind of WALLPAPERS) {
+      const full = await loadImage(await readFile(new URL(`../../public/${wallpaperPath(kind, 'full')}`, import.meta.url)))
+      const thumb = await loadImage(await readFile(new URL(`../../public/${wallpaperPath(kind, 'thumb')}`, import.meta.url)))
+      expect(full.width / full.height, kind).toBeCloseTo(1.6, 2)
+      expect([thumb.width, thumb.height], kind).toEqual([192, 120])
+    }
+  })
+
+  it('peint l’image du fond, pas l’aplat', async () => {
+    const settings = { seed: 3, grain: 0 } as const
+    const solid = await render({ input: shot, settings: { ...settings, background: 'solid' }, scale: 1 })
+    const tahoe = await render({ input: shot, settings: { ...settings, background: 'tahoe-dark' }, scale: 1 })
+    const again = await render({ input: shot, settings: { ...settings, background: 'tahoe-dark' }, scale: 1 })
+    const sequoia = await render({ input: shot, settings: { ...settings, background: 'sequoia-light' }, scale: 1 })
+    expect(tahoe.buffer.equals(solid.buffer)).toBe(false)
+    expect(tahoe.buffer.equals(again.buffer)).toBe(true)
+    expect(tahoe.buffer.equals(sequoia.buffer)).toBe(false)
+    const bloom = await render({ input: shot, settings: { ...settings, background: 'windows-11-dark' }, scale: 1 })
+    expect(bloom.buffer.equals(solid.buffer)).toBe(false)
+    expect(bloom.buffer.equals(tahoe.buffer)).toBe(false)
+  })
+})
+
+describe('render — série tramée', () => {
+  it('compte onze trames, les trois d’origine en tête', () => {
+    expect(SERIES.dither).toEqual([
+      'bayer', 'halftone', 'scanlines',
+      'atkinson', 'stipple', 'crosshatch', 'contours', 'ridgelines', 'riso', 'glyphs', 'truchet',
+    ])
+  })
+
+  it('`atkinson` ne pose que deux couleurs : des cellules pleines, sans lissage', async () => {
+    const { buffer } = await render({
+      input: shot,
+      // PNG : le WebP, avec pertes, inventerait des couleurs intermédiaires.
+      settings: { background: 'atkinson', seed: 3, shadow: 0, ditherCell: 0.01, format: 'png' },
+      scale: 1,
+    })
+    const image = await loadImage(buffer)
+    const canvas = createCanvas(image.width, image.height)
+    const ctx = canvas.getContext('2d')
+    ctx.drawImage(image, 0, 0)
+    // Une bande du haut du canvas : du fond seul, la fenêtre commence plus bas.
+    const { data } = ctx.getImageData(0, 0, image.width, 48)
+    const colours = new Set<number>()
+    for (let i = 0; i < data.length; i += 4) colours.add((data[i]! << 16) | (data[i + 1]! << 8) | data[i + 2]!)
+    expect(colours.size).toBe(2)
+  })
+
+  for (const background of SERIES.dither) {
+    it(`\`${background}\` est déterministe par graine`, async () => {
+      const a = await render({ input: shot, settings: { background, seed: 3, grain: 0 }, scale: 1 })
+      const b = await render({ input: shot, settings: { background, seed: 3, grain: 0 }, scale: 1 })
+      const c = await render({ input: shot, settings: { background, seed: 4, grain: 0 }, scale: 1 })
+      expect(a.buffer.equals(b.buffer)).toBe(true)
+      expect(a.buffer.equals(c.buffer)).toBe(false)
+    })
+  }
 })

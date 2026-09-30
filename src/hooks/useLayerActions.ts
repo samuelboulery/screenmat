@@ -36,7 +36,7 @@ export function useLayerActions(shots: ShotsState): LayerActions {
   } = shots
 
   const onSelection = useCallback(
-    (act: (shot: string, layers: readonly string[]) => void) => {
+    (act: (shot: string, layers: readonly string[]) => unknown) => {
       if (shotId && ids.length > 0) act(shotId, ids)
     },
     [shotId, ids],

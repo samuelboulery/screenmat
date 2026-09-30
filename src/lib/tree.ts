@@ -124,6 +124,18 @@ export function updateNode(
   })
 }
 
+/** Applique `change` à chaque calque de l'arbre, groupes traversés et laissés
+ *  tels quels. Pour ce qui touche tous les calques d'un shot à la fois : les
+ *  faire suivre le screenshot qui glisse ou change de cadre. */
+export function mapAnnotations(
+  nodes: readonly LayerNode[],
+  change: (annotation: Annotation) => Annotation,
+): LayerNode[] {
+  return nodes.map((node) =>
+    isGroup(node) ? { ...node, children: mapAnnotations(node.children, change) } : change(node),
+  )
+}
+
 /** Retire les nœuds visés, où qu'ils soient dans l'arbre. */
 export function removeNodes(nodes: readonly LayerNode[], ids: readonly string[]): LayerNode[] {
   const doomed = new Set(ids)

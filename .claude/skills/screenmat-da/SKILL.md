@@ -1,20 +1,34 @@
 ---
 name: screenmat-da
-description: Direction artistique « Afterglow » de screenmat — palette et accent, recettes de sélection, icônes Lucide, typographie, rayons, carte des quatre écrans, raccourcis clavier, références visuelles. À invoquer AVANT de toucher à un composant, une couleur, un token, une icône, un écran, un panneau, un raccourci, un état sélectionné ou survolé, une taille de texte ou un espacement. Écrire de l'interface sans avoir lu ce skill fait diverger la DA au premier ajustement.
+description: Direction artistique « Papier technique » de screenmat (clair et sombre) — jetons et thème, recettes de sélection, icônes Lucide, typographie, rayons, espace de travail unique, raccourcis clavier, références visuelles. À invoquer AVANT de toucher à un composant, une couleur, un token, une icône, un écran, un panneau, un raccourci, un état sélectionné ou survolé, une taille de texte ou un espacement. Écrire de l'interface sans avoir lu ce skill fait diverger la DA au premier ajustement.
 ---
 
-# screenmat — direction artistique « Afterglow »
+# screenmat — direction artistique « Papier technique »
 
-Scène noire (`#07070A`), panneaux translucides flottants, un seul accent
-cyan→violet (`#7DE2FF` → `#A378FF`) réservé à **deux** usages : l'action
-primaire et la sélection courante. `#FF9A9A` est réservé au floutage et au
-destructif. Aucune ombre portée dans le chrome — la seule ombre du produit
-appartient à l'artwork.
+Encre sur papier en clair (`#F3F2EE` / `#111`), papier sur encre en sombre
+(`#121110` / `#EDEBE5`), trame de points discrète, rayons de 2 px. **Aucune
+couleur dans le chrome** : la couleur appartient à la capture et aux
+annotations. L'« accent » est l'encre du thème, réservé à **deux** usages :
+l'action primaire (aplat `bg-accent`) et la sélection courante. Le rouge
+(`--color-danger`) est réservé au floutage et au destructif. Les annotations
+sont ambre par défaut (`#FFD479`) : jamais la couleur de la sélection. Aucune
+ombre dans le chrome — la seule ombre du produit appartient à l'artwork.
+
+**Deux thèmes, un seul jeu de noms.** Les valeurs claires vivent dans
+`@theme` (`src/index.css`), le sombre les redéfinit sous
+`:root[data-theme='dark']`. Le thème est posé sur `<html>` avant le premier
+rendu par le script en tête de chaque page (`index.html`, `app/index.html`, `docs/index.html`) (choix `sm-theme`, sinon le système), puis
+suivi par `useTheme`. Il ne touche jamais l'export : rien dans `src/lib/` ne lit
+un jeton du chrome. Pas de `text-white` ni de `bg-white/…` : `ink` est le
+contraste du thème, `ink/[.04]` le survol.
+
+**Une seule animation décorative : le reflet** (`sheen`), une bande qui
+traverse un bouton au survol. Primaire et secondaire, jamais ailleurs.
 
 ## Les deux recettes de sélection
 
 **Définies dans `src/components/ui.tsx` et nulle part ailleurs.** `SWITCH_ON`
-(`bg-raised text-white`) marque un *commutateur* — navigation, instrument,
+(`bg-raised text-ink`) marque un *commutateur* — navigation, instrument,
 ratio, format : il y en a toujours un d'allumé, l'accent y perdrait son sens.
 `SELECTED` marque un *contenu sélectionné* — shot, calque, style, preset : ce
 sur quoi la prochaine action portera, et c'est là que l'accent gagne sa place.
@@ -24,10 +38,12 @@ la DA au premier ajustement d'opacité.
 
 ## Typographie, icônes, rayons
 
-Deux familles : **Space Grotesk** (ce qu'un humain lit) et **JetBrains Mono**
-(ce qu'une machine a produit : labels de section, dimensions, seeds, noms de
-fichiers). Les deux sont embarquées en woff2 dans `public/fonts/` — l'app doit
-rester utilisable hors ligne. Tokens et échelle typographique : `src/index.css`.
+Trois familles, trois rôles : **Unbounded 800** pour les titres qui
+s'affichent en grand (`t-headline` : titre d'accueil, landing) et nulle part
+dans les panneaux ; **Space Grotesk** pour ce qu'un humain lit ;
+**JetBrains Mono** pour ce qu'une machine a produit (labels de section,
+dimensions, seeds, noms de fichiers). Les trois sont embarquées en woff2 dans
+`public/fonts/` — l'app doit rester utilisable hors ligne. Tokens et échelle typographique : `src/index.css`.
 
 Un seul jeu d'icônes, **Lucide**, importé par le seul `src/components/icons.tsx`
 — aucun autre fichier n'importe `lucide-react`. Taille (16 px, 20 px dans le
@@ -36,39 +52,80 @@ rail) et épaisseur du trait (1.5) sont posées une fois en CSS sur la classe
 Icône seule là où l'espace est compté et où le geste est évident (rail, œil et
 cadenas d'un calque, undo/redo) ; icône **et** mot sur la navigation et les
 actions de fin de course. Un raccourci clavier (`⌘V`, `⌫`) s'écrit, il ne se
-dessine pas. Cinq rayons, pas seize : `--radius-xs|sm|md|lg|xl`.
+dessine pas — et il s'écrit pour le clavier de celui qui regarde : `Keys`
+(une capsule par touche) dans un panneau ou une infobulle, `keyLabel` dans un
+`title`, tous deux lus dans `lib/keys.ts`. La table reste rédigée en symboles
+Mac ; hors Mac elle sort en `Ctrl` `Shift` `Alt` `Del`. Ne jamais écrire `⌘`
+en dur dans un composant. Les symboles prennent la police système
+(`t-key-glyph`) : la mono embarquée ne les contient pas. Cinq noms de rayon (`--radius-xs|sm|md|lg|xl`) qui valent tous
+2 px : le nom dit le rôle, la valeur est celle du papier.
 
-## Écrans
+## L'espace de travail
 
-**Quatre destinations, un seul état** (`Screen`, dans `types.ts`) : `edit`,
-`batch`, `styles`, `history`. La barre haute de 58 px ne porte que l'identité et
-la navigation — deux groupes segmentés, `Edit | Batch` (le document) puis
-`Styles | History` (la bibliothèque), séparés par un espace et non par un trait.
-Aucune action n'y entre : sa largeur ne bouge donc plus d'un écran à l'autre.
+**Un seul écran de travail**, et l'écran d'import quand aucune image n'est
+ouverte. Plus de navigation : Edit, Batch, Styles et History ont fusionné.
 
-**Une action vit près de ce qu'elle manipule.** Copy et Export sont dans le
-filmstrip, avec les dimensions, undo/redo et la nouvelle session ; les actions
-de lot au pied du panneau Batch ; l'export et l'enregistrement d'un style dans
-l'écran Styles, chacun du côté de ce qu'il produit.
-
-| Écran | Rôle |
+| Zone | Rôle |
 |---|---|
-| Import | premier écran, dropzone + exports récents (déduit de « aucun shot ») |
-| Edit | embellir **et** annoter : rail d'instruments à gauche, inspecteur unique à droite, filmstrip en bas. Les compositions multi-shot (single/stack/side/tilt3d) s'y règlent aussi, filmstrip docké |
-| Styles | nommer et réutiliser un réglage complet, partage par `.json` |
-| Batch | appliquer un style à N shots, sortir un zip ; « Harmonize backgrounds » aligne l'intensité des fonds du lot sans toucher aux teintes |
-| History | retrouver un export passé et le réouvrir avec ses réglages |
+| Barre haute (58 px) | identité à gauche ; à droite `Styles ▾` (menu), `History` (tiroir), `Export 2× ▾` (bouton primaire + menu), Dev docs, thème |
+| Panneau gauche (240 px) | les images de la session — clic = ouvrir, jamais vider le lot —, `Separate / Combined`, puis les calques de l'image active, et la nouvelle session au pied |
+| Canvas | la barre d'outils flotte au-dessus, centrée sur la zone de dessin ; undo/redo et dimensions dessous |
+| Inspecteur droit (288 px) | **contextuel** : un calque sélectionné ⇒ ses réglages seuls, avec `← Document` ; rien de sélectionné ⇒ Frame, Canvas, Background, Composition (en combiné), Shot, puis la section Style si un style est appliqué |
 
-**Le rail gauche ne porte que des instruments** — ce qui laisse une trace sur le
-screenshot (`SEL TXT NUM ARR LIN BOX ELL RDC`). Les réglages du document sont
-des sections repliables de l'inspecteur, pas des outils. Le chrome d'annotation
-— cadres, poignées, caret — ne se dessine que quand un calque est sélectionné ou
+**Séparé ou combiné, sans champ de plus.** `layout: 'single'` est le mode
+séparé (un fichier par image, le lot sort en zip depuis le menu Export) ; toute
+autre disposition est le mode combiné, qui compose les images cochées. Le menu
+Export porte format, échelle, copie et — en séparé, à plusieurs images — le lot :
+ratios en plus, « Harmonize backgrounds », progression et annulation. Chaque
+fichier du lot entre dans l'historique.
+
+**Styles en menu** : appliquer, enregistrer, mettre à jour, importer/exporter en
+`.json`. Nom, filigrane et palette figée se règlent dans la section Style de
+l'inspecteur, là où l'effet se voit. **History en tiroir**, sur `<dialog>` natif.
+
+**La barre d'outils ne porte que des instruments** — ce qui laisse une trace sur
+le screenshot (`SEL TXT NUM ARR LIN BOX ELL RDC`). Le chrome d'annotation —
+cadres, poignées, caret — ne se dessine que quand un calque est sélectionné ou
 qu'un instrument de tracé est en main : avec `SEL` et rien de sélectionné, le
 canvas montre exactement ce que l'export produira, et `Escape` y ramène.
 
-Sous 1100 px : le rail passe en barre horizontale, l'inspecteur devient une
-feuille rétractable. Pas de version mobile — l'outil vit à côté d'un screenshot
-pris sur desktop.
+**Une couleur se choisit partout par le même `ColorPicker`** : la pastille
+courante (28 px, c'est elle qui ouvre le sélecteur natif), son hex éditable, puis
+le nuancier en pastilles de 20 px — la palette du fond aux mêmes 20 px. Un hex
+incomplet ou faux ne s'applique pas. **Une forme a un fond et un contour, chacun
+sa bascule, sa couleur et sa transparence** (`ShapeStyle`, pour `BOX` et `ELL`) :
+sections `Fill`, `Stroke`, puis `Appearance` (coins pour `BOX`, ombre). La
+transparence se saisit dans un champ `%` à droite de l'hex, jamais au curseur ;
+l'opacité du calque n'est pas proposée pour une forme — ce serait un troisième
+réglage pour la même chose. Le champ va de 1 à 100 : une couleur se coupe à sa
+bascule, pas en la rendant invisible. Couper le fond rallume le contour, dont la bascule se grise alors : une forme ne peut pas être invisible.
+Le fond d'une forme neuve est l'ambre des annotations, pas la couleur de son
+trait. **Un floutage se
+choisit en `Rectangle` ou `Ellipse`** dans son inspecteur, deux tuiles au-dessus
+de `blur · pixel · solid` — pas de second instrument dans la barre ; le choix
+suit l'outil, comme tout réglage de style.
+
+**La section Background range les fonds en séries** — `Screenshot · Dither` puis
+`macOS · Windows`, un `Segmented` en grille 2×2 (les fonds générés sur une ligne,
+les fonds d'écran sur l'autre) dont la valeur se déduit du type de fond. Les tuiles sont
+des miniatures dessinées par le moteur (`BackgroundThumb`), jamais un dégradé CSS :
+elles suivent la palette retouchée. Seuls les réglages que la série lit
+s'affichent. Les séries macOS et Windows montrent les vrais fonds d'écran d'Apple
+(Big Sur à Golden Gate) et de Microsoft (XP à Windows 11), embarqués dans
+`public/wallpapers/` (© Apple, © Microsoft, hors licence MIT, voir `NOTICE.md`) :
+ni palette, ni graine, ni grain — le fond tel qu'il est sur un bureau. Leurs
+tuiles chargent une vignette de 192 px, jamais l'image entière. Seul Windows 11
+existe en 3840 px ; 10, 8 et 7 sont en 1920 px, XP en 800 — flous à l'export 3×.
+
+**Le ratio de l'écran se règle dans la section Frame** (`ScreenRatioControl`) :
+une bascule `Device ratio` pour `mac` et `phone`, une grille `Screen ratio` pour
+`none` et `browser`. Verrouillé, l'écran rogne le screenshot ; **Espace + glisser**
+sur le canvas choisit la part visible, image par image, et les calques suivent.
+Un screenshot paysage couche le `phone` ; `Island · Left / Right` choisit alors
+le bord qui porte l'îlot, et n'apparaît pas pour un screenshot portrait.
+
+Sous 1100 px, l'inspecteur devient une feuille rétractable. Pas de version
+mobile — l'outil vit à côté d'un screenshot pris sur desktop.
 
 ## Raccourcis
 
@@ -78,12 +135,24 @@ annuler · `⇧⌘Z` refaire · `⌘D` dupliquer · `⌘A` tout sélectionner ·
 `⇧⌘G` dégrouper · `⌘↑`/`⌘↓` ordre dans la pile.
 
 Les **touches nues** n'existent que quand le canvas a le focus — il l'a par
-défaut dès qu'un shot est chargé : `R` régénérer le fond · `1/2/3` échelle
-d'export · `Delete` supprimer · `Escape` désélectionner · `←↑→↓` déplacer
-(`⇧` = pas ×5). Les poser sur `window` avec `preventDefault()` tuait le
+défaut dès qu'un shot est chargé, et le reprend après un choix d'outil ou une
+saisie : les outils `V T N A L R O B` (table `TOOL_KEYS`, `lib/tools.ts`) ·
+`⇧R` régénérer le fond · `1/2/3` échelle d'export · `Delete` supprimer ·
+`Escape` désélectionner, puis revenir à `V` · `←↑→↓` déplacer (`⇧` = pas ×5). Les poser sur `window` avec `preventDefault()` tuait le
 défilement aux flèches de tout panneau, et WCAG 2.1.4 exige de pouvoir couper,
 remapper, ou n'activer qu'au focus un raccourci à touche unique. `useShortcuts`
 rend le handler du canvas, il ne l'installe pas.
+
+**Se découvrir sans visite guidée.** Une seule table fait foi : `SHORTCUTS`
+(`useShortcuts.ts`) plus `TOOL_KEYS`. Le panneau `?` (touche nue, ou bouton
+clavier de la barre haute) ne lit qu'elles ; une touche ajoutée à un handler sans
+l'être là est introuvable, et un test refuse deux sens pour une même touche.
+Les barres (outils, barre haute, barre basse) portent une vraie infobulle
+`Tooltip` — nom puis touche en `<kbd>`, au survol après 300 ms, au focus clavier
+tout de suite ; ailleurs, `title` natif, faute de portail. Au premier import,
+trois astuces (`T`, glisser, `⌘E`) au-dessus de la barre basse, fermées une fois
+pour toutes (`sm-tips-seen`). Enregistrer ou mettre à jour un style s'accuse
+dans la ligne d'état.
 
 `⇧` **pendant un tracé** aimante une flèche ou un trait aux multiples de 45° —
 horizontales, verticales et diagonales parfaites — et carre une surface. En
@@ -91,8 +160,36 @@ tirant une poignée, il conserve les proportions et aimante de même. Sur le can
 avec l'outil Select : `⇧`/`⌘`-clic ajoute au lot, glisser sur le vide trace un
 rectangle de sélection.
 
-L'outil Texte pose son label d'un clic et ouvre la saisie sur place ; un
-double-clic la rouvre, un texte laissé vide supprime le calque.
+**Un outil reste en main après un tracé** : `Escape` ou `V` le rendent. Il
+retient aussi son dernier style — couleur, épaisseur, taille, ombre… — d'un
+calque au suivant et d'une session à l'autre (`lib/tool-style.ts`,
+`localStorage`) : un réglage fait à l'inspecteur devient celui de son outil.
+`⌥`-glisser sur un calque le duplique, la copie part avec le curseur ; hors
+calque, `⌥`-glisser déplace l'image entière. Au survol,
+un trait fin montre ce qu'un clic attraperait. Une sélection multiple porte sa
+boîte englobante, pointillée, avec quatre poignées de coin homothétiques.
+
+Le **calque texte** est blanc sur une plaque noire à 85 %, en Space Grotesk 600,
+avec une ombre : lisible sur n'importe quel screenshot sans rien régler. Un clic
+le pose et ouvre la saisie sur place — `Entrée` va à la ligne, `⌘Entrée` ou
+`Escape` valident ; un double-clic, quel que soit l'outil, la rouvre ; un texte
+laissé vide supprime le calque. Ses bords règlent la largeur de retour à la
+ligne, son coin la taille. Toute la mise en page passe par `layoutText`
+(`lib/text.ts`) : le dessin et le cadre de sélection lisent la même mesure.
+
+## La landing
+
+`/` est une page statique (`index.html`, `src/landing/`), sans React : même
+jetons, mêmes polices, même reflet. Le titre en Unbounded est le LCP ; la
+vitrine « Signature » se charge après. Les équerres du logo partent des coins
+de la fenêtre, se referment sur la capture tramée (Bayer 4×4, encre sur papier
+en clair, papier sur encre en sombre), qui se développe de haut en bas, puis
+glisse à sa place dans le **vrai** rendu de `renderScene` — réglages par
+défaut de l'éditeur, rien d'autre. `T A R B` y posent de vrais calques (focus
+dans la vitrine), `⌫` annule, `↻` rejoue. Une capture collée ou déposée passe
+par la même séquence, puis « Continue in editor » l'emporte dans `/app/`. Mouvement
+réduit : l'état final directement. La capture de démo est un fichier,
+`public/landing/demo.webp`, généré par `docs/assets/landing-demo.ts`.
 
 ## Références visuelles
 

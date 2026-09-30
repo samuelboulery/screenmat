@@ -78,7 +78,8 @@ export function useHistory(current: Snapshot, apply: (snapshot: Snapshot) => voi
   }
 }
 
-/** L'historique du document de l'éditeur : shots, réglages, composition. */
+/** L'historique du document de l'éditeur : shots, réglages, composition et
+ *  ses membres. */
 export function useDocumentHistory(
   shots: ShotsState,
   settings: Settings,
@@ -87,14 +88,14 @@ export function useDocumentHistory(
   setComposition: (composition: Composition) => void,
 ): HistoryState {
   const document = useMemo(
-    () => ({ shots: shots.shots, settings, composition }),
-    [shots.shots, settings, composition],
+    () => ({ shots: shots.shots, settings, composition, members: shots.selection }),
+    [shots.shots, settings, composition, shots.selection],
   )
 
   const { restore } = shots
   const apply = useCallback(
     (snapshot: Snapshot) => {
-      restore(snapshot.shots)
+      restore(snapshot.shots, snapshot.members)
       setSettings(snapshot.settings)
       setComposition(snapshot.composition)
     },

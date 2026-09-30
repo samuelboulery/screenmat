@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="theme-color" content="#f3f2ee" />
+    <!-- Thème posé avant le premier rendu, pour ne jamais flasher : le choix
+         mémorisé, sinon le système. `useTheme` prend la suite. -->
+    <script>
+      (function () {
+        var t = null
+        try { t = localStorage.getItem('sm-theme') } catch (e) { /* stockage bloqué : on suit le système */ }
+        if (t !== 'light' && t !== 'dark') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+        document.documentElement.dataset.theme = t
+        document.querySelector('meta[name="theme-color"]').content = t === 'dark' ? '#121110' : '#f3f2ee'
+      })()
+    </script>
+    <!-- Les polices du premier écran : texte courant et titre d'accueil. Les
+         sous-ensembles `-ext` attendent d'être réclamés : les précharger
+         retarderait ceux-ci. -->
+    <link rel="preload" as="font" type="font/woff2" href="/fonts/space-grotesk-latin.woff2" crossorigin />
+    <link rel="preload" as="font" type="font/woff2" href="/fonts/jetbrains-mono-latin.woff2" crossorigin />
+    <link rel="preload" as="font" type="font/woff2" href="/fonts/unbounded-800-latin.woff2" crossorigin />
+    <title>screenmat — editor</title>
+    <meta name="description" content="Turn a raw screenshot into a shareable visual — macOS-style window, generative background, annotations, redaction. Runs entirely in the browser." />
+    <!-- `%SITE_URL%` est substitué au build par `vite-docs-prerender.ts` : le
+         domaine n'est écrit qu'une fois, dans `vite.config.ts`. -->
+    <link rel="canonical" href="%SITE_URL%/app/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="screenmat" />
+    <meta property="og:title" content="screenmat — turn a screenshot into a shareable visual" />
+    <meta property="og:description" content="macOS-style window, generative background derived from the screenshot's own colours, annotations, redaction. No backend, no account, no upload — your images never leave the browser." />
+    <meta property="og:url" content="%SITE_URL%/app/" />
+    <meta property="og:image" content="%SITE_URL%/og.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="675" />
+    <meta property="og:image:alt" content="A screenshot framed in a rounded macOS-style window over a generative background." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="screenmat — turn a screenshot into a shareable visual" />
+    <meta name="twitter:description" content="macOS-style window, generative background derived from the screenshot's own colours, annotations, redaction. No backend, no account, no upload — your images never leave the browser." />
+    <meta name="twitter:image" content="%SITE_URL%/og.jpg" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <!-- L'app est une coquille React par choix : ce bloc est le seul texte que
+         lisent un moteur de recherche et un lecteur sans JavaScript. -->
+    <noscript>
+      <main style="margin: 0 auto; max-width: 40rem; padding: 4rem 1.5rem; color: #eceef2; font-family: system-ui, sans-serif">
+        <h1>screenmat</h1>
+        <p>
+          Turn a raw screenshot into a shareable visual: a rounded macOS-style window, a generative background derived
+          from the screenshot's own colours, annotations, redaction, multi-shot compositions and high-resolution export.
+        </p>
+        <p>
+          Everything runs in your browser. No backend, no account, no upload — your images never leave the machine.
+          The only network call is a cookieless page counter. The same rendering engine is reachable from a Node API, a
+          command line and an MCP server.
+        </p>
+        <p>
+          The editor needs JavaScript. The <a href="/docs/">documentation</a> does not — start with the
+          <a href="/docs/overview/">overview</a>, or read <a href="/docs/llms.txt">llms.txt</a>.
+        </p>
+      </main>
+    </noscript>
+    <script type="module" src="/src/main.tsx"></script>
+    <!-- Cloudflare Web Analytics : compteur de pages sans cookie ni identifiant. -->
+    <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "1066d94e4b934c0daeaaa7f77fe5d984"}'></script>
+  </body>
+</html>

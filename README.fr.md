@@ -41,13 +41,13 @@ screenshot, des annotations, du floutage — le tout calculé dans le navigateur
 | | |
 | --- | --- |
 | **Fenêtres** | `browser` (chrome macOS avec barre d'adresse éditable), `macbook`, `iphone`, ou `none`. Barre de titre optionnelle, rayon des angles et inclinaison sur l'axe Y (−24° à 24°) réglables. |
-| **Fonds** | `mesh`, `gradient`, `solid` ou votre propre image — tous dérivés des couleurs dominantes du screenshot, avec des molettes pour le flou, le nombre de formes, l'opacité, la saturation, le contraste et le grain. |
+| **Fonds** | Quatre séries — générés depuis le screenshot (`mesh`, `gradient`, `solid`), les vrais fonds d'écran macOS de Big Sur à Golden Gate (`tahoe-dark`, `sonoma-light`, …), ceux de Windows de XP à 11 (`windows-11-dark`, `windows-xp`, …) et les trames (`bayer`, `halftone`, `atkinson`, `contours`, `truchet`, … onze motifs) — ou votre propre image. Chaque couleur générée est éditable ; molettes pour le flou, les formes, l'opacité, la saturation, le contraste, le grain, la cellule et l'angle de trame. |
 | **Annotations** | Sept natures de calques : étiquettes de texte, badges numérotés, flèches, traits, rectangles, ellipses et floutage. Couleur, taille, épaisseur, remplissage, opacité et contraste inversé, calque par calque. |
-| **Floutage** | `blur`, `pixel` ou `solid`, cuit sous le clip de la fenêtre. |
+| **Floutage** | `blur`, `pixel` ou `solid`, en rectangle ou en ellipse, cuit sous le clip de la fenêtre. |
 | **Compositions** | Jusqu'à 24 shots dans un même visuel : `single`, `stack`, `side` ou `tilt3d`, avec écartement, convergence et élévation. |
 | **Calques** | Un vrai arbre — groupes, réordonnancement, masquage, verrouillage, multi-sélection, annuler/rétablir. |
 | **Styles** | Enregistrer un jeu de réglages complet sous un nom, le rappeler depuis l'app, le CLI, MCP ou Node. Le partager, c'est exporter un `.json`. |
-| **Lot** | Une file de captures, un seul style, un `.zip` en sortie. |
+| **Lot** | Un dossier de captures gardées séparées, un seul style, un `.zip` en sortie depuis le menu Export. |
 | **Historique** | Les exports passés vivent dans IndexedDB avec leurs vignettes, réouvrables avec tous leurs réglages. |
 | **Export** | WebP par défaut (7 à 10× plus léger que le PNG à grain égal), PNG à la demande, en 1× / 2× / 3× — 1600, 3200 ou 4800 px de large. |
 
@@ -145,7 +145,7 @@ unique ne vole une frappe à un panneau.
 | `⌘G` / `⇧⌘G` | Grouper · dégrouper |
 | `⌘↑` / `⌘↓` | Monter ou descendre le calque dans la pile |
 | `⌘V` | Coller une capture |
-| `R` | Mélanger — nouveau seed, nouveau fond |
+| `⇧R` | Mélanger — nouveau seed, nouveau fond |
 | `1` `2` `3` | Échelle d'export |
 | Flèches (`⇧` pour un grand pas) | Déplacer la sélection |
 | `⌫` · `Échap` | Supprimer · désélectionner |
@@ -201,3 +201,7 @@ identifiants sont en anglais, les commentaires en français.
 ## Licence
 
 [MIT](LICENSE) © Samuel Boulery
+
+Les fonds d'écran macOS et Windows de `public/wallpapers/` sont © Apple Inc. et
+© Microsoft Corporation. Ils ne sont pas couverts par cette licence — voir
+[la notice](public/wallpapers/NOTICE.md).

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { chromeColors, screenRect } from '../frame.ts'
+import { chromeColors } from '../frame.ts'
+import { screenRect } from '../screen.ts'
 import { luminance } from '../color.ts'
 import { computeGeometry } from '../render.ts'
 import { DEFAULT_SETTINGS, type Settings } from '../../types.ts'

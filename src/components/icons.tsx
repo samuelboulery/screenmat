@@ -5,13 +5,13 @@ import {
   ArrowDownLeft,
   ArrowDownNarrowWide,
   ArrowDownRight,
+  ArrowLeft,
   ArrowUp,
   ArrowUpLeft,
   ArrowUpNarrowWide,
   ArrowUpRight,
   Ban,
   Bookmark,
-  Boxes,
   Check,
   ChevronDown,
   ChevronRight,
@@ -31,16 +31,19 @@ import {
   History,
   Image,
   ImagePlus,
+  Keyboard,
   Laptop,
   Layers,
   Lock,
   LockOpen,
+  Moon,
   MousePointer2,
   Palette,
   PanelRightClose,
   PanelRightOpen,
   Plus,
   Redo2,
+  RefreshCw,
   Rotate3d,
   Search,
   ShieldCheck,
@@ -50,18 +53,18 @@ import {
   Square,
   SquareAsterisk,
   SquareSlash,
+  Sun,
   Terminal,
   Trash2,
   TriangleAlert,
   Type,
   Undo2,
   Ungroup,
-  Wand2,
   X,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { AnnotationKind, FrameStyle, LayoutKind, RedactionMode, WatermarkPosition } from '../types.ts'
-import type { Tool } from './ToolRail.tsx'
+import type { Tool } from '../lib/tools.ts'
 
 /* Le jeu d'icônes de l'app, en un seul endroit. Rien n'importe `lucide-react`
    ailleurs : la cohérence du jeu se juge en relisant ce fichier, pas en
@@ -75,14 +78,12 @@ export type { LucideIcon }
 
 /* ── Navigation ─────────────────────────────────────────────────────────── */
 
-/** Une icône par destination — quatre, comme la barre haute. */
-export const ScreenIcon = {
-  edit: Wand2,
-  batch: Boxes,
-  styles: Palette,
-  history: History,
-} as const
+/** Les deux tiroirs de la barre haute : la bibliothèque, pas des écrans. */
+export const StylesIcon = Palette
+export const HistoryIcon = History
 export const LocalIcon = ShieldCheck
+/** Bascule de thème : l'icône montre le thème vers lequel on va. */
+export const ThemeIcon = { light: Moon, dark: Sun } as const
 
 /* ── Outils ─────────────────────────────────────────────────────────────── */
 
@@ -152,6 +153,7 @@ export {
   /* La pile se dit par une flèche : les deux icônes de profondeur de Lucide
      sont deux carrés qui se confondent à 16 px. */
   ArrowDown as BackwardIcon,
+  ArrowLeft as BackIcon,
   ArrowUp as ForwardIcon,
   ArrowDownNarrowWide as SortNewestIcon,
   ArrowUpNarrowWide as SortOldestIcon,
@@ -167,6 +169,7 @@ export {
   FilePlus2 as NewSessionIcon,
   FolderOpen as PickFileIcon,
   Image as ImageIcon,
+  Keyboard as ShortcutsIcon,
   ImagePlus as NewShotIcon,
   Lock as LockedIcon,
   LockOpen as UnlockedIcon,
@@ -174,6 +177,9 @@ export {
   PanelRightOpen as OpenSheetIcon,
   Plus as AddIcon,
   Redo2 as RedoIcon,
+  /* Mettre à jour un style n'est pas en créer un : une flèche qui tourne, pas
+     le signet de « Start from last style ». */
+  RefreshCw as UpdateStyleIcon,
   Search as SearchIcon,
   Shuffle as ShuffleIcon,
   Check as CheckIcon,

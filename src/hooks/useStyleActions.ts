@@ -9,10 +9,11 @@ export type StyleActions = {
   /** Filigrane du style actif, décodé. `null` tant qu'il n'y en a pas. */
   watermarkImage: HTMLImageElement | null
   apply: (id: string) => void
-  save: () => void
+  /** Rejetée si IndexedDB refuse l'écriture : l'appelant l'annonce. */
+  save: () => Promise<void>
   /** Écrase le style actif avec les réglages courants. Sans lui, régler un
    *  style dans l'éditeur ne mène nulle part : `save` crée toujours un doublon. */
-  update: () => void
+  update: () => Promise<void>
   patch: (style: Style) => void
 }
 
@@ -24,7 +25,6 @@ export function useStyleActions(
   library: Library,
   settings: Settings,
   setSettings: (settings: Settings) => void,
-  onSaved: () => void,
 ): StyleActions {
   const [watermarkImage, setWatermarkImage] = useState<HTMLImageElement | null>(null)
   const activeStyle = library.styles.find((style) => style.id === library.activeStyleId) ?? null
@@ -56,13 +56,12 @@ export function useStyleActions(
 
   const save = useCallback(() => {
     const style = createStyle(`Style ${library.styles.length + 1}`, settings)
-    void library.saveStyle(style).then(() => library.setActiveStyleId(style.id))
-    onSaved()
-  }, [library, settings, onSaved])
+    return library.saveStyle(style).then(() => library.setActiveStyleId(style.id))
+  }, [library, settings])
 
   const update = useCallback(() => {
-    if (!activeStyle) return
-    void library.saveStyle({ ...activeStyle, settings })
+    if (!activeStyle) return Promise.resolve()
+    return library.saveStyle({ ...activeStyle, settings })
   }, [activeStyle, library, settings])
 
   const patch = useCallback((next: Style) => void library.saveStyle(next), [library])

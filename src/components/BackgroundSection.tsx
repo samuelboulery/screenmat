@@ -1,20 +1,27 @@
+import BackgroundPalette from './BackgroundPalette.tsx'
+import BackgroundThumb from './BackgroundThumb.tsx'
 import { ImageIcon, ShuffleIcon } from './icons.tsx'
-import { DashedTile, MonoLabel, Section, Slider, Swatch } from './ui.tsx'
-import type { BackgroundKind, Palette, Settings } from '../types.ts'
+import { DashedTile, MonoLabel, Section, Segmented, Slider } from './ui.tsx'
+import { DITHERS, isDither } from '../lib/dithered.ts'
+import { SERIES, seriesOf, type Series } from '../lib/series.ts'
+import { isWallpaper } from '../lib/wallpapers.ts'
+import type { Palette, Settings } from '../types.ts'
 
 /* Le fond et ses formes : la moitié la plus longue de l'inspecteur, sortie du
    panneau pour le garder lisible. Aucune logique — des contrôles, un patch, et
-   la seule règle qui vaille ici : un réglage que le preset choisi ne lit pas ne
+   la seule règle qui vaille ici : un réglage que le fond choisi ne lit pas ne
    s'affiche pas. `paintBackground` (`lib/background.ts`) dit lequel lit quoi. */
 
-const BACKGROUNDS: Array<{ value: BackgroundKind; label: string; preview: string }> = [
-  { value: 'mesh', label: 'mesh', preview: 'radial-gradient(120% 120% at 20% 10%, #7DE2FF55, #A378FF33 45%, #14141B)' },
-  { value: 'gradient', label: 'gradient', preview: 'linear-gradient(140deg, #7DE2FF66, #A378FF44)' },
-  { value: 'solid', label: 'solid', preview: '#1B1B24' },
+const SERIES_OPTIONS: ReadonlyArray<{ value: Series; label: string; title: string }> = [
+  { value: 'screenshot', label: 'Screenshot', title: 'Backgrounds drawn from the screenshot colours' },
+  { value: 'dither', label: 'Dither', title: 'Two-tone dithered backgrounds' },
+  { value: 'macos', label: 'macOS', title: 'The macOS wallpapers, Big Sur to Golden Gate' },
+  { value: 'windows', label: 'Windows', title: 'The Windows wallpapers, XP to 11' },
 ]
 
 type BackgroundSectionProps = {
   settings: Settings
+  /** Celle de la capture ; `settings.palette`, si elle existe, la remplace. */
   palette: Palette
   onChange: (patch: Partial<Settings>) => void
   onPickBackgroundImage: () => void
@@ -26,22 +33,42 @@ export default function BackgroundSection({
   onChange,
   onPickBackgroundImage,
 }: BackgroundSectionProps) {
+  const kind = settings.background
+  // Une image n'appartient à aucune série : l'onglet reste sur la première,
+  // et en choisir un applique sa première variation.
+  const series = seriesOf(kind) ?? 'screenshot'
+  const colors = settings.palette ?? palette
+  // Une image — perso ou fond d'écran — couvre l'aplat : ni couleur, ni graine,
+  // ni saturation n'y changent rien. Le grain ne se pose que sur l'image perso :
+  // un fond d'écran se montre tel qu'il est sur un bureau.
+  const wallpaper = isWallpaper(kind)
+  const picture = kind === 'image' || wallpaper
+
   return (
     <>
       <Section title="Background" collapsible open>
-        <div className="grid grid-cols-4 gap-1.5">
-          {BACKGROUNDS.map((preset) => (
-            <Swatch
-              key={preset.value}
-              color={preset.preview}
-              title={preset.label}
-              active={settings.background === preset.value}
-              onClick={() => onChange({ background: preset.value })}
+        <Segmented
+          options={SERIES_OPTIONS}
+          value={series}
+          onPick={(next) => onChange({ background: SERIES[next][0] })}
+          // Quatre séries ne tiennent pas sur une ligne de l'inspecteur : deux par deux.
+          className="grid! w-full grid-cols-2"
+        />
+        <div className="grid grid-cols-5 gap-1.5">
+          {SERIES[series].map((variant) => (
+            <BackgroundThumb
+              key={variant}
+              kind={variant}
+              label={variant}
+              palette={colors}
+              settings={settings}
+              active={kind === variant}
+              onPick={() => onChange({ background: variant })}
             />
           ))}
           <DashedTile
             onClick={onPickBackgroundImage}
-            className={`size-10 ${settings.background === 'image' ? 'ring-selected' : ''}`}
+            className={`h-10 ${kind === 'image' ? 'ring-selected' : ''}`}
             title="Use an image as background"
             aria-label="Use an image as background"
           >
@@ -49,10 +76,8 @@ export default function BackgroundSection({
           </DashedTile>
         </div>
 
-        {/* La graine ne sert qu'aux presets qui tirent au sort : le mesh place
-            ses blobs avec, le dégradé son angle. Un aplat ou une image n'ont
-            rien à régénérer. */}
-        {(settings.background === 'mesh' || settings.background === 'gradient') && (
+        {/* Seuls un aplat et une image n'ont rien à tirer au sort. */}
+        {kind !== 'solid' && !picture && (
           <div className="flex items-center justify-between">
             <MonoLabel>Seed {settings.seed}</MonoLabel>
             <button
@@ -66,96 +91,110 @@ export default function BackgroundSection({
           </div>
         )}
 
-        <div className="flex gap-1.5">
-          <span
-            title={palette.base}
-            style={{ background: palette.base }}
-            className="h-6 flex-1 rounded border border-white/10"
+        {!picture && (
+          <BackgroundPalette
+            palette={colors}
+            frozen={Boolean(settings.palette)}
+            onChange={(next) => onChange({ palette: next })}
           />
-          {palette.accents.map((color) => (
-            <span
-              key={color}
-              title={color}
-              style={{ background: color }}
-              className="h-6 flex-1 rounded border border-white/10"
-            />
-          ))}
-        </div>
-
-        {/* Une image de fond couvre l'aplat : la graduer ne se verrait pas. */}
-        {settings.background !== 'image' && (
-          <>
-            <Slider
-              label="Saturation"
-              value={settings.saturation}
-              display={`${Math.round(settings.saturation * 100)} %`}
-              min={0}
-              max={2}
-              step={0.05}
-              onInput={(saturation) => onChange({ saturation })}
-            />
-            <Slider
-              label="Contrast"
-              value={settings.contrast}
-              display={`${Math.round(settings.contrast * 100)} %`}
-              min={0}
-              max={2}
-              step={0.05}
-              onInput={(contrast) => onChange({ contrast })}
-            />
-          </>
         )}
 
-        {/* Le grain est commun aux quatre presets : c'est lui qui empêche un
-            aplat de ressembler à du vide. */}
-        <Slider
-          label="Grain"
-          value={settings.grain}
-          display={`${Math.round(settings.grain * 100)} %`}
-          min={0}
-          max={1}
-          step={0.05}
-          onInput={(grain) => onChange({ grain })}
-        />
+        {series === 'dither' && !picture && <DitherSliders settings={settings} onChange={onChange} />}
+
+        {/* Une image de fond couvre l'aplat : la graduer ne se verrait pas. Une
+            trame n'a que deux tons, poussés aux extrêmes : la saturation n'y
+            change presque rien. */}
+        {!picture && series !== 'dither' && (
+          <Percent label="Saturation" value={settings.saturation} max={2} onInput={(saturation) => onChange({ saturation })} />
+        )}
+        {!picture && (
+          <Percent label="Contrast" value={settings.contrast} max={2} onInput={(contrast) => onChange({ contrast })} />
+        )}
+        {/* Le grain empêche un aplat de ressembler à du vide ; sur une trame, il
+            brouillerait ce qu'elle a de net, et le moteur ne le dessine pas. */}
+        {(series !== 'dither' && !wallpaper) || kind === 'image' ? (
+          <Percent label="Grain" value={settings.grain} max={1} onInput={(grain) => onChange({ grain })} />
+        ) : null}
       </Section>
 
-      {(settings.background === 'mesh' || settings.background === 'gradient') && (
-        <Section title="Shapes" collapsible>
-          {settings.background === 'mesh' && (
-            <Slider
-              label="Count"
-              value={settings.shapes}
-              display={String(settings.shapes)}
-              min={0}
-              max={8}
-              step={1}
-              onInput={(shapes) => onChange({ shapes })}
-            />
-          )}
-          <Slider
-            label="Opacity"
-            value={settings.shapeOpacity}
-            display={`${Math.round(settings.shapeOpacity * 100)} %`}
-            min={0}
-            max={1}
-            step={0.05}
-            onInput={(shapeOpacity) => onChange({ shapeOpacity })}
-          />
-          {/* Le flou est celui du canvas réduit où les blobs sont peints : hors
-              du mesh, il n'y a rien à flouter. */}
-          {settings.background === 'mesh' && (
-            <Slider
-              label="Blur"
-              value={settings.blur}
-              display={`×${settings.blur}`}
-              min={1}
-              max={16}
-              step={1}
-              onInput={(blur) => onChange({ blur })}
-            />
-          )}
-        </Section>
+      {(kind === 'mesh' || kind === 'gradient' || seriesOf(kind) === 'dither') && (
+        <ShapesSection settings={settings} onChange={onChange} />
       )}
     </>
+  )
+}
+
+type SlidersProps = { settings: Settings; onChange: (patch: Partial<Settings>) => void }
+
+function Percent({ label, value, max, onInput }: { label: string; value: number; max: number; onInput: (value: number) => void }) {
+  return (
+    <Slider label={label} value={value} display={`${Math.round(value * 100)} %`} min={0} max={max} step={0.05} onInput={onInput} />
+  )
+}
+
+/** La trame : taille de cellule, en part de la largeur, et angle du réseau —
+ *  pour celles qui en ont un : `DITHERS` dit lesquelles sont alignées sur leur
+ *  grille. */
+function DitherSliders({ settings, onChange }: SlidersProps) {
+  return (
+    <>
+      <Slider
+        label="Cell size"
+        value={settings.ditherCell}
+        display={`${(settings.ditherCell * 100).toFixed(1)} %`}
+        min={0.002}
+        max={0.03}
+        step={0.001}
+        onInput={(ditherCell) => onChange({ ditherCell })}
+      />
+      {isDither(settings.background) && DITHERS[settings.background].angle && (
+        <Slider
+          label="Angle"
+          value={settings.ditherAngle}
+          display={`${settings.ditherAngle}°`}
+          min={0}
+          max={90}
+          step={1}
+          onInput={(ditherAngle) => onChange({ ditherAngle })}
+        />
+      )}
+    </>
+  )
+}
+
+/** Les taches du mesh, qu'une trame reprend sous elle. Le dégradé n'a que leur
+ *  opacité ; le nombre et le flou n'existent que là où elles sont peintes. */
+function ShapesSection({ settings, onChange }: SlidersProps) {
+  const blobs = settings.background !== 'gradient'
+  return (
+    <Section title="Shapes" collapsible>
+      {blobs && (
+        <Slider
+          label="Count"
+          value={settings.shapes}
+          display={String(settings.shapes)}
+          min={0}
+          max={8}
+          step={1}
+          onInput={(shapes) => onChange({ shapes })}
+        />
+      )}
+      {/* Sous une trame, les taches sont peintes pleines : c'est le seuil qui
+          décide du ton, une opacité n'y changerait rien. */}
+      {seriesOf(settings.background) !== 'dither' && (
+        <Percent label="Opacity" value={settings.shapeOpacity} max={1} onInput={(shapeOpacity) => onChange({ shapeOpacity })} />
+      )}
+      {blobs && (
+        <Slider
+          label="Blur"
+          value={settings.blur}
+          display={`×${settings.blur}`}
+          min={1}
+          max={16}
+          step={1}
+          onInput={(blur) => onChange({ blur })}
+        />
+      )}
+    </Section>
   )
 }

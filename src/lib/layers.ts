@@ -1,8 +1,9 @@
 import { badgeNumbers, badgeRadius, normalizeRect, toLength, toPixels, type Rect } from './annotate.ts'
 import { css, hexToRgb, inkOn } from './color.ts'
-import { frameRadius, screenRect, windowPath, windowTransform, type ScreenRect } from './frame.ts'
-import type { Geometry, WindowBox } from './render.ts'
-import type { Annotation, LabelStyle, Settings } from '../types.ts'
+import { windowTransform } from './frame.ts'
+import type { WindowBox } from './render.ts'
+import { layoutText, shadowFor } from './text.ts'
+import type { Annotation } from '../types.ts'
 
 /* Dessin des calques. Un seul chemin : la preview et l'export appellent les
    mêmes fonctions, avec la même `WindowBox` à des échelles différentes. */
@@ -10,115 +11,6 @@ import type { Annotation, LabelStyle, Settings } from '../types.ts'
 const MONO = 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace'
 
 const STAGE = 'rgba(7, 7, 10, 0.78)'
-
-/** Nombre de blocs sur la largeur d'une zone floutée. Constant, donc le flou est
- *  visuellement identique à l'échelle 1 et à l'échelle 3. */
-const REDACTION_BLOCKS = 14
-const PIXEL_BLOCKS = 8
-
-/** Aplat des zones masquées, et de ce qui déborde du screenshot. */
-const REDACTED = '#0B0B0F'
-
-/**
- * Cuit les zones floutées dans les pixels, sous le clip de la fenêtre. Jamais en
- * CSS : sinon l'export ne correspondrait plus à la preview et, pire, la donnée
- * masquée resterait lisible dans le fichier.
- *
- * L'échantillon vient du **screenshot source**, jamais de `ctx.canvas` : relire
- * le canvas de destination force le rasteriseur à vider toute la frame en cours,
- * puis à en rasteriser la suite une seconde fois — une frame passait de 3 ms à
- * 372 ms dès qu'une seule zone existait. Y échantillonner permet en prime de
- * dessiner sous `windowTransform`, donc de suivre la rotation de la fenêtre.
- */
-export function renderRedactions(
-  ctx: CanvasRenderingContext2D,
-  box: WindowBox,
-  geometry: Geometry,
-  image: HTMLImageElement,
-  annotations: readonly Annotation[],
-  settings: Settings,
-): void {
-  const zones = annotations.filter((annotation) => annotation.kind === 'redaction')
-  if (zones.length === 0) return
-
-  const screen = screenRect(box, geometry, settings)
-
-  ctx.save()
-  windowTransform(ctx, box)
-  windowPath(ctx, box, frameRadius(box, geometry, settings))
-  ctx.clip()
-
-  for (const zone of zones) {
-    const rect = normalizeRect(toPixels(zone.rect, box))
-    if (rect.w < 1 || rect.h < 1) continue
-
-    const inside = zone.redaction === 'solid' ? null : intersect(rect, screen)
-
-    // Hors du screenshot — barre de titre, bezel — il n'y a rien à
-    // échantillonner : cette part se couvre de l'aplat, comme le mode `solid`.
-    if (!inside || inside.w !== rect.w || inside.h !== rect.h) {
-      ctx.fillStyle = REDACTED
-      ctx.fillRect(rect.x, rect.y, rect.w, rect.h)
-    }
-
-    if (inside) {
-      downsample(
-        ctx,
-        image,
-        screen,
-        inside,
-        zone.redaction === 'pixel' ? PIXEL_BLOCKS : REDACTION_BLOCKS,
-      )
-    }
-  }
-
-  ctx.restore()
-}
-
-/** Part de `rect` qui tombe dans le screenshot, `null` si elle est vide. */
-function intersect(rect: Rect, screen: ScreenRect): Rect | null {
-  const x = Math.max(rect.x, screen.x)
-  const y = Math.max(rect.y, screen.y)
-  const right = Math.min(rect.x + rect.w, screen.x + screen.width)
-  const bottom = Math.min(rect.y + rect.h, screen.y + screen.height)
-  if (right - x < 1 || bottom - y < 1) return null
-  return { x, y, w: right - x, h: bottom - y }
-}
-
-/** Réduit puis réagrandit la zone : flou (lissé) ou mosaïque (non lissé). */
-function downsample(
-  ctx: CanvasRenderingContext2D,
-  image: HTMLImageElement,
-  screen: ScreenRect,
-  rect: Rect,
-  blocks: number,
-): void {
-  // Le screenshot est posé dans `screen` : la zone s'y relit en proportion.
-  const scaleX = image.naturalWidth / screen.width
-  const scaleY = image.naturalHeight / screen.height
-  const source = {
-    x: (rect.x - screen.x) * scaleX,
-    y: (rect.y - screen.y) * scaleY,
-    w: rect.w * scaleX,
-    h: rect.h * scaleY,
-  }
-  if (source.w < 1 || source.h < 1) return
-
-  const small = document.createElement('canvas')
-  small.width = Math.max(1, Math.round(blocks))
-  small.height = Math.max(1, Math.round((blocks * rect.h) / rect.w))
-
-  const layer = small.getContext('2d')
-  if (!layer) return
-
-  layer.imageSmoothingEnabled = blocks > PIXEL_BLOCKS
-  layer.drawImage(image, source.x, source.y, source.w, source.h, 0, 0, small.width, small.height)
-
-  ctx.save()
-  ctx.imageSmoothingEnabled = blocks > PIXEL_BLOCKS
-  ctx.drawImage(small, 0, 0, small.width, small.height, rect.x, rect.y, rect.w, rect.h)
-  ctx.restore()
-}
 
 /**
  * Dessine les calques non destructifs d'une fenêtre. Appelée par `renderScene`
@@ -146,6 +38,11 @@ export function renderAnnotations(
     ctx.lineCap = 'round'
     ctx.lineJoin = 'round'
 
+    // L'ombre porte sur tout ce que le calque dessine ; un texte la réserve à
+    // sa plaque (voir `drawLabel`).
+    const shadow = shadowFor(annotation.shadow, box)
+    if (shadow && annotation.kind !== 'text') applyShadow(ctx, shadow)
+
     const rect = toPixels(annotation.rect, box)
     if (annotation.kind === 'box') drawBox(ctx, annotation, rect, box)
     else if (annotation.kind === 'ellipse') drawEllipse(ctx, annotation, rect)
@@ -155,7 +52,7 @@ export function renderAnnotations(
       drawBadge(ctx, annotation, rect, box, numbers.get(annotation.id) ?? 1)
     } else if (annotation.kind === 'text') {
       const edited = editing?.id === annotation.id ? editing : null
-      drawLabel(ctx, annotation, rect, toLength(annotation.size, box), edited)
+      drawLabel(ctx, annotation, rect, box, edited)
     }
 
     ctx.restore()
@@ -164,10 +61,26 @@ export function renderAnnotations(
   ctx.restore()
 }
 
-/** Remplissage translucide d'une forme fermée, `null` si le fill est nul. */
+/** Remplit puis trace une forme fermée. L'ombre ne porte que sur le premier
+ *  des deux : doublée, celle du trait se poserait sur le fond. */
+function strokeAndFill(ctx: CanvasRenderingContext2D, annotation: Annotation): void {
+  const fill = fillStyle(annotation)
+  if (fill) {
+    ctx.fillStyle = fill
+    ctx.fill()
+    clearShadow(ctx)
+  }
+  // Sans fond, le contour se trace toujours, et jamais à zéro : une forme ne
+  // peut pas être invisible.
+  if (!annotation.stroke && fill) return
+  ctx.strokeStyle = css(hexToRgb(annotation.color), fill ? annotation.strokeOpacity : annotation.strokeOpacity || 1)
+  ctx.stroke()
+}
+
+/** Remplissage d'une forme fermée, `null` si le fill est nul. */
 function fillStyle(annotation: Annotation): string | null {
   if (annotation.fill <= 0) return null
-  return css(hexToRgb(annotation.color), annotation.fill)
+  return css(hexToRgb(annotation.fillColor), annotation.fill)
 }
 
 function drawBox(
@@ -182,12 +95,7 @@ function drawBox(
   ctx.beginPath()
   ctx.roundRect(x, y, w, h, Math.max(0, radius))
 
-  const fill = fillStyle(annotation)
-  if (fill) {
-    ctx.fillStyle = fill
-    ctx.fill()
-  }
-  ctx.stroke()
+  strokeAndFill(ctx, annotation)
 }
 
 function drawEllipse(ctx: CanvasRenderingContext2D, annotation: Annotation, rect: Rect): void {
@@ -196,12 +104,7 @@ function drawEllipse(ctx: CanvasRenderingContext2D, annotation: Annotation, rect
   ctx.beginPath()
   ctx.ellipse(x + w / 2, y + h / 2, w / 2, h / 2, 0, 0, Math.PI * 2)
 
-  const fill = fillStyle(annotation)
-  if (fill) {
-    ctx.fillStyle = fill
-    ctx.fill()
-  }
-  ctx.stroke()
+  strokeAndFill(ctx, annotation)
 }
 
 /** Trait simple. Le rect garde son signe : le sens du tracé est conservé. */
@@ -263,65 +166,123 @@ function drawBadge(
 
   ctx.fillStyle = annotation.invert ? annotation.color : inkOn(annotation.color)
   ctx.font = `600 ${toLength(annotation.size, box)}px ${MONO}`
-  ctx.textAlign = 'center'
-  ctx.textBaseline = 'middle'
-  ctx.fillText(String(number), cx, cy)
+  fillInkCentered(ctx, String(number), cx, cy)
 }
 
 /**
- * Label. `invert` échange le fond et l'encre : pastille à la couleur du calque,
- * texte automatiquement noir ou blanc selon son contraste. Sans effet sur
- * `plain`, qui n'a pas de fond à remplir.
+ * Pose un texte pour que son **encre** soit centrée sur le point. `textAlign =
+ * 'center'` centre la largeur d'avance et `textBaseline = 'middle'` la boîte
+ * em : un « 1 » s'y lit décalé, d'un écart qui change avec la police et le
+ * moteur — et la pile mono d'une pastille n'est pas la même d'une machine à
+ * l'autre.
+ */
+function fillInkCentered(ctx: CanvasRenderingContext2D, text: string, cx: number, cy: number): void {
+  ctx.textAlign = 'left'
+  ctx.textBaseline = 'alphabetic'
+  const metrics = ctx.measureText(text)
+  const dx = (metrics.actualBoundingBoxRight - metrics.actualBoundingBoxLeft) / 2
+  const dy = (metrics.actualBoundingBoxAscent - metrics.actualBoundingBoxDescent) / 2
+
+  if (Number.isFinite(dx + dy)) {
+    ctx.fillText(text, cx - dx, cy + dy)
+    return
+  }
+  // Moteur sans boîte d'encre : le centrage approché d'avant.
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.fillText(text, cx, cy)
+}
+
+/** Hauteur de capitale de la police courante. Un texte se centre sur elle, pas
+ *  sur l'encre de sa ligne : celle-ci change à chaque lettre saisie, et le
+ *  texte sauterait sous le curseur. */
+function capHeight(ctx: CanvasRenderingContext2D, fontSize: number): number {
+  const height = ctx.measureText('H').actualBoundingBoxAscent
+  return Number.isFinite(height) && height > 0 ? height : fontSize * 0.7
+}
+
+type Shadow = NonNullable<ReturnType<typeof shadowFor>>
+
+function applyShadow(ctx: CanvasRenderingContext2D, shadow: Shadow): void {
+  ctx.shadowColor = shadow.color
+  ctx.shadowBlur = shadow.blur
+  ctx.shadowOffsetY = shadow.offsetY
+}
+
+function clearShadow(ctx: CanvasRenderingContext2D): void {
+  ctx.shadowColor = 'transparent'
+  ctx.shadowBlur = 0
+  ctx.shadowOffsetY = 0
+}
+
+/**
+ * Texte, sur une ou plusieurs lignes, avec sa plaque. L'ombre va à la plaque
+ * quand elle existe — doubler celle du texte dessus le rendrait flou — et au
+ * texte seul sinon.
  *
  * `editing` porte la saisie en cours. Le caret est dessiné ici et nulle part
  * ailleurs : c'est la seule façon qu'il tombe au bon pixel quelle que soit
- * l'échelle et l'inclinaison de la fenêtre. Un label en cours de saisie garde
- * sa pastille même vide — sinon elle clignoterait avec le curseur.
+ * l'échelle et l'inclinaison de la fenêtre. Un texte en cours de saisie garde
+ * sa plaque même vide — sinon elle clignoterait avec le curseur.
  */
 function drawLabel(
   ctx: CanvasRenderingContext2D,
   annotation: Annotation,
   rect: Rect,
-  fontSize: number,
+  box: WindowBox,
   editing: { caret: number; blink: boolean } | null = null,
 ): void {
-  const label = annotation.text.trim()
-  if (!label && !editing) return
+  if (!annotation.text.trim() && !editing) return
 
-  const style: LabelStyle = annotation.labelStyle
-  ctx.font = `${fontSize}px ${MONO}`
-  ctx.textAlign = 'left'
-  ctx.textBaseline = 'middle'
+  const layout = layoutText(annotation, box)
+  const shadow = shadowFor(annotation.shadow, box)
+  const plate = annotation.background
 
-  const filled = annotation.invert && style !== 'plain'
-  const padX = style === 'plain' ? 0 : fontSize * 0.8
-  const padY = style === 'plain' ? 0 : fontSize * 0.55
-  const width = ctx.measureText(label).width + padX * 2
-  const height = fontSize + padY * 2
-
-  if (style !== 'plain') {
-    ctx.fillStyle = filled ? annotation.color : STAGE
+  if (plate.on) {
+    if (shadow) applyShadow(ctx, shadow)
+    ctx.fillStyle = css(hexToRgb(plate.color), plate.opacity)
     ctx.beginPath()
-    ctx.roundRect(rect.x, rect.y, width, height, style === 'pill' ? height / 2 : fontSize * 0.35)
+    ctx.roundRect(rect.x, rect.y, layout.width, layout.height, plate.radius * layout.fontSize)
     ctx.fill()
-    if (!filled) {
-      ctx.strokeStyle = annotation.color
-      ctx.lineWidth = Math.max(1, fontSize * 0.09)
-      ctx.stroke()
-    }
+    clearShadow(ctx)
+  } else if (shadow) {
+    applyShadow(ctx, shadow)
   }
 
-  const ink = filled ? inkOn(annotation.color) : annotation.color
-  ctx.fillStyle = ink
-  ctx.fillText(label, rect.x + padX, rect.y + height / 2)
+  ctx.font = layout.font
+  ctx.textBaseline = 'alphabetic'
+  ctx.textAlign = 'left'
+  ctx.fillStyle = annotation.color
+  const rise = capHeight(ctx, layout.fontSize) / 2
+
+  const inner = layout.width - layout.padX * 2
+  const lineX = (width: number) =>
+    rect.x +
+    layout.padX +
+    (annotation.align === 'center' ? (inner - width) / 2 : annotation.align === 'right' ? inner - width : 0)
+  const lineY = (index: number) => rect.y + layout.padY + layout.lineHeight * (index + 0.5)
+
+  layout.lines.forEach((line, index) => ctx.fillText(line.text, lineX(line.width), lineY(index) + rise))
 
   if (!editing || !editing.blink) return
-  const caret = Math.max(0, Math.min(editing.caret, label.length))
-  const offset = ctx.measureText(label.slice(0, caret)).width
+  clearShadow(ctx)
+  const row = caretRow(layout.lines, editing.caret)
+  const line = layout.lines[row]
+  const column = Math.max(0, Math.min(editing.caret - line.start, line.text.length))
+  const offset = ctx.measureText(line.text.slice(0, column)).width
   ctx.fillRect(
-    rect.x + padX + offset,
-    rect.y + height / 2 - fontSize * 0.6,
-    Math.max(1, fontSize * 0.06),
-    fontSize * 1.2,
+    lineX(line.width) + offset,
+    lineY(row) - layout.fontSize * 0.6,
+    Math.max(1, layout.fontSize * 0.06),
+    layout.fontSize * 1.2,
   )
+}
+
+/** La ligne qui porte le caret : la dernière qui commence avant lui. */
+function caretRow(lines: readonly { start: number }[], caret: number): number {
+  let row = 0
+  lines.forEach((line, index) => {
+    if (line.start <= caret) row = index
+  })
+  return row
 }

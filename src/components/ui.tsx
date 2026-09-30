@@ -1,8 +1,10 @@
 import type { ButtonHTMLAttributes, ComponentProps, ReactNode } from 'react'
 import { CheckIcon, CollapsedIcon, type LucideIcon } from './icons.tsx'
+import Tooltip, { ariaKeys } from './Tooltip.tsx'
 
-/* Composants de base de la DA « Afterglow ». Un seul accent, pour exactement
-   deux choses : l'action primaire et la sélection courante. */
+/* Composants de base de la DA « Papier technique ». L'accent est l'encre du
+   thème, sans teinte, et ne marque que deux choses : l'action primaire et la
+   sélection courante. */
 
 /* Deux recettes de sélection, pas six. Elles se définissent ici et nulle part
    ailleurs — un composant qui réécrit la chaîne fait diverger la DA au premier
@@ -16,10 +18,10 @@ import { CheckIcon, CollapsedIcon, type LucideIcon } from './icons.tsx'
    action portera (un shot, un calque, un style, un preset). C'est là que
    l'accent gagne sa place. Une image ou une couleur, elles, prennent
    `ring-selected` : un fond teinté mentirait sur ce qu'elles montrent. */
-export const SWITCH_ON = 'bg-raised text-white'
+export const SWITCH_ON = 'bg-raised text-ink'
 export const SELECTED = 'border-accent/35 bg-accent/12 text-accent-ink'
 /** Même recette pour ce qui touche au floutage — l'accent y est interdit. */
-export const SELECTED_DANGER = 'border-danger/35 bg-danger/12 text-[#FFC9C9]'
+export const SELECTED_DANGER = 'border-danger/35 bg-danger/12 text-danger'
 
 /* `ComponentProps<'button'>` plutôt que `ButtonHTMLAttributes` : `ref` en fait
    partie, et le dialogue de confirmation a besoin de poser le focus initial sur
@@ -34,21 +36,27 @@ const CONTROL = 't-ui inline-flex items-center gap-1.5 rounded-md px-3.5 py-2 tr
 /** La recette discrète : rien à annoncer, on ne la voit qu'au survol. */
 const GHOST = 'text-ink-soft hover:text-ink'
 
-export function Button({ variant = 'secondary', className = '', ...rest }: ButtonProps) {
-  const styles = {
-    primary: 'gradient-accent text-stage font-semibold',
-    secondary: 'border border-hairline-strong text-ink hover:border-white/20',
-    ghost: GHOST,
-    // Le destructif porte `#FF9A9A`, jamais le dégradé d'accent : l'accent est
-    // réservé à l'action primaire. Une variante, pas une classe surchargée —
-    // Tailwind trie ses utilitaires par ordre de feuille, pas par ordre d'écriture.
-    danger: 'border border-danger/40 text-danger hover:border-danger/70',
-  }[variant]
+const VARIANTS = {
+  primary: 'bg-accent sheen text-stage font-semibold',
+  secondary: 'sheen border border-hairline-strong text-ink hover:border-ink/40',
+  ghost: GHOST,
+  // Le destructif porte le rouge, jamais l'aplat d'encre : l'accent est
+  // réservé à l'action primaire. Une variante, pas une classe surchargée —
+  // Tailwind trie ses utilitaires par ordre de feuille, pas par ordre d'écriture.
+  danger: 'border border-danger/40 text-danger hover:border-danger/70',
+} as const
 
+/** Les classes d'un bouton, pour ce qui n'est pas un `<Button>` mais doit en
+ *  avoir l'air — le déclencheur d'un `Menu`. */
+export function buttonClass(variant: keyof typeof VARIANTS = 'secondary', className = ''): string {
+  return `${CONTROL} disabled:opacity-40 ${VARIANTS[variant]} ${className}`
+}
+
+export function Button({ variant = 'secondary', className = '', ...rest }: ButtonProps) {
   return (
     <button
       type="button"
-      className={`${CONTROL} disabled:opacity-40 ${styles} ${className}`}
+      className={buttonClass(variant, className)}
       {...rest}
     />
   )
@@ -74,6 +82,8 @@ export function IconButton({
   label,
   active,
   tone,
+  shortcut,
+  tipSide,
   className = '',
   ...rest
 }: Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'aria-label' | 'title'> & {
@@ -81,20 +91,32 @@ export function IconButton({
   label: string
   active?: boolean
   tone?: 'danger'
+  /** Présent ⇒ vraie infobulle avec la touche, au lieu du `title` natif.
+   *  Réservé aux barres : l'infobulle n'échappe pas à un parent en `overflow`. */
+  shortcut?: string
+  tipSide?: 'top' | 'bottom'
 }) {
   const color = tone === 'danger' ? 'text-danger' : active ? 'text-ink' : 'text-ink-soft'
 
-  return (
+  const button = (
     <button
       type="button"
-      title={label}
+      title={shortcut ? undefined : label}
       aria-label={label}
+      aria-keyshortcuts={shortcut?.includes('⌘') ? ariaKeys(shortcut) : undefined}
       aria-pressed={active}
-      className={`flex size-8 shrink-0 items-center justify-center rounded-md transition-colors duration-140 hover:bg-white/[.04] hover:text-ink disabled:opacity-40 disabled:hover:bg-transparent ${color} ${className}`}
+      className={`flex size-8 shrink-0 items-center justify-center rounded-md transition-colors duration-140 hover:bg-ink/[.04] hover:text-ink disabled:opacity-40 disabled:hover:bg-transparent ${color} ${className}`}
       {...rest}
     >
       <Icon />
     </button>
+  )
+  return shortcut ? (
+    <Tooltip label={label} shortcut={shortcut} side={tipSide}>
+      {button}
+    </Tooltip>
+  ) : (
+    button
   )
 }
 
@@ -104,7 +126,7 @@ export function Badge({ children, tone }: { children: ReactNode; tone?: 'accent'
       ? 'text-accent border-accent/30'
       : tone === 'danger'
         ? 'text-danger border-danger/30'
-        : 'text-dim border-[#23232C]'
+        : 'text-dim border-hairline-strong'
   return (
     <span className={`rounded-xs border px-[7px] py-1 font-mono text-[10px] ${color}`}>{children}</span>
   )
@@ -198,7 +220,11 @@ export function Segmented<T extends string>({
           aria-label={option.title}
           aria-pressed={value === option.value}
           onClick={() => onPick(option.value)}
+          // Pleine largeur ⇒ les options se partagent la place, sinon elles se
+          // tassent à gauche et le groupe paraît à moitié vide.
           className={`t-ui flex items-center gap-1.5 rounded-sm px-3 py-1.5 transition-colors duration-140 ${
+            className.includes('w-full') ? 'flex-1 justify-center' : ''
+          } ${
             value === option.value ? SWITCH_ON : 'text-ink-soft hover:text-ink'
           }`}
         >
@@ -271,7 +297,7 @@ export function Toggle({
       title={title}
       onClick={() => onChange(!checked)}
       className={`relative h-5 w-[34px] shrink-0 rounded-full transition-colors duration-140 disabled:opacity-40 ${
-        checked ? 'bg-accent/35' : 'bg-white/[.09]'
+        checked ? 'bg-accent/35' : 'bg-ink/[.09]'
       }`}
     >
       <span
@@ -327,7 +353,7 @@ export function Row({
       type="button"
       aria-pressed={active}
       className={`flex w-full items-center gap-2.5 rounded-md border px-2.5 py-2.5 text-left transition-colors duration-140 ${
-        active ? SELECTED : 'border-transparent text-ink-soft hover:bg-white/[.03] hover:text-ink'
+        active ? SELECTED : 'border-transparent text-ink-soft hover:bg-ink/[.03] hover:text-ink'
       } ${className}`}
       {...rest}
     >
@@ -346,7 +372,7 @@ export function CheckBox({ checked }: { checked: boolean }) {
     <span
       aria-hidden
       className={`flex size-[15px] shrink-0 items-center justify-center rounded-xs ${
-        checked ? 'bg-accent text-stage' : 'border-[1.5px] border-white/20'
+        checked ? 'bg-accent text-stage' : 'border-[1.5px] border-ink/20'
       }`}
     >
       {checked && <CheckIcon className="size-2.5" />}
@@ -372,7 +398,7 @@ export function Swatch({
       aria-pressed={active}
       onClick={onClick}
       style={{ background: color }}
-      className={`size-10 rounded-md border border-white/10 ${active ? 'ring-selected' : ''}`}
+      className={`size-5 rounded-xs border border-ink/15 ${active ? 'ring-selected' : ''}`}
     />
   )
 }
@@ -386,7 +412,7 @@ export function DashedTile({
   return (
     <button
       type="button"
-      className={`flex items-center justify-center rounded-md border border-dashed border-white/15 text-dim transition-colors duration-140 hover:border-white/25 hover:text-ink-soft ${className}`}
+      className={`flex items-center justify-center rounded-md border border-dashed border-ink/15 text-dim transition-colors duration-140 hover:border-ink/25 hover:text-ink-soft ${className}`}
       {...rest}
     >
       {children}

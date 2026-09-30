@@ -1,29 +1,36 @@
-import { useCallback, useMemo, useRef, useState } from 'react'
-import Filmstrip from './Filmstrip.tsx'
-import { CloseSheetIcon, OpenSheetIcon } from './icons.tsx'
+import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react'
+import FirstTips from './FirstTips.tsx'
+import ImagesPanel from './ImagesPanel.tsx'
+import { CloseSheetIcon, OpenSheetIcon, RedoIcon, UndoIcon } from './icons.tsx'
 import Inspector from './Inspector.tsx'
 import Preview, { type Editing } from './Preview.tsx'
-import ToolRail, { type Tool } from './ToolRail.tsx'
+import ToolRail from './ToolRail.tsx'
+import type { Point } from '../lib/annotate.ts'
+import { rememberToolStyle } from '../lib/tool-style.ts'
+import { toolForKey, type Tool } from '../lib/tools.ts'
+import { IconButton, Panel } from './ui.tsx'
 import { displayOrder, findAnnotation } from '../lib/tree.ts'
 import type { NodePatch } from '../hooks/useShots.ts'
 import type {
   Annotation,
   AnnotationKind,
   Composition,
-  Format,
   FractionRect,
+  OutputMode,
+  Pan,
   Placement,
+  QueueItem,
   Scene,
   Settings,
   Shot,
-  Style,
 } from '../types.ts'
 
 /** Les panneaux flottent au-dessus du canvas : la boîte disponible est réduite
- *  d'autant. `[96, 328]` d'inset horizontal, comme spécifié dans le handoff. */
-const INSET = { left: 96, right: 328, top: 8, bottom: 110 }
-/** Sous 1100 px : le rail occupe une barre horizontale de 64 px en haut. */
-const NARROW_INSET = { left: 20, right: 20, top: 72, bottom: 110 }
+ *  d'autant. Images à gauche (240 px), inspecteur à droite (288 px), barre
+ *  d'outils en haut et barre du document en bas. */
+const INSET = { left: 280, right: 328, top: 80, bottom: 76 }
+/** Sous 1100 px : l'inspecteur devient une feuille, le canvas s'élargit. */
+const NARROW_INSET = { left: 280, right: 20, top: 80, bottom: 76 }
 
 const ANNOTATION_KIND: Record<Tool, AnnotationKind | 'select'> = {
   SEL: 'select',
@@ -40,41 +47,40 @@ export type EditorScreenProps = {
   scene: Scene
   shots: readonly Shot[]
   activeShotId: string
-  selection: readonly string[]
-  styles: readonly Style[]
-  activeStyleId: string | null
+  /** Membres de la composition, en mode combiné. */
+  members: readonly string[]
+  mode: OutputMode
+  /** État de chaque image dans le lot en cours d'export. */
+  queue: readonly QueueItem[]
   selectedLayerIds: readonly string[]
-  /** Vrai sous 1100 px : le rail passe à l'horizontale, l'inspecteur se replie. */
+  /** La section « Style » de l'inspecteur, quand un style est appliqué. */
+  style: ReactNode
+  /** Vrai sous 1100 px : l'inspecteur se replie en feuille. */
   narrow: boolean
-  /** Dimensions de sortie, affichées par le filmstrip. */
-  output: { width: number; height: number; format: Format } | null
+  /** Dimensions de sortie, affichées sous le canvas. */
+  output: { width: number; height: number } | null
   canUndo: boolean
   canRedo: boolean
-  copied: boolean
   onUndo: () => void
   onRedo: () => void
   onNewSession: () => void
-  onCopy: () => void
-  onExport: () => void
   /** Touches nues de l'édition, à poser sur le canvas — voir `useShortcuts`. */
   onKeys: (event: React.KeyboardEvent) => void
   onChange: (patch: Partial<Settings>) => void
   onCompose: (patch: Partial<Composition>) => void
   onPlace: (shotId: string, patch: Partial<Placement>) => void
-  /** Échelle d'export, réglée depuis le filmstrip comme aux touches 1/2/3. */
-  scale: number
-  onScale: (scale: number) => void
-  onSelectShot: (id: string, additive: boolean) => void
+  onPan: (shotId: string, pan: Pan, travel: Point) => void
+  onMode: (mode: OutputMode) => void
+  onActivate: (id: string) => void
+  onToggleMember: (id: string) => void
   onReorderShots: (from: number, to: number) => void
   onAddShot: () => void
-  onApplyStyle: (id: string) => void
-  onSaveStyle: () => void
-  onUpdateStyle: () => void
   onPickBackgroundImage: () => void
   onCreateAnnotation: (shotId: string, kind: AnnotationKind, rect: FractionRect) => string
   onPatchAnnotation: (shotId: string, id: string, patch: Partial<Annotation>) => void
   onPatchNode: (shotId: string, id: string, patch: NodePatch) => void
   onTranslateLayers: (shotId: string, ids: readonly string[], dx: number, dy: number) => void
+  onDuplicateLayers: (shotId: string, ids: readonly string[], offset?: number) => string[]
   onDeleteLayers: (shotId: string, ids: readonly string[]) => void
   onMoveLayer: (shotId: string, id: string, direction: 'up' | 'down') => void
   onMoveLayers: (shotId: string, ids: readonly string[], parentId: string | null, index: number) => void
@@ -83,8 +89,14 @@ export type EditorScreenProps = {
   onSelectLayers: (shotId: string | null, ids: readonly string[], additive: boolean) => void
 }
 
+/**
+ * L'espace de travail unique : les images et leurs calques à gauche, le canvas
+ * au centre avec ses outils au-dessus, l'inspecteur à droite. Séparé ou
+ * combiné, une image ou vingt, c'est le même écran.
+ */
 export default function EditorScreen(props: EditorScreenProps) {
   const { scene, shots, narrow } = props
+  /** L'outil reste en main après un tracé : `Escape` ou `V` le rendent. */
   const [tool, setTool] = useState<Tool>('SEL')
   const [sheetOpen, setSheetOpen] = useState(false)
   const [editing, setEditing] = useState<Editing | null>(null)
@@ -98,16 +110,53 @@ export default function EditorScreen(props: EditorScreenProps) {
      mode Compose — et `Escape` y ramène en un geste. Le `Preview` tient déjà
      cette règle : sans `selectedIds`, il n'affiche ni cadre ni poignée. */
 
-  const docked = scene.composition.layout !== 'single' && shots.length > 1
   const inset = narrow ? NARROW_INSET : INSET
 
   // Largeur d'une fenêtre à l'échelle 1 : l'inspecteur en a besoin pour
   // afficher l'élévation en pixels plutôt qu'en fraction abstraite.
   const windowWidth = useMemo(() => scene.shots[0]?.image.naturalWidth ?? 0, [scene.shots])
+  // L'image de tête donne son rapport à la fenêtre : paysage, elle couche un iPhone.
+  const lead = scene.shots[0]?.image
+  const landscape = lead ? lead.naturalWidth > lead.naturalHeight : false
 
   const activeShot = shots.find((shot) => shot.id === props.activeShotId) ?? shots[0] ?? null
 
-  const { onCreateAnnotation, onDeleteLayers, onSelectLayers } = props
+  const { onCreateAnnotation, onDeleteLayers, onPatchAnnotation, onSelectLayers, onKeys } = props
+
+  /** Un réglage fait à l'inspecteur devient le style de son outil : le prochain
+   *  calque du même type le reprend. Les poignées du canvas n'y écrivent pas —
+   *  étirer un groupe change des tailles qu'on n'a pas choisies. */
+  const patchAnnotation = useCallback(
+    (shotId: string, id: string, patch: Partial<Annotation>) => {
+      const shot = shots.find((item) => item.id === shotId)
+      const annotation = shot ? findAnnotation(shot.layers, id) : null
+      if (annotation) rememberToolStyle(annotation.kind, patch)
+      onPatchAnnotation(shotId, id, patch)
+    },
+    [shots, onPatchAnnotation],
+  )
+
+  /** Touches nues propres à l'éditeur, avant celles de l'app : le choix d'un
+   *  outil, et le dernier cran d'`Escape` — sortir de la saisie (géré par le
+   *  champ), puis désélectionner (l'app), puis revenir à la sélection. */
+  const keys = useCallback(
+    (event: React.KeyboardEvent) => {
+      const bare = !event.metaKey && !event.ctrlKey && !event.altKey && !event.shiftKey
+      const picked = bare ? toolForKey(event.key) : null
+      if (picked) {
+        event.preventDefault()
+        setTool(picked)
+        return
+      }
+      if (event.key === 'Escape' && props.selectedLayerIds.length === 0 && tool !== 'SEL') {
+        event.preventDefault()
+        setTool('SEL')
+        return
+      }
+      onKeys(event)
+    },
+    [onKeys, props.selectedLayerIds.length, tool],
+  )
 
   /** Fin de saisie : un label resté vide ne laisse pas de calque fantôme. */
   const closeEdit = useCallback(
@@ -154,12 +203,14 @@ export default function EditorScreen(props: EditorScreenProps) {
     [activeShot, onSelectLayers],
   )
 
+  const center = { paddingLeft: inset.left, paddingRight: inset.right }
+
   return (
-    <div className="stage-glow absolute inset-x-0 top-[58px] bottom-0">
+    <div className="stage-grain absolute inset-x-0 top-[58px] bottom-0">
       <Preview
         scene={scene}
         inset={inset}
-        onKeys={props.onKeys}
+        onKeys={keys}
         tool={ANNOTATION_KIND[tool]}
         selectedIds={props.selectedLayerIds}
         selectedShotId={props.activeShotId}
@@ -170,13 +221,53 @@ export default function EditorScreen(props: EditorScreenProps) {
           props.onSelectLayers(shotId, ids, additive)
         }}
         onTranslate={props.onTranslateLayers}
+        onDuplicate={(shotId, ids) => props.onDuplicateLayers(shotId, ids, 0)}
         onPlace={props.onPlace}
-        onResize={(shotId, id, rect) => props.onPatchAnnotation(shotId, id, { rect })}
+        onPan={props.onPan}
+        onPatch={onPatchAnnotation}
         onEdit={closeEdit}
-        onEditText={(shotId, id, text) => props.onPatchAnnotation(shotId, id, { text })}
+        onEditText={(shotId, id, text) => onPatchAnnotation(shotId, id, { text })}
       />
 
-      <ToolRail active={tool} onPick={setTool} horizontal={narrow} />
+      {/* Barre d'outils et barre du document, centrées sur la zone de dessin
+          et non sur l'écran : les panneaux latéraux n'ont pas la même largeur. */}
+      <div className="pointer-events-none absolute inset-x-0 top-4 z-10 flex justify-center" style={center}>
+        <ToolRail active={tool} onPick={setTool} />
+      </div>
+      <div className="pointer-events-none absolute inset-x-0 bottom-4 z-10 flex flex-col items-center gap-2" style={center}>
+        <FirstTips />
+        <Panel className="pointer-events-auto flex items-center gap-1 rounded-lg px-2 py-1.5">
+          <IconButton icon={UndoIcon} label="Undo" shortcut="⌘Z" tipSide="top" disabled={!props.canUndo} onClick={props.onUndo} />
+          <IconButton icon={RedoIcon} label="Redo" shortcut="⇧⌘Z" tipSide="top" disabled={!props.canRedo} onClick={props.onRedo} />
+          {props.output && (
+            <span className="t-mono-micro px-2 whitespace-nowrap text-dim">
+              {props.output.width} × {props.output.height}
+            </span>
+          )}
+        </Panel>
+      </div>
+
+      <ImagesPanel
+        shots={shots}
+        activeId={props.activeShotId}
+        members={props.members}
+        mode={props.mode}
+        queue={props.queue}
+        onMode={props.onMode}
+        onActivate={props.onActivate}
+        onToggleMember={props.onToggleMember}
+        onReorder={props.onReorderShots}
+        onAdd={props.onAddShot}
+        onNewSession={props.onNewSession}
+        layers={{
+          shot: activeShot,
+          selectedIds: props.selectedLayerIds,
+          onSelect: selectLayers,
+          onPatch: (id, patch) => activeShot && props.onPatchNode(activeShot.id, id, patch),
+          onMove: (ids, parentId, index) =>
+            activeShot && props.onMoveLayers(activeShot.id, ids, parentId, index),
+        }}
+      />
 
       {/* Sous 1100 px l'inspecteur devient une feuille rétractable ancrée à
           droite : il n'y a plus la place de le laisser flotter en permanence. */}
@@ -187,7 +278,7 @@ export default function EditorScreen(props: EditorScreenProps) {
           aria-expanded={sheetOpen}
           title={sheetOpen ? 'Close the inspector' : 'Open the inspector'}
           aria-label={sheetOpen ? 'Close the inspector' : 'Open the inspector'}
-          className="panel absolute top-[76px] right-5 z-20 flex size-9 items-center justify-center rounded-md text-ink-soft hover:text-ink"
+          className="panel absolute top-4 right-5 z-20 flex size-9 items-center justify-center rounded-md text-ink-soft hover:text-ink"
         >
           {sheetOpen ? <CloseSheetIcon /> : <OpenSheetIcon />}
         </button>
@@ -195,58 +286,37 @@ export default function EditorScreen(props: EditorScreenProps) {
 
       {(!narrow || sheetOpen) && (
         <Inspector
-          settings={scene.settings}
-          composition={scene.composition}
-          palette={scene.palette}
-          styles={props.styles}
-          activeStyleId={props.activeStyleId}
-          windowWidth={windowWidth}
-          shotCount={shots.length}
-          activeShot={activeShot}
-          selectedLayerIds={props.selectedLayerIds}
-          onSelectLayers={selectLayers}
-          onPatchAnnotation={props.onPatchAnnotation}
-          onPatchNode={props.onPatchNode}
-          onDeleteLayers={props.onDeleteLayers}
-          onMoveLayer={props.onMoveLayer}
-          onMoveLayers={props.onMoveLayers}
-          onGroupLayers={props.onGroupLayers}
-          onUngroupLayer={props.onUngroupLayer}
-          onChange={props.onChange}
-          onCompose={props.onCompose}
-          onPlace={props.onPlace}
-          onApplyStyle={props.onApplyStyle}
-          onSaveStyle={props.onSaveStyle}
-          onUpdateStyle={props.onUpdateStyle}
-          onPickBackgroundImage={props.onPickBackgroundImage}
           offset={narrow}
+          onDeselect={() => props.onSelectLayers(null, [], false)}
+          style={props.style}
+          layer={
+            props.selectedLayerIds.length > 0
+              ? {
+                  shot: activeShot,
+                  selectedIds: props.selectedLayerIds,
+                  onPatch: patchAnnotation,
+                  onDelete: props.onDeleteLayers,
+                  onMove: props.onMoveLayer,
+                  onGroup: props.onGroupLayers,
+                  onUngroup: props.onUngroupLayer,
+                }
+              : null
+          }
+          document={{
+            settings: scene.settings,
+            composition: scene.composition,
+            palette: scene.palette,
+            windowWidth,
+            landscape,
+            combined: props.mode === 'combined',
+            activeShot,
+            onChange: props.onChange,
+            onCompose: props.onCompose,
+            onPlace: props.onPlace,
+            onPickBackgroundImage: props.onPickBackgroundImage,
+          }}
         />
       )}
-
-      <Filmstrip
-        shots={shots}
-        activeId={props.activeShotId}
-        selection={docked ? props.selection : undefined}
-        docked={docked}
-        onSelect={props.onSelectShot}
-        onAdd={props.onAddShot}
-        onReorder={props.onReorderShots}
-        output={props.output}
-        scale={props.scale}
-        onScale={props.onScale}
-        onFormat={(format) => props.onChange({ format })}
-        canUndo={props.canUndo}
-        canRedo={props.canRedo}
-        onUndo={props.onUndo}
-        onRedo={props.onRedo}
-        onNewSession={props.onNewSession}
-        copied={props.copied}
-        onCopy={props.onCopy}
-        onExport={props.onExport}
-        hint={
-          docked ? `${props.selection.length} of ${shots.length} shots in composition` : undefined
-        }
-      />
     </div>
   )
 }

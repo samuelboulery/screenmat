@@ -16,6 +16,9 @@ import { inspect, render } from './api.ts'
 import { resolveUnder, writeNew, writeRoot } from './write-guard.ts'
 import { STYLES_DIR, listStyles } from './styles-dir.ts'
 import { ANNOTATION_LIMITS } from '../src/lib/annotate.ts'
+import { SCREEN_RATIOS } from '../src/lib/screen.ts'
+import { SERIES } from '../src/lib/series.ts'
+import type { BackgroundKind } from '../src/types.ts'
 
 const REPERE = `Repère des calques — à lire avant de placer quoi que ce soit.
 Un rect est en fractions de la LARGEUR DE LA FENÊTRE (le cadre dessiné autour du
@@ -24,8 +27,11 @@ aussi, jamais par la hauteur : un screenshot 16:9 occupe donc y de 0 à 0.5625.
 \`w\` et \`h\` sont signés — une flèche va de (x, y) vers (x+w, y+h), ce qui lui
 permet de pointer dans les quatre directions.
 Appeler d'abord screenmat_inspect : il renvoie \`screen\`, le rectangle qu'occupe
-le screenshot dans ce repère, décalé de la barre de titre. Pour convertir un
-point lu en pixels sur l'image : x = px / imageWidth, y = screen.y + py / imageWidth.`
+le screenshot dans ce repère (décalé de la barre de titre ou du bezel), et
+\`source\`, la part de l'image qui s'y voit, en pixels. Pour convertir un point lu
+en pixels sur l'image, avec k = screen.w / source.w :
+x = screen.x + (px − source.x) × k, y = screen.y + (py − source.y) × k.
+Une longueur en pixels se multiplie par k.`
 
 const rect = z
   .object({
@@ -39,13 +45,25 @@ const rect = z
 const layer = z.object({
   kind: z.enum(['text', 'badge', 'arrow', 'line', 'box', 'ellipse', 'redaction']),
   rect,
-  text: z.string().max(280).optional().describe('Texte, pour kind=text uniquement.'),
+  text: z.string().max(280).optional().describe('kind=text only. \\n breaks lines; rect.w > 0 wraps at that width.'),
+  font: z.enum(['sans', 'mono']).optional(),
+  weight: z.number().min(400).max(700).optional(),
+  align: z.enum(['left', 'center', 'right']).optional(),
+  background: z
+    .object({
+      on: z.boolean().optional(),
+      color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+      opacity: z.number().min(0).max(1).optional(),
+    })
+    .optional()
+    .describe('Plate behind a text. Default: on, #000000 at 0.85.'),
+  shadow: z.number().min(0).max(1).optional().describe('Drop shadow. Text defaults to 0.4, shapes to 0.'),
   redaction: z
     .enum(['blur', 'pixel', 'solid'])
     .optional()
     .describe('Mode de masquage, pour kind=redaction. Cuit dans les pixels : illisible à l’export.'),
-  color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional().describe('Hex à six chiffres, ex. #7DE2FF.'),
-  labelStyle: z.enum(['pill', 'plain', 'badge']).optional(),
+  redactionShape: z.enum(['rect', 'ellipse']).optional().describe('kind=redaction. ellipse is inscribed in rect.'),
+  color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional().describe('Hex à six chiffres, ex. #FFD479.'),
   size: z.number().min(ANNOTATION_LIMITS.size.min).max(ANNOTATION_LIMITS.size.max).optional(),
   strokeWidth: z
     .number()
@@ -53,6 +71,9 @@ const layer = z.object({
     .max(ANNOTATION_LIMITS.strokeWidth.max)
     .optional(),
   fill: z.number().min(0).max(1).optional().describe('Opacité du remplissage. 0 = contour seul.'),
+  fillColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional().describe('box/ellipse fill colour. Default: color.'),
+  stroke: z.boolean().optional().describe('box/ellipse outline. false needs fill > 0.'),
+  strokeOpacity: z.number().min(0).max(1).optional().describe('box/ellipse outline opacity. Default 1.'),
   opacity: z.number().min(0.1).max(1).optional(),
 })
 
@@ -67,11 +88,25 @@ const geometrySettings = z.object({
   radius: z.number().min(0).max(0.08).optional(),
   rotateY: z.number().min(-24).max(24).optional(),
   titleBar: z.boolean().optional(),
+  deviceRatio: z.boolean().optional().describe('macbook|iphone: lock the screen to the device ratio; the screenshot is cropped to fill it.'),
+  screenRatio: z.enum(SCREEN_RATIOS).optional().describe('browser|none: screen ratio; the screenshot is cropped to fill it.'),
 })
+
+/** Part visible d'un screenshot rogné par un ratio verrouillé. */
+const pan = z
+  .object({ x: z.number().min(0).max(1).optional(), y: z.number().min(0).max(1).optional() })
+  .optional()
+  .describe('Which part of a cropped screenshot shows, per axis: 0 start, 0.5 centre (default), 1 end.')
 
 const settings = geometrySettings
   .extend({
-    background: z.enum(['mesh', 'gradient', 'solid']).optional(),
+    // Lu dans `SERIES`, jamais recopié : `image` n'y est pas, il demande un
+    // fichier que cet outil ne reçoit pas.
+    background: z
+      .enum(Object.values(SERIES).flat() as [BackgroundKind, ...BackgroundKind[]])
+      .optional()
+      .describe('mesh|gradient|solid follow the screenshot colours; tahoe-dark|sonoma-light|big-sur-day|… are the real macOS wallpapers; windows-11-light|windows-11-dark|windows-10|windows-8|windows-7|windows-xp the Windows ones; bayer|halftone|scanlines|atkinson|stipple|crosshatch|contours|ridgelines|riso|glyphs|truchet are two-tone dithered patterns.'),
+    islandSide: z.enum(['left', 'right']).optional().describe('iphone with a landscape screenshot: which short edge carries the island. Default left.'),
     theme: z.enum(['auto', 'light', 'dark']).optional(),
     url: z.string().max(200).optional().describe('Texte de la barre d’adresse, pour frame=browser.'),
     shadow: z.number().min(0).max(2).optional(),
@@ -111,6 +146,7 @@ repère de coordonnées, et sa réponse dit où le screenshot atterrit.`,
               })
               .optional()
               .describe('Retouche de cette fenêtre, en largeurs de fenêtre.'),
+            pan,
           }),
         )
         .min(1)
@@ -157,9 +193,10 @@ ${REPERE}`,
     inputSchema: {
       input: z.string().describe('Chemin du screenshot.'),
       settings: geometrySettings.optional(),
+      pan,
     },
   },
-  async ({ input, settings: overrides }) => json(await inspect(input, overrides)),
+  async ({ input, settings: overrides, pan: position }) => json(await inspect(input, overrides, position)),
 )
 
 server.registerTool(

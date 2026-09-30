@@ -18,7 +18,58 @@ export type Shortcuts = {
   onSelectAll: () => void
   onGroup: () => void
   onUngroup: () => void
+  /** Le panneau des raccourcis, sur `?`. */
+  onHelp: () => void
 }
+
+export type ShortcutEntry = { keys: string; label: string }
+
+/**
+ * La table des raccourcis, source unique du panneau `?`. Les outils n'y sont
+ * pas : `TOOL_KEYS` (`lib/tools.ts`) les porte, et le panneau les lit là.
+ * Une ligne ajoutée à un handler sans l'être ici est un raccourci introuvable.
+ */
+export const SHORTCUTS: { title: string; hint: string; items: ShortcutEntry[] }[] = [
+  {
+    title: 'Everywhere',
+    hint: 'With a modifier key',
+    items: [
+      { keys: '⌘V', label: 'Paste a screenshot' },
+      { keys: '⌘E', label: 'Export' },
+      { keys: '⌘C', label: 'Copy the image' },
+      { keys: '⌘Z', label: 'Undo' },
+      { keys: '⇧⌘Z', label: 'Redo' },
+      { keys: '⌘D', label: 'Duplicate layer' },
+      { keys: '⌘A', label: 'Select all layers' },
+      { keys: '⌘G', label: 'Group' },
+      { keys: '⇧⌘G', label: 'Ungroup' },
+      { keys: '⌘↑ ⌘↓', label: 'Move in the layer stack' },
+    ],
+  },
+  {
+    title: 'On the canvas',
+    hint: 'Single keys, when the canvas has focus',
+    items: [
+      { keys: '⇧R', label: 'New background' },
+      { keys: '1 2 3', label: 'Export scale' },
+      { keys: '⌫', label: 'Delete layer' },
+      { keys: '← ↑ → ↓', label: 'Nudge — ⇧ for ×5' },
+      { keys: 'Esc', label: 'Deselect, then back to Select' },
+      { keys: '?', label: 'This panel' },
+    ],
+  },
+  {
+    title: 'With the mouse',
+    hint: 'Gestures on the canvas',
+    items: [
+      { keys: '⇧ drag', label: 'Snap to 45°, keep proportions' },
+      { keys: '⇧ click', label: 'Add to the selection' },
+      { keys: '⌥ drag', label: 'Duplicate a layer · move a whole image' },
+      { keys: 'Space drag', label: 'Reposition the image in its frame' },
+      { keys: 'Double-click', label: 'Edit a text' },
+    ],
+  },
+]
 
 /** Direction de chaque flèche du clavier. */
 const ARROWS: Record<string, [number, number]> = {
@@ -30,9 +81,10 @@ const ARROWS: Record<string, [number, number]> = {
 
 /** Ce qu'un handler lit d'une touche — vrai de l'événement DOM comme du
  *  synthétique React, sans importer ni l'un ni l'autre. */
-type KeyEvent = {
+export type KeyEvent = {
   key: string
   shiftKey: boolean
+  altKey?: boolean
   metaKey: boolean
   ctrlKey: boolean
   preventDefault: () => void
@@ -65,15 +117,17 @@ function handleModified(event: KeyEvent, shortcuts: Shortcuts): void {
 }
 
 /** Les touches nues : elles n'existent que quand le canvas a le focus. */
-function handleBare(event: KeyEvent, shortcuts: Shortcuts): void {
+export function handleBare(event: KeyEvent, shortcuts: Shortcuts): void {
   const arrow = ARROWS[event.key]
 
   if (event.key === 'Escape') shortcuts.onEscape()
   else if (arrow) shortcuts.onNudge(arrow[0], arrow[1], event.shiftKey)
-  else if (event.key === 'r' || event.key === 'R') shortcuts.onShuffle()
+  // ⇧R : `r` nu choisit l'outil Box, comme dans tout éditeur.
+  else if (event.shiftKey && event.key.toLowerCase() === 'r') shortcuts.onShuffle()
   else if (event.key === '1' || event.key === '2' || event.key === '3')
     shortcuts.onScale(Number(event.key))
   else if (event.key === 'Delete' || event.key === 'Backspace') shortcuts.onDelete()
+  else if (event.key === '?') shortcuts.onHelp()
   else return
 
   event.preventDefault()
@@ -84,7 +138,7 @@ function handleBare(event: KeyEvent, shortcuts: Shortcuts): void {
  *
  * - **Global** : les combinaisons à modificateur, posées sur `window`. Elles
  *   n'entrent en conflit avec rien et WCAG 2.1.4 ne les vise pas.
- * - **Au focus** : les touches nues (`r`, `1/2/3`, flèches, `⌫`, `Escape`),
+ * - **Au focus** : les touches nues (`⇧R`, `1/2/3`, flèches, `⌫`, `Escape`, `?`),
  *   renvoyées comme handler à poser sur le canvas. Les poser sur `window` avec
  *   `preventDefault()` tuait le défilement aux flèches de tout panneau, et 2.1.4
  *   exige de pouvoir couper, remapper, ou n'activer qu'au focus un raccourci à
@@ -103,6 +157,9 @@ export function useShortcuts(shortcuts: Shortcuts, enabled = true): (event: KeyE
     const onKeyDown = (event: KeyboardEvent) => {
       if (isTyping(event.target)) return
       if (!event.metaKey && !event.ctrlKey) return
+      // Un `<dialog>` modal rend la page inerte au clic, pas au clavier :
+      // ⌘Z derrière le tiroir annulerait sur un document qu'on ne voit pas.
+      if (document.querySelector('dialog[open]')) return
       handleModified(event, current.current)
     }
 

@@ -40,13 +40,13 @@ English · [Français](README.fr.md)
 | | |
 | --- | --- |
 | **Frames** | `browser` (macOS chrome with an editable address bar), `macbook`, `iphone`, or `none`. Title bar optional, corner radius and Y-axis tilt (−24° to 24°) adjustable. |
-| **Backgrounds** | `mesh`, `gradient`, `solid` or your own image — all derived from the dominant colours of the screenshot, with dials for blur, shape count, opacity, saturation, contrast and film grain. |
+| **Backgrounds** | Four series — generated from the screenshot (`mesh`, `gradient`, `solid`), the real macOS wallpapers from Big Sur to Golden Gate (`tahoe-dark`, `sonoma-light`, …), the Windows ones from XP to 11 (`windows-11-dark`, `windows-xp`, …) and dithered (`bayer`, `halftone`, `atkinson`, `contours`, `truchet`, … eleven patterns) — or your own image. Every generated colour is editable; dials for blur, shapes, opacity, saturation, contrast, grain, dither cell and angle. |
 | **Annotations** | Seven layer kinds: text labels, ranked badges, arrows, lines, boxes, ellipses and redaction. Colour, size, stroke, fill, opacity and inverted contrast per layer. |
-| **Redaction** | `blur`, `pixel` or `solid`, baked under the window clip. |
+| **Redaction** | `blur`, `pixel` or `solid`, as a rectangle or an ellipse, baked under the window clip. |
 | **Compositions** | Up to 24 shots in one visual: `single`, `stack`, `side` or `tilt3d`, with spread, convergence and elevation. |
 | **Layers** | A real tree — groups, reordering, hide, lock, multi-selection, undo/redo. |
 | **Styles** | Save a full set of settings under a name, recall it from the app, the CLI, MCP or Node. Share it as a `.json` file. |
-| **Batch** | Queue a folder of screenshots, render them with one style, download a single `.zip`. |
+| **Batch** | Drop a folder of screenshots, keep them as separate images, export them all as one `.zip` — from the Export menu. |
 | **History** | Past exports live in IndexedDB with their thumbnails, reopenable with every setting intact. |
 | **Export** | WebP by default (7–10× lighter than PNG at equal grain), PNG on demand, at 1× / 2× / 3× — 1600, 3200 or 4800 px wide. |
 
@@ -142,10 +142,12 @@ has focus, so no single-key shortcut ever steals a keystroke from a panel.
 | `⌘G` / `⇧⌘G` | Group · ungroup |
 | `⌘↑` / `⌘↓` | Move the layer up or down the stack |
 | `⌘V` | Paste a screenshot |
-| `R` | Shuffle — a new seed, a new background |
+| `⇧R` | Shuffle — a new seed, a new background |
 | `1` `2` `3` | Export scale |
 | Arrows (`⇧` for a large step) | Nudge the selection |
 | `⌫` · `Esc` | Delete · deselect |
+| `⌥` drag | Duplicate a layer · move a whole image |
+| `Space` drag | Reposition a cropped screenshot inside its frame |
 
 ## Privacy by construction
 
@@ -197,3 +199,7 @@ identifiers are in English; comments in this codebase are in French.
 ## License
 
 [MIT](LICENSE) © Samuel Boulery
+
+The macOS and Windows wallpapers in `public/wallpapers/` are © Apple Inc. and
+© Microsoft Corporation. They are not covered by that licence — see
+[the notice](public/wallpapers/NOTICE.md).

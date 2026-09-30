@@ -1,16 +1,13 @@
-import { REDACTION_ICON } from './icons.tsx'
-import { Section, Slider, Swatch, Tile, Toggle } from './ui.tsx'
-import { ANNOTATION_LIMITS, isPoint, isSegment } from '../lib/annotate.ts'
-import type { Annotation, LabelStyle, Palette, RedactionMode } from '../types.ts'
+import ColorPicker from './ColorPicker.tsx'
+import { KIND_ICON, REDACTION_ICON } from './icons.tsx'
+import ShapeStyle from './ShapeStyle.tsx'
+import TextStyle from './TextStyle.tsx'
+import { Section, Slider, Tile, Toggle } from './ui.tsx'
+import { ANNOTATION_LIMITS, isSegment, percent } from '../lib/annotate.ts'
+import type { Annotation, Palette, RedactionMode, RedactionShape } from '../types.ts'
 
 /* Éditeurs de propriétés d'un calque. Séparés de la liste des calques pour
    qu'aucun des deux fichiers ne devienne un fourre-tout. */
-
-const LABEL_STYLES: Array<{ value: LabelStyle; label: string }> = [
-  { value: 'pill', label: 'pill' },
-  { value: 'plain', label: 'plain' },
-  { value: 'badge', label: 'badge' },
-]
 
 const REDACTIONS: Array<{ value: RedactionMode; label: string }> = [
   { value: 'blur', label: 'blur' },
@@ -18,19 +15,20 @@ const REDACTIONS: Array<{ value: RedactionMode; label: string }> = [
   { value: 'solid', label: 'solid' },
 ]
 
+/** La forme d'une zone floutée porte l'icône de l'outil qui trace la même. */
+const SHAPES: Array<{ value: RedactionShape; label: string; icon: 'box' | 'ellipse' }> = [
+  { value: 'rect', label: 'rectangle', icon: 'box' },
+  { value: 'ellipse', label: 'ellipse', icon: 'ellipse' },
+]
+
 /** Couleurs de la DA, toujours proposées. Les accents du screenshot viennent
  *  ensuite : une annotation assortie à l'image tient mieux dans le visuel. */
-const BASE_COLORS = ['#7DE2FF', '#A378FF', '#FF9A9A', '#FFD479', '#8CE99A', '#FFFFFF']
+const BASE_COLORS = ['#FFD479', '#FFFFFF', '#111111', '#FF5A4F', '#8CE99A', '#4D8BFF']
 
 type AnnotationStyleProps = {
   annotation: Annotation
   palette: Palette
   onPatch: (patch: Partial<Annotation>) => void
-}
-
-/** Pourcentage lisible pour une fraction de la largeur de la fenêtre. */
-function percent(value: number): string {
-  return `${(value * 100).toFixed(2)} %`
 }
 
 export default function AnnotationStyle({
@@ -39,12 +37,28 @@ export default function AnnotationStyle({
   onPatch,
 }: AnnotationStyleProps) {
   const { kind } = annotation
-  const closed = kind === 'box' || kind === 'ellipse'
-  const stroked = closed || isSegment(kind)
+  const stroked = isSegment(kind)
 
   if (kind === 'redaction') {
     return (
       <Section title="Redaction">
+        <div className="grid grid-cols-2 gap-1">
+          {SHAPES.map((shape) => {
+            const Icon = KIND_ICON[shape.icon]
+            return (
+              <Tile
+                key={shape.value}
+                tone="danger"
+                active={annotation.redactionShape === shape.value}
+                onClick={() => onPatch({ redactionShape: shape.value })}
+                className="h-11 font-mono text-[10px]"
+              >
+                <Icon />
+                {shape.label}
+              </Tile>
+            )
+          })}
+        </div>
         <div className="grid grid-cols-3 gap-1">
           {REDACTIONS.map((mode) => {
             const Icon = REDACTION_ICON[mode.value]
@@ -71,35 +85,23 @@ export default function AnnotationStyle({
 
   const colors = [...BASE_COLORS, ...palette.accents.slice(0, 4)]
 
+  if (kind === 'box' || kind === 'ellipse') {
+    return <ShapeStyle annotation={annotation} colors={colors} onPatch={onPatch} />
+  }
+
   return (
     <>
-      <Section title="Color">
-        <div className="flex flex-wrap gap-1.5">
-          {colors.map((color) => (
-            <Swatch
-              key={color}
-              color={color}
-              active={annotation.color.toUpperCase() === color.toUpperCase()}
-              onClick={() => onPatch({ color })}
-            />
-          ))}
-          {/* L'input garde sa taille : réduit à 0×0 il restait focalisable, et
-              l'anneau de focus n'avait plus rien à entourer. Ici il couvre tout
-              le carré, invisible mais focalisable là où on le voit. */}
-          <label
-            title="Custom color"
-            className="relative flex size-10 items-center justify-center rounded-lg border border-dashed border-white/20 text-[10px] text-dim hover:border-white/35"
-          >
-            <span aria-hidden>···</span>
-            <input
-              type="color"
-              value={annotation.color}
-              aria-label="Custom color"
-              onChange={(event) => onPatch({ color: event.target.value })}
-              className="absolute inset-0 size-full rounded-lg opacity-0"
-            />
-          </label>
-        </div>
+      {kind === 'text' && (
+        <TextStyle annotation={annotation} accents={palette.accents.slice(0, 4)} onPatch={onPatch} />
+      )}
+
+      <Section title={kind === 'text' ? 'Text color' : 'Color'}>
+        <ColorPicker
+          colors={colors}
+          value={annotation.color}
+          label={kind === 'text' ? 'Text color' : 'Custom color'}
+          onPick={(color) => onPatch({ color })}
+        />
         <Slider
           label="Opacity"
           value={annotation.opacity}
@@ -107,45 +109,23 @@ export default function AnnotationStyle({
           {...ANNOTATION_LIMITS.opacity}
           onInput={(opacity) => onPatch({ opacity })}
         />
+        <Slider
+          label="Shadow"
+          value={annotation.shadow}
+          display={annotation.shadow === 0 ? 'none' : `${Math.round(annotation.shadow * 100)} %`}
+          {...ANNOTATION_LIMITS.shadow}
+          onInput={(shadow) => onPatch({ shadow })}
+        />
       </Section>
 
-      {isPoint(kind) && (
-        <Section title={kind === 'text' ? 'Label' : 'Badge'}>
-          {kind === 'text' && (
-            <>
-              <input
-                type="text"
-                value={annotation.text}
-                onChange={(event) => onPatch({ text: event.target.value })}
-                aria-label="Label text"
-                className="w-full rounded-md border border-hairline bg-sunken px-3 py-2 text-[12px] text-ink placeholder:text-dim"
-              />
-              <div className="grid grid-cols-3 gap-1">
-                {LABEL_STYLES.map((style) => (
-                  <Tile
-                    key={style.value}
-                    active={annotation.labelStyle === style.value}
-                    onClick={() => onPatch({ labelStyle: style.value })}
-                    className="h-[34px] font-mono text-[10px]"
-                  >
-                    {style.label}
-                  </Tile>
-                ))}
-              </div>
-            </>
-          )}
-          {/* Le contraste du texte se déduit du fond : pas de réglage à
-              rater côté accessibilité. Sans effet sur un label `plain`. */}
-          {(kind === 'badge' || annotation.labelStyle !== 'plain') && (
-            <div className="flex items-center justify-between">
-              <span className="t-ui text-ink-soft">Invert</span>
-              <Toggle
-                checked={annotation.invert}
-                label="Invert"
-                onChange={(invert) => onPatch({ invert })}
-              />
-            </div>
-          )}
+      {kind === 'badge' && (
+        <Section title="Badge">
+          {/* Le contraste du numéro se déduit du disque : pas de réglage à
+              rater côté accessibilité. */}
+          <div className="flex items-center justify-between">
+            <span className="t-ui text-ink-soft">Invert</span>
+            <Toggle checked={annotation.invert} label="Invert" onChange={(invert) => onPatch({ invert })} />
+          </div>
           <Slider
             label="Size"
             value={annotation.size}
@@ -165,15 +145,6 @@ export default function AnnotationStyle({
             {...ANNOTATION_LIMITS.strokeWidth}
             onInput={(strokeWidth) => onPatch({ strokeWidth })}
           />
-          {kind === 'box' && (
-            <Slider
-              label="Corners"
-              value={annotation.radius}
-              display={percent(annotation.radius)}
-              {...ANNOTATION_LIMITS.radius}
-              onInput={(radius) => onPatch({ radius })}
-            />
-          )}
           {kind === 'arrow' && (
             <Slider
               label="Head"
@@ -181,15 +152,6 @@ export default function AnnotationStyle({
               display={percent(annotation.arrowHead)}
               {...ANNOTATION_LIMITS.arrowHead}
               onInput={(arrowHead) => onPatch({ arrowHead })}
-            />
-          )}
-          {closed && (
-            <Slider
-              label="Fill"
-              value={annotation.fill}
-              display={annotation.fill === 0 ? 'none' : `${Math.round(annotation.fill * 100)} %`}
-              {...ANNOTATION_LIMITS.fill}
-              onInput={(fill) => onPatch({ fill })}
             />
           )}
         </Section>

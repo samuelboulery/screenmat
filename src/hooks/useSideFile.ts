@@ -67,7 +67,7 @@ async function apply(
     if (target === 'watermark') {
       const style = options.activeStyle
       if (!style) {
-        options.onError('Sélectionnez d’abord un style pour y attacher un logo')
+        options.onError('Select a style first to attach a logo to it')
         return
       }
       const dataUrl = await toDataUrl(file)
@@ -80,6 +80,6 @@ async function apply(
 
     await options.onStyle(parseStyle(await file.text()))
   } catch (cause: unknown) {
-    options.onError(cause instanceof Error ? cause.message : 'Fichier illisible')
+    options.onError(cause instanceof Error ? cause.message : 'Unreadable file')
   }
 }

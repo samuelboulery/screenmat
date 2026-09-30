@@ -5,7 +5,7 @@ from a machine. It exists so that no setting is ever duplicated between the app
 and the CLI: you get it right once, visually, and scripts refer to it.
 
 ```text
-  app  →  Styles screen  →  Export .json  →  ~/.screenmat/styles/docs.screenmat.json
+  app  →  Styles menu    →  Export .json  →  ~/.screenmat/styles/docs.screenmat.json
                                                         │
                                     --style docs ───────┤
                                     style: "docs" ──────┘
@@ -14,8 +14,8 @@ and the CLI: you get it right once, visually, and scripts refer to it.
 ## Saving one
 
 1. Set up a shot the way you want it in the app.
-2. Go to **Styles**, name it, save it.
-3. Export it — you get a `.json` file.
+2. Open the **Styles** menu in the top bar, then **Save as a new style**.
+3. Pick **Export** in the same menu — you get a `.json` file.
 4. Drop that file into `~/.screenmat/styles/`.
 
 `SCREENMAT_STYLES` moves that directory somewhere else. Putting it inside a
@@ -75,9 +75,10 @@ speak; it is never overwritten with an empty value.
 pnpm cli screenshot.png --style docs --ratio 1:1
 ```
 
-A style may also carry a frozen `palette`. The scene's own `palette` wins if it
-has one; otherwise the style's is used; otherwise the colours are extracted from
-the first screenshot.
+A style may also carry a frozen palette, in `settings.palette`. The scene's own
+`palette` wins if it has one; otherwise the style's is used; otherwise the
+colours are extracted from the first screenshot. A style file from an older
+version that keeps `palette` next to `settings` is still read.
 
 ## The file
 
@@ -91,8 +92,12 @@ exports and imports.
   "style": {
     "id": "style-1",
     "name": "Docs",
-    "settings": { "frame": "macbook", "ratio": "16:9", "seed": 5 },
-    "palette": { "base": "#101018", "accents": ["#7DE2FF"] }
+    "settings": {
+      "frame": "macbook",
+      "ratio": "16:9",
+      "seed": 5,
+      "palette": { "base": "#101018", "accents": ["#7DE2FF"] }
+    }
   }
 }
 ```

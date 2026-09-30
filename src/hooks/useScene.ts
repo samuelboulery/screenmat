@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { pickMembers } from '../lib/anchor.ts'
 import { computeGeometry } from '../lib/render.ts'
 import { DEFAULT_PLACEMENT, type Composition, type Scene, type Settings, type Shot, type Style } from '../types.ts'
 
@@ -31,17 +32,14 @@ export function useScene(input: SceneInput) {
     if (composition.layout === 'single') {
       return activeShot ? [activeShot] : []
     }
-    const picked = shots.filter((shot) => selection.includes(shot.id))
-    // Une composition multi-shot sans sélection retombe sur le premier shot :
-    // un canvas vide serait pris pour un bug, pas pour un choix.
-    return picked.length > 0 ? picked : shots.slice(0, 1)
+    return pickMembers(shots, selection)
   }, [shots, activeShot, selection, composition.layout])
 
   const scene = useMemo<Scene | null>(() => {
     if (composed.length === 0) return null
     return {
       shots: composed,
-      palette: activeStyle?.palette ?? composed[0].palette,
+      palette: composed[0].palette,
       settings,
       composition,
       backgroundImage: backgroundImage ?? undefined,

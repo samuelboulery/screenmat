@@ -1,9 +1,6 @@
-/**
- * Les quatre destinations de l'app. `edit` porte à lui seul l'embellissement et
- * l'annotation : ce sont deux moitiés du même geste, pas deux écrans. L'import
- * n'en fait pas partie — il se déduit de « aucun shot chargé ».
- */
-export type Screen = 'edit' | 'batch' | 'styles' | 'history'
+import type { Dither } from './lib/dithered.ts'
+import type { ScreenRatio } from './lib/screen.ts'
+import type { Wallpaper } from './lib/wallpapers.ts'
 
 export type Ratio = '4:3' | '1:1' | '16:9' | '9:16' | 'auto'
 
@@ -12,11 +9,23 @@ export type Format = 'png' | 'webp'
 /** Style de fenêtre dessiné autour du screenshot. */
 export type FrameStyle = 'browser' | 'macbook' | 'iphone' | 'none'
 
-/** Preset de fond. `image` utilise l'image fournie dans la `Scene`. */
-export type BackgroundKind = 'mesh' | 'gradient' | 'solid' | 'image'
+/** Quatre séries — tirée de la capture, fonds d'écran macOS et Windows, tramée — plus
+ *  l'image perso, fournie dans la `Scene`. La série se déduit du type (`SERIES`,
+ *  `lib/series.ts`). */
+export type BackgroundKind =
+  | 'mesh'
+  | 'gradient'
+  | 'solid'
+  | Wallpaper
+  | Dither
+  | 'image'
 
 /** Disposition multi-shot. `single` n'affiche que le shot actif. */
 export type LayoutKind = 'single' | 'stack' | 'side' | 'tilt3d'
+
+/** Séparé : une image, un fichier (`layout === 'single'`). Combiné : les
+ *  images cochées font une seule scène. Déduit du layout, jamais stocké. */
+export type OutputMode = 'separate' | 'combined'
 
 export type AnnotationKind =
   | 'text'
@@ -29,7 +38,23 @@ export type AnnotationKind =
 
 export type RedactionMode = 'blur' | 'pixel' | 'solid'
 
-export type LabelStyle = 'pill' | 'plain' | 'badge'
+export type RedactionShape = 'rect' | 'ellipse'
+
+export type IslandSide = 'left' | 'right'
+
+export type TextFont = 'sans' | 'mono'
+
+export type TextAlign = 'left' | 'center' | 'right'
+
+/** Plaque derrière un texte. `padding` et `radius` sont en fractions de la
+ *  taille de police : la plaque suit le texte quand on le grossit. */
+export type TextBackground = {
+  on: boolean
+  color: string
+  opacity: number
+  padding: number
+  radius: number
+}
 
 export type WatermarkPosition =
   | 'top-left'
@@ -65,11 +90,26 @@ export type Settings = {
   grain: number
   /** Graine du PRNG : même graine ⇒ même fond, en preview comme à l'export. */
   seed: number
+  /** Série tramée : taille d'une cellule, en fraction de la largeur du canvas. */
+  ditherCell: number
+  /** Série tramée : angle de la trame, en degrés (points et lignes). */
+  ditherAngle: number
+  /** Couleurs du fond figées à la main. Absent ⇒ celles de la capture. */
+  palette?: Palette
   /** PNG : sans perte, mais le grain est du bruit et fait exploser le poids.
    *  WebP : le défaut, et 7 à 10× plus léger pour un résultat visuellement
    *  identique — mesuré à l'échelle 3, 11,5 Mo contre 1,5 Mo. */
   format: Format
   frame: FrameStyle
+  /** Cadres `macbook` et `iphone` : l'écran garde le ratio de l'appareil
+   *  (16:10, 19,5:9 — couché si le screenshot est paysage) au lieu de suivre
+   *  celui du screenshot, qui est alors rogné. */
+  deviceRatio: boolean
+  /** Cadres `browser` et `none` : ratio de l'écran. `auto` ⇒ celui du screenshot. */
+  screenRatio: ScreenRatio
+  /** Bord qui porte l'île d'un `iphone` couché. Sans effet debout, et sans
+   *  effet sur la géométrie : l'île se dessine par-dessus l'écran. */
+  islandSide: IslandSide
   background: BackgroundKind
   /** Rotation autour de l'axe Y, en degrés. Simulée par matrice (voir `depth.ts`). */
   rotateY: number
@@ -103,6 +143,8 @@ export type FractionRect = {
 export type Annotation = {
   id: string
   kind: AnnotationKind
+  /** Un `text` y lit sa largeur de retour à la ligne : `w > 0` la fixe, `0`
+   *  suit la ligne la plus longue. */
   rect: FractionRect
   /** Nom affiché dans la pile. Vide ⇒ dérivé du texte, puis du type. */
   name: string
@@ -111,16 +153,22 @@ export type Annotation = {
   /** Plus attrapable au clic ni au rectangle de sélection ; le panneau, lui,
    *  le sélectionne toujours. */
   locked: boolean
-  /** Texte du callout. Ignoré hors `text`. */
+  /** Texte, lignes séparées par `\n`. Ignoré hors `text`. */
   text: string
-  labelStyle: LabelStyle
-  /** Inverse le contraste d'un label ou d'un badge : la pastille prend la
-   *  couleur du calque, le texte l'encre lisible dessus. Ignoré sur `plain`. */
+  /** Police, graisse et alignement d'un `text`. */
+  font: TextFont
+  weight: number
+  align: TextAlign
+  /** Plaque derrière un `text`. */
+  background: TextBackground
+  /** Inverse le contraste d'un badge : le disque devient un contour. */
   invert: boolean
   /** Taille de police, en fraction de la largeur de la fenêtre. */
   size: number
   /** Mode de floutage. Ignoré hors `redaction`. */
   redaction: RedactionMode
+  /** Forme de la zone floutée, inscrite dans `rect`. Ignoré hors `redaction`. */
+  redactionShape: RedactionShape
   /** Couleur du trait et du texte, en hexadécimal. */
   color: string
   /** Épaisseur du trait, en fraction de la largeur de la fenêtre. */
@@ -131,8 +179,17 @@ export type Annotation = {
   arrowHead: number
   /** Opacité du remplissage d'un `box` ou d'une `ellipse`. 0 ⇒ contour seul. */
   fill: number
+  /** Couleur du remplissage, distincte de celle du trait. */
+  fillColor: string
+  /** Contour d'un `box` ou d'une `ellipse`. Sans fond, il se trace quand même :
+   *  une forme ne peut pas être invisible. */
+  stroke: boolean
+  /** Opacité du contour d'un `box` ou d'une `ellipse`, comme `fill` pour le fond. */
+  strokeOpacity: number
   /** Opacité du calque entier. */
   opacity: number
+  /** Ombre portée, 0 → 1. Sans effet sur un masquage, qui cache sans dessiner. */
+  shadow: number
 }
 
 /** Regroupement de calques. `kind` discrimine un groupe d'une annotation dans
@@ -163,6 +220,13 @@ export type Placement = {
 
 export const DEFAULT_PLACEMENT: Placement = { scale: 1, dx: 0, dy: 0 }
 
+/** Position du screenshot dans un écran plus petit que lui, à la manière
+ *  d'`object-position` : par axe, la part du débord rognée avant. 0 montre le
+ *  début de l'image, 1 la fin, 0,5 le milieu. Sans effet sur un axe qui tient. */
+export type Pan = { x: number; y: number }
+
+export const DEFAULT_PAN: Pan = { x: 0.5, y: 0.5 }
+
 export type Shot = {
   id: string
   name: string
@@ -173,6 +237,8 @@ export type Shot = {
   layers: LayerNode[]
   /** Retouche manuelle de cette fenêtre. Absent ⇒ `DEFAULT_PLACEMENT`. */
   placement?: Placement
+  /** Part du screenshot visible quand il déborde de son écran. Absent ⇒ centré. */
+  pan?: Pan
 }
 
 export type Composition = {
@@ -204,9 +270,8 @@ export type Watermark = {
 export type Style = {
   id: string
   name: string
+  /** Les couleurs figées vivent dans `settings.palette`, avec le reste. */
   settings: Settings
-  /** Palette figée. Absente ⇒ les couleurs viennent de `extractPalette`. */
-  palette?: Palette
   watermark?: Watermark
 }
 
@@ -271,6 +336,8 @@ export const DEFAULT_SETTINGS: Settings = {
   contrast: 1,
   grain: 0.35,
   seed: 1,
+  ditherCell: 0.006,
+  ditherAngle: 45,
   // Le grain est du bruit : il fait exploser un PNG. Mesuré à l'échelle 3,
   // 8,4 Mo en PNG contre 0,8 Mo en WebP, pour un résultat visuellement
   // identique. Là où l'encodeur WebP manque, `supportsWebp()` ramène au PNG.
@@ -279,6 +346,9 @@ export const DEFAULT_SETTINGS: Settings = {
   // navigateur : tout screenshot ne vient pas du web, et le cadre `browser`
   // reste à un clic.
   frame: 'none',
+  deviceRatio: false,
+  screenRatio: 'auto',
+  islandSide: 'left',
   background: 'mesh',
   rotateY: 0,
   shadow: 1,

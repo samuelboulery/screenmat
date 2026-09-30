@@ -6,6 +6,7 @@ import {
   findNode,
   flatten,
   groupNodes,
+  mapAnnotations,
   moveNodes,
   nodeIds,
   removeNodes,
@@ -132,5 +133,16 @@ describe('groupNodes et ungroup', () => {
   it('dissout un groupe en remettant ses enfants à sa place', () => {
     const grouped = groupNodes(tree(), ['a', 'd'], 'Flow', 'g2')
     expect(nodeIds(ungroup(grouped, 'g2'))).toEqual(['g1', 'b', 'c', 'a', 'd'])
+  })
+})
+
+describe('mapAnnotations', () => {
+  it('transforme chaque calque, imbriqué ou non, et laisse les groupes en place', () => {
+    const tree = [layer('a'), group('g', [layer('b'), group('h', [layer('c')])])]
+    const moved = mapAnnotations(tree, (item) => ({ ...item, rect: { ...item.rect, x: item.rect.x + 1 } }))
+
+    expect(flatten(moved).map((item) => item.rect.x)).toEqual([1.1, 1.1, 1.1])
+    expect(nodeIds(moved)).toEqual(nodeIds(tree))
+    expect(flatten(tree)[0].rect.x).toBe(0.1)
   })
 })

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { applyHandle, handlesFor, nudge } from '../handles.ts'
+import { applyHandle, handlesFor, nudge, resizeGroup, scaleLayer } from '../handles.ts'
 import type { FractionRect } from '../../types.ts'
 
 const square: FractionRect = { x: 0.2, y: 0.2, w: 0.4, h: 0.2 }
@@ -12,9 +12,12 @@ describe('handlesFor', () => {
     expect(handlesFor('line')).toEqual(['start', 'end'])
   })
 
-  it("n'en donne aucune là où la taille vient du réglage de police", () => {
-    expect(handlesFor('text')).toHaveLength(0)
+  it("n'en donne aucune à un badge, dont la taille vient du réglage de police", () => {
     expect(handlesFor('badge')).toHaveLength(0)
+  })
+
+  it('donne à un texte ses deux bords et un coin', () => {
+    expect(handlesFor('text')).toEqual(['w', 'e', 'se'])
   })
 })
 
@@ -92,5 +95,42 @@ describe('nudge', () => {
     expect(next.y).toBeCloseTo(0.19, 9)
     expect(next.w).toBe(square.w)
     expect(next.h).toBe(square.h)
+  })
+})
+
+describe('scaleLayer — redimensionnement d’une sélection multiple', () => {
+  const from: FractionRect = { x: 0.1, y: 0.1, w: 0.4, h: 0.2 }
+  const to: FractionRect = { x: 0.1, y: 0.1, w: 0.8, h: 0.4 }
+
+  it('étire chaque rect depuis le coin fixe de la boîte englobante', () => {
+    const layer = { kind: 'box', rect: { x: 0.3, y: 0.2, w: 0.2, h: 0.1 }, size: 0.01 } as const
+    const next = scaleLayer(layer, from, to)
+    expect(next.rect.x).toBeCloseTo(0.5, 9)
+    expect(next.rect.y).toBeCloseTo(0.3, 9)
+    expect(next.rect.w).toBeCloseTo(0.4, 9)
+    expect(next.rect.h).toBeCloseTo(0.2, 9)
+  })
+
+  it('garde le sens d’une flèche et grossit un texte ou un badge', () => {
+    const arrow = scaleLayer({ kind: 'arrow', rect: { x: 0.5, y: 0.3, w: -0.1, h: -0.1 }, size: 0.01 }, from, to)
+    expect(arrow.rect.w).toBeCloseTo(-0.2, 9)
+    const badge = scaleLayer({ kind: 'badge', rect: { x: 0.1, y: 0.1, w: 0, h: 0 }, size: 0.01 }, from, to)
+    expect(badge.size).toBeCloseTo(0.02, 9)
+  })
+
+  it('ne retourne jamais un calque quand on tire la poignée au-delà du coin opposé', () => {
+    const flipped = scaleLayer(
+      { kind: 'box', rect: { x: 0.1, y: 0.1, w: 0.4, h: 0.2 }, size: 0.01 },
+      from,
+      { x: 0.1, y: 0.1, w: -0.4, h: -0.2 },
+    )
+    expect(flipped.rect.w).toBeGreaterThan(0)
+  })
+})
+
+describe('resizeGroup', () => {
+  it('conserve toujours les proportions de la sélection', () => {
+    const next = resizeGroup(square, 'se', { x: 0.4, y: 0 })
+    expect(next.w / next.h).toBeCloseTo(square.w / square.h, 9)
   })
 })

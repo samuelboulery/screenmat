@@ -15,7 +15,7 @@ const wrap = (style: unknown) => JSON.stringify({ kind: 'screenmat-style', versi
 describe('parseStyle', () => {
   it('refuse ce qui n’est pas un style screenmat', () => {
     expect(() => parseStyle('pas du json')).toThrow(/JSON/)
-    expect(() => parseStyle('{"kind":"autre-chose"}')).toThrow(/style screenmat/)
+    expect(() => parseStyle('{"kind":"autre-chose"}')).toThrow(/screenmat style/)
     expect(() => parseStyle(JSON.stringify({ kind: 'screenmat-style' }))).toThrow()
   })
 
@@ -42,6 +42,27 @@ describe('parseStyle', () => {
     expect(style.settings.seed).toBe(DEFAULT_SETTINGS.seed)
   })
 
+  it('relit le côté de l’île, à gauche quand il manque ou ment', () => {
+    const read = (settings: unknown) =>
+      parseStyle(wrap({ id: 'a', name: 'a', createdAt: 1, settings })).settings
+
+    expect(read({ islandSide: 'right' }).islandSide).toBe('right')
+    expect(read({}).islandSide).toBe('left')
+    expect(read({ islandSide: 'top' }).islandSide).toBe('left')
+  })
+
+  it('relit les ratios d’écran, et retombe sur Auto quand ils manquent ou mentent', () => {
+    const read = (settings: unknown) =>
+      parseStyle(wrap({ id: 'a', name: 'a', createdAt: 1, settings })).settings
+
+    expect(read({ deviceRatio: true, screenRatio: '16:9' })).toMatchObject({ deviceRatio: true, screenRatio: '16:9' })
+    expect(read({})).toMatchObject({ deviceRatio: false, screenRatio: 'auto' })
+    expect(read({ deviceRatio: 'yes', screenRatio: '__proto__' })).toMatchObject({
+      deviceRatio: false,
+      screenRatio: 'auto',
+    })
+  })
+
   it('borne les valeurs numériques hors plage', () => {
     const style = parseStyle(wrap({ name: 'x', settings: { padding: 99, grain: -4, blur: 1e6 } }))
     expect(style.settings.padding).toBe(0.3)
@@ -50,10 +71,10 @@ describe('parseStyle', () => {
   })
 
   it('ignore une palette mal formée mais garde une palette valide', () => {
-    expect(parseStyle(wrap({ name: 'x', palette: { base: 'rouge' } })).palette).toBeUndefined()
+    expect(parseStyle(wrap({ name: 'x', palette: { base: 'rouge' } })).settings.palette).toBeUndefined()
     expect(
       parseStyle(wrap({ name: 'x', palette: { base: '#112233', accents: ['#445566', 'nope'] } }))
-        .palette,
+        .settings.palette,
     ).toEqual({ base: '#112233', accents: ['#445566'] })
   })
 
@@ -99,14 +120,11 @@ describe('normalizeStyle', () => {
   })
 
   it('écarte une palette illisible plutôt que de la propager', () => {
-    const style = normalizeStyle({
-      id: 'x',
-      name: 'x',
-      settings: DEFAULT_SETTINGS,
-      palette: { base: 'not-a-color', accents: ['#ff0000'] },
-    })
+    const legacy = { id: 'x', name: 'x', settings: DEFAULT_SETTINGS, palette: { base: 'not-a-color', accents: ['#ff0000'] } }
+    const style = normalizeStyle(legacy)
 
-    expect(style.palette).toBeUndefined()
+    expect(style.settings.palette).toBeUndefined()
+    expect('palette' in style).toBe(false)
   })
 })
 

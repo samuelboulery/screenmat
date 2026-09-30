@@ -1,0 +1,94 @@
+/* Ce que la landing ajoute aux jetons de l'app — rien d'autre. Couleurs, polices
+   et reflet viennent de `index.css` : un seul système, deux entrées. */
+
+.landing-gutter {
+  padding-inline: clamp(16px, 4vw, 56px);
+}
+
+/* Le cadre de la vitrine : une scène 4:3, comme le rendu par défaut. */
+.hero-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  outline: none;
+}
+
+.hero-frame canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.hero-frame:focus-visible {
+  outline: 1.5px solid var(--color-accent);
+  outline-offset: 10px;
+}
+
+.hero-frame[data-drop] {
+  outline: 1.5px dashed var(--color-accent);
+  outline-offset: 10px;
+}
+
+.mark {
+  position: absolute;
+  z-index: 2;
+  width: 28px;
+  height: 28px;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.mark svg {
+  display: block;
+  width: 28px;
+  height: 28px;
+  overflow: visible;
+  fill: none;
+  stroke: var(--color-ink);
+  stroke-width: 2.5;
+  stroke-linecap: square;
+}
+
+/* Une touche de clavier : la même que dans l'éditeur, en plus grand. */
+.keycap {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--color-hairline-strong);
+  border-bottom-width: 3px;
+  border-radius: var(--radius-xs);
+  font: 12px var(--font-mono);
+  color: var(--color-ink-soft);
+  transition: border-color 0.2s, transform 0.08s;
+}
+
+.keycap b {
+  color: var(--color-ink);
+  font-weight: 500;
+}
+
+.keycap:hover {
+  border-color: var(--color-ink);
+}
+
+.keycap:active {
+  transform: translateY(1px);
+}
+
+/* Pendant l'intro, les touches de calque sont désactivées pour de vrai : un
+   bouton `disabled` ne se tabule pas et n'annonce rien qu'il ne ferait. */
+.keycap:disabled {
+  opacity: 0.35;
+}
+
+.theme-toggle svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}

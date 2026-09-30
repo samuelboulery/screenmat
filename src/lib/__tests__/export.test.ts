@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { exportFilename, runBatch, slug } from '../export.ts'
+import { buildBatchJobs, exportBaseName, exportFilename, humanSize, runBatch, slug } from '../export.ts'
 import { DEFAULT_COMPOSITION, DEFAULT_SETTINGS } from '../../types.ts'
 
 describe('slug', () => {
@@ -30,6 +30,49 @@ describe('exportFilename', () => {
       'miette-indol-vercel-app-3x.webp',
     )
     expect(exportFilename('', 1, 'webp')).toBe('screenmat-1x.webp')
+  })
+})
+
+describe('exportBaseName', () => {
+  const settings = (frame: string, url: string) => ({ frame, url }) as never
+
+  it('nomme le fichier d’après le shot quand aucune barre d’URL n’est visible', () => {
+    expect(exportBaseName(settings('none', 'example.com'), 'Capture 2026-09-29.png')).toBe(
+      'Capture 2026-09-29',
+    )
+  })
+
+  it('garde l’URL quand le cadre navigateur l’affiche', () => {
+    expect(exportBaseName(settings('browser', 'example.com'), 'shot.png')).toBe('example.com')
+  })
+
+  it('retombe sur le shot si l’URL affichée est vide', () => {
+    expect(exportBaseName(settings('browser', ''), 'shot.png')).toBe('shot')
+  })
+})
+
+describe('humanSize', () => {
+  it('parle en KB et MB, comme le reste de l’interface', () => {
+    expect(humanSize(2048)).toBe('2 KB')
+    expect(humanSize(3.5 * 1024 * 1024)).toBe('3.5 MB')
+  })
+})
+
+describe('buildBatchJobs — mode séparé', () => {
+  const shot = (id: string) => ({ id, name: id, palette: { base: '#000', accents: [] } }) as never
+  const scene = {
+    shots: [shot('a'), shot('b')],
+    palette: { base: '#000', accents: [] },
+    settings: { ...DEFAULT_SETTINGS, ratio: '16:9' },
+    composition: { ...DEFAULT_COMPOSITION, layout: 'stack' },
+  } as never
+
+  it('sort un fichier par image et par ratio, chacun seul dans sa scène', () => {
+    const jobs = buildBatchJobs(scene, [shot('a'), shot('b'), shot('c')], ['4:3', '1:1'], 2)
+    expect(jobs).toHaveLength(6)
+    expect(jobs.every((job) => job.scene.shots.length === 1)).toBe(true)
+    expect(jobs.every((job) => job.scene.composition.layout === 'single')).toBe(true)
+    expect(jobs.map((job) => job.scene.settings.ratio)).toEqual(['4:3', '1:1', '4:3', '1:1', '4:3', '1:1'])
   })
 })
 

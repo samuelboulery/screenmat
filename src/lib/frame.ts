@@ -1,7 +1,8 @@
 import type { Point } from './annotate.ts'
 import { css, hexToRgb, luminance, withLuminance, type Rgb } from './color.ts'
-import type { Palette, Settings } from '../types.ts'
 import type { Geometry, WindowBox } from './render.ts'
+import { frameBezel, frameRadius, frameUnit, screenRect, sourceRect, type ScreenRect } from './screen.ts'
+import type { IslandSide, Palette, Pan, Settings } from '../types.ts'
 
 /* Toutes ces constantes sont des fractions de la LARGEUR DE LA FENÊTRE, mesurées
    sur les captures de référence (fenêtre de 1382 px dans un canvas de 1600). */
@@ -19,13 +20,9 @@ const SHADOW_BLUR = 0.04
 const SHADOW_OFFSET = 0.015
 const SHADOW_ALPHA = 0.35
 
-/* Cadres d'appareil — fractions de la largeur de la fenêtre. */
-const MACBOOK_BEZEL = 0.011
+/* Encoches — fractions de l'unité du cadre (`frameUnit`, `screen.ts`). */
 const MACBOOK_NOTCH_WIDTH = 0.12
 const MACBOOK_NOTCH_HEIGHT = 0.016
-const MACBOOK_RADIUS = 0.014
-const IPHONE_BEZEL = 0.035
-const IPHONE_RADIUS = 0.13
 const IPHONE_ISLAND_WIDTH = 0.3
 const IPHONE_ISLAND_HEIGHT = 0.055
 
@@ -58,50 +55,6 @@ export function chromeColors(palette: Palette, theme: Settings['theme']): Chrome
         dot: withLuminance(base, 0.22),
         text: withLuminance(base, 0.45),
       }
-}
-
-/** Rectangle occupé par le screenshot dans sa fenêtre, en pixels du canvas et
- *  dans le repère non tourné de la fenêtre. */
-export type ScreenRect = { x: number; y: number; width: number; height: number }
-
-/**
- * Où le screenshot atterrit dans sa fenêtre. Source unique : le cadre le
- * dessine ici, le floutage y échantillonne, et `inspect()` le publie aux
- * machines. Recalculer ce rectangle ailleurs, c'est le voir diverger — c'est
- * exactement ce qui faisait ignorer le bezel à `inspect()`.
- */
-export function screenRect(
-  box: WindowBox,
-  geometry: Geometry,
-  settings: Settings,
-): ScreenRect {
-  if (settings.frame === 'macbook' || settings.frame === 'iphone') {
-    const bezel = (settings.frame === 'macbook' ? MACBOOK_BEZEL : IPHONE_BEZEL) * box.width
-    return {
-      x: box.x + bezel,
-      y: box.y + bezel,
-      width: Math.max(1, box.width - 2 * bezel),
-      height: Math.max(1, box.height - 2 * bezel),
-    }
-  }
-
-  // `geometry.titleBar` vaut déjà 0 hors du cadre navigateur ou barre masquée,
-  // et il est donné pour une fenêtre à l'échelle 1 : une fenêtre retouchée
-  // porte son facteur, sinon elle garderait une barre pleine taille.
-  const bar = geometry.titleBar * box.scale
-  return {
-    x: box.x,
-    y: box.y + bar,
-    width: box.width,
-    height: Math.max(1, box.height - bar),
-  }
-}
-
-/** Rayon effectif d'une fenêtre : les cadres d'appareil imposent le leur. */
-export function frameRadius(box: WindowBox, geometry: Geometry, settings: Settings): number {
-  if (settings.frame === 'macbook') return MACBOOK_RADIUS * box.width
-  if (settings.frame === 'iphone') return IPHONE_RADIUS * box.width
-  return geometry.radius * box.scale
 }
 
 /** Cisaillement vertical simulant la rotation Y. `render.ts` l'importe pour
@@ -187,6 +140,7 @@ export function renderFrame(
   image: HTMLImageElement,
   palette: Palette,
   settings: Settings,
+  pan?: Pan,
 ): void {
   const chrome = chromeColors(palette, settings.theme)
   const radius = frameRadius(box, geometry, settings)
@@ -210,15 +164,22 @@ export function renderFrame(
   const screen = screenRect(box, geometry, settings)
 
   if (settings.frame === 'macbook' || settings.frame === 'iphone') {
-    drawDeviceShell(ctx, box, screen, image, settings.frame)
+    drawDeviceShell(ctx, box, screen, radius, image, settings.frame, settings.islandSide, pan)
   } else {
-    ctx.drawImage(image, screen.x, screen.y, screen.width, screen.height)
+    drawScreenshot(ctx, screen, image, pan)
     if (geometry.titleBar > 0) {
       drawTitleBar(ctx, box, geometry.titleBar * box.scale, chrome, settings.url)
     }
   }
 
   ctx.restore()
+}
+
+/** Le screenshot dans son écran : la part visible, à une seule échelle. Jamais
+ *  étiré — un écran d'un autre rapport le rogne (`sourceRect`). */
+function drawScreenshot(ctx: CanvasRenderingContext2D, screen: ScreenRect, image: HTMLImageElement, pan?: Pan): void {
+  const source = sourceRect(screen, image, pan)
+  ctx.drawImage(image, source.x, source.y, source.w, source.h, screen.x, screen.y, screen.width, screen.height)
 }
 
 /**
@@ -229,39 +190,61 @@ function drawDeviceShell(
   ctx: CanvasRenderingContext2D,
   box: WindowBox,
   screen: ScreenRect,
+  radius: number,
   image: HTMLImageElement,
   kind: 'macbook' | 'iphone',
+  side: IslandSide,
+  pan?: Pan,
 ): void {
-  const bezel = (kind === 'macbook' ? MACBOOK_BEZEL : IPHONE_BEZEL) * box.width
+  const bezel = frameBezel(box, kind)
 
   ctx.fillStyle = '#111114'
   ctx.fillRect(box.x, box.y, box.width, box.height)
 
   ctx.save()
   ctx.beginPath()
-  const inner = (kind === 'macbook' ? MACBOOK_RADIUS : IPHONE_RADIUS) * box.width - bezel
-  ctx.roundRect(screen.x, screen.y, screen.width, screen.height, Math.max(0, inner))
+  // `max(0, …)` : un rayon négatif lève `RangeError` dans un navigateur.
+  ctx.roundRect(screen.x, screen.y, screen.width, screen.height, Math.max(0, radius - bezel))
   ctx.clip()
-  ctx.drawImage(image, screen.x, screen.y, screen.width, screen.height)
+  drawScreenshot(ctx, screen, image, pan)
   ctx.restore()
-
-  // Encoche : barre fine centrée sur macOS, îlot arrondi sur iPhone.
-  const notchWidth =
-    (kind === 'macbook' ? MACBOOK_NOTCH_WIDTH : IPHONE_ISLAND_WIDTH) * box.width
-  const notchHeight =
-    (kind === 'macbook' ? MACBOOK_NOTCH_HEIGHT : IPHONE_ISLAND_HEIGHT) * box.width
-  const notchTop = kind === 'macbook' ? box.y : screen.y + bezel * 0.4
 
   ctx.fillStyle = '#0a0a0c'
   ctx.beginPath()
-  ctx.roundRect(
-    box.x + (box.width - notchWidth) / 2,
-    notchTop,
-    notchWidth,
-    notchHeight,
-    kind === 'macbook' ? [0, 0, notchHeight / 2, notchHeight / 2] : notchHeight / 2,
-  )
+  if (kind === 'macbook') macbookNotch(ctx, box)
+  else iphoneIsland(ctx, box, screen, bezel, side)
   ctx.fill()
+}
+
+/** Barre fine, collée au bord haut, coins bas arrondis. */
+function macbookNotch(ctx: CanvasRenderingContext2D, box: WindowBox): void {
+  const width = MACBOOK_NOTCH_WIDTH * box.width
+  const height = MACBOOK_NOTCH_HEIGHT * box.width
+  ctx.roundRect(box.x + (box.width - width) / 2, box.y, width, height, [0, 0, height / 2, height / 2])
+}
+
+/** Îlot arrondi, en haut d'un iPhone debout. Couché — screenshot paysage —, le
+ *  téléphone a tourné d'un quart de tour : l'îlot passe sur un bord court,
+ *  celui de `side` selon le sens de la rotation, et ses cotes se lisent sur le
+ *  petit côté. */
+function iphoneIsland(
+  ctx: CanvasRenderingContext2D,
+  box: WindowBox,
+  screen: ScreenRect,
+  bezel: number,
+  side: IslandSide,
+): void {
+  const unit = frameUnit(box, 'iphone')
+  const long = IPHONE_ISLAND_WIDTH * unit
+  const short = IPHONE_ISLAND_HEIGHT * unit
+  const inset = bezel * 0.4
+
+  if (box.width > box.height) {
+    const x = side === 'right' ? screen.x + screen.width - inset - short : screen.x + inset
+    ctx.roundRect(x, box.y + (box.height - long) / 2, short, long, short / 2)
+  } else {
+    ctx.roundRect(box.x + (box.width - long) / 2, screen.y + inset, long, short, short / 2)
+  }
 }
 
 function drawTitleBar(

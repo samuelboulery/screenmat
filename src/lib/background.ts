@@ -2,6 +2,9 @@ import { css, hexToRgb, luminance, withLuminance, type Rgb } from './color.ts'
 import { applyGrain } from './noise.ts'
 import { saturation, withSaturation } from './palette.ts'
 import { mulberry32 } from './random.ts'
+import { drawDithered, isDither } from './dithered.ts'
+import { textFontsReady } from './text.ts'
+import { isWallpaper } from './wallpapers.ts'
 import type { Palette, Settings } from '../types.ts'
 import type { Geometry } from './render.ts'
 
@@ -82,8 +85,8 @@ function imageId(image?: HTMLImageElement): number {
  * fond : le réglage bouge, l'image ne suit pas. `background.test.ts` tient cette
  * liste — toute entrée ajoutée à `Settings` qui touche au fond doit s'y voir.
  */
-function backgroundKey(
-  geometry: Geometry,
+export function backgroundKey(
+  geometry: Pick<Geometry, 'width' | 'height'>,
   palette: Palette,
   settings: Settings,
   scale: number,
@@ -101,6 +104,11 @@ function backgroundKey(
     settings.contrast,
     settings.grain,
     settings.seed,
+    settings.ditherCell,
+    settings.ditherAngle,
+    // La trame en glyphes dessine du texte : peinte avant l'arrivée de la police,
+    // elle resterait en cache dans la police de secours.
+    textFontsReady,
     palette.base,
     palette.accents.join(','),
     imageId(image),
@@ -152,12 +160,12 @@ export function renderBackground(
 }
 
 /**
- * Dessine le fond selon le preset choisi, puis le grain. Le grain est commun aux
- * quatre presets : c'est lui qui empêche un aplat de ressembler à du vide.
+ * Dessine le fond choisi, puis le grain — sauf sur une trame et sur un fond
+ * d'écran. C'est le grain qui empêche un aplat de ressembler à du vide.
  */
-function paintBackground(
+export function paintBackground(
   ctx: CanvasRenderingContext2D,
-  geometry: Geometry,
+  geometry: Pick<Geometry, 'width' | 'height'>,
   palette: Palette,
   settings: Settings,
   scale: number,
@@ -169,16 +177,42 @@ function paintBackground(
   ctx.fillStyle = css(colors.fill)
   ctx.fillRect(0, 0, width, height)
 
-  if (settings.background === 'image' && image) {
+  const kind = settings.background
+  if (isWallpaper(kind)) {
+    // Un fond d'écran est une image comme une autre ; tant qu'elle charge,
+    // l'aplat tient sa place. Pas de grain : un bureau n'en a pas.
+    if (image) drawCover(ctx, width, height, image)
+    return
+  }
+  if (kind === 'image' && image) {
     drawCover(ctx, width, height, image)
-  } else if (settings.background === 'gradient') {
+  } else if (kind === 'gradient') {
     drawGradient(ctx, width, height, colors, settings)
-  } else if (settings.background === 'mesh' && settings.shapes > 0 && settings.shapeOpacity > 0) {
+  } else if (kind === 'mesh' && settings.shapes > 0 && settings.shapeOpacity > 0) {
     drawBlobs(ctx, width, height, colors.blobs, settings)
+  } else if (isDither(kind)) {
+    drawDithered(ctx, width, height, colors, settings, meshCells(width, height, colors, settings), kind)
+    // Pas de grain sur une trame : il brouillerait ce qu'elle a de net.
+    return
   }
   // `solid` ne dessine rien de plus que l'aplat.
 
   applyGrain(ctx, width, height, settings.grain, scale)
+}
+
+/** Le mesh rendu à une cellule de trame par pixel : `ditherCell` est une
+ *  fraction de la largeur, la grille garde donc le même nombre de cellules à
+ *  toutes les échelles. */
+function meshCells(width: number, height: number, colors: BackgroundColors, settings: Settings): HTMLCanvasElement {
+  const cells = document.createElement('canvas')
+  cells.width = Math.max(8, Math.round(1 / settings.ditherCell))
+  cells.height = Math.max(8, Math.round((cells.width * height) / width))
+  const layer = cells.getContext('2d')
+  if (!layer) throw new Error('Canvas 2D is unavailable')
+  layer.fillStyle = css(colors.fill)
+  layer.fillRect(0, 0, cells.width, cells.height)
+  if (settings.shapes > 0) drawBlobs(layer, cells.width, cells.height, colors.blobs, { ...settings, shapeOpacity: 1 })
+  return cells
 }
 
 /** Couvre le canvas sans déformer l'image (équivalent de `object-fit: cover`). */

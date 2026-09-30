@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { computeGeometry } from '../render.ts'
-import { frameRadius, screenRect } from '../frame.ts'
+import { frameRadius, screenRect } from '../screen.ts'
 import {
   DEFAULT_COMPOSITION,
   DEFAULT_PLACEMENT,

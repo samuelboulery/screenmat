@@ -15,6 +15,11 @@ type SelectionOverlayProps = {
   /** Absent ⇒ cadre seul, sans poignées : c'est le cas d'une sélection
    *  multiple, ou d'un tracé en cours. */
   onGrab?: (handle: Handle, event: React.PointerEvent) => void
+  /** Poignées imposées — les quatre coins d'une boîte englobante. */
+  handles?: readonly Handle[]
+  /** `hover` : trait fin, sans voile ni poignée — ce qu'un clic attraperait.
+   *  `group` : la boîte englobante d'une sélection multiple, en pointillé. */
+  variant?: 'selected' | 'hover' | 'group'
 }
 
 /** Position d'une poignée en px canvas, avant la rotation de la fenêtre. */
@@ -35,8 +40,9 @@ function handlePoint(annotation: Annotation, box: WindowBox, handle: Handle) {
  * Repère de la fenêtre active, quand la composition en montre plusieurs.
  *
  * Bi-ton, et c'est tout l'intérêt : un trait d'accent seul disparaît sur un
- * artwork clair. Les deux gardes sombres qui l'encadrent tiennent le contraste
- * sans rien savoir de la couleur du fond. Un seul `box-shadow` empile les trois
+ * artwork de même valeur. Les deux gardes couleur de scène qui l'encadrent —
+ * l'inverse de l'encre, dans les deux thèmes — tiennent le contraste sans rien
+ * savoir de la couleur du fond. Un seul `box-shadow` empile les trois
  * anneaux et suit l'arrondi des coins, ce qu'un `outline` ne garantit pas.
  */
 export function ShotRing({ box, ratio, radius }: { box: WindowBox; ratio: number; radius: number }) {
@@ -53,7 +59,7 @@ export function ShotRing({ box, ratio, radius }: { box: WindowBox; ratio: number
         transformOrigin: '0 0',
         transform: `matrix(${matrix[0]}, ${matrix[1]}, ${matrix[2]}, ${matrix[3]}, ${origin.x * ratio}, ${origin.y * ratio})`,
         boxShadow:
-          '0 0 0 1.5px rgba(7,7,10,.65), 0 0 0 3px var(--color-accent), 0 0 0 4.5px rgba(7,7,10,.65)',
+          '0 0 0 1.5px color-mix(in srgb, var(--color-stage) 65%, transparent), 0 0 0 3px var(--color-accent), 0 0 0 4.5px color-mix(in srgb, var(--color-stage) 65%, transparent)',
       }}
     />
   )
@@ -64,6 +70,8 @@ export default function SelectionOverlay({
   box,
   ratio,
   onGrab,
+  handles,
+  variant = 'selected',
 }: SelectionOverlayProps) {
   const matrix: Matrix = windowMatrix(box)
   const area = bounds(annotation, box)
@@ -82,12 +90,16 @@ export default function SelectionOverlay({
           height: area.h * ratio,
           transformOrigin: '0 0',
           transform: frame,
-          border: '1.5px solid var(--color-accent)',
-          background: 'rgba(7,7,10,.10)',
+          border:
+            variant === 'hover'
+              ? '1px solid var(--color-accent)'
+              : `1.5px ${variant === 'group' ? 'dashed' : 'solid'} var(--color-accent)`,
+          background:
+            variant === 'selected' ? 'color-mix(in srgb, var(--color-stage) 10%, transparent)' : undefined,
         }}
       />
 
-      {(onGrab ? handlesFor(annotation.kind) : []).map((handle) => {
+      {(onGrab ? (handles ?? handlesFor(annotation.kind)) : []).map((handle) => {
         const point = applyMatrix(matrix, handlePoint(annotation, box, handle))
         return (
           <span

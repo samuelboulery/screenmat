@@ -95,9 +95,12 @@ what makes an export at scale 3 the exact homothety of the preview.
 
 | Field | Values | Default | Bounds |
 | --- | --- | --- | --- |
-| `frame` | `browser` `macbook` `iphone` `none` | `none` | |
+| `frame` | `browser` `macbook` `iphone` `none` | `none` | A landscape screenshot lays the `iphone` on its side. |
+| `deviceRatio` | boolean | `false` | `macbook`, `iphone` only: the screen keeps the device ratio (16:10, 19.5:9) and crops the screenshot. |
+| `screenRatio` | `auto` `16:10` `16:9` `4:3` `1:1` | `auto` | `browser`, `none` only: ratio of the screen. Anything but `auto` crops the screenshot. |
+| `islandSide` | `left` `right` | `left` | `iphone` lying on its side: the short edge that carries the island. Moves nothing else. |
 | `ratio` | `auto` `4:3` `1:1` `16:9` `9:16` | `4:3` | |
-| `background` | `mesh` `gradient` `solid` `image` | `mesh` | `image` needs the top-level `background`. |
+| `background` | see [below](#background-series) | `mesh` | `image` needs the top-level `background`. |
 | `theme` | `auto` `light` `dark` | `auto` | |
 | `format` | `png` `webp` | `webp` | |
 | `titleBar` | boolean | `true` | |
@@ -113,11 +116,50 @@ what makes an export at scale 3 the exact homothety of the preview.
 | `shapeOpacity` | number | `0.75` | 0 to 1 |
 | `saturation` | number | `1` | 0 to 2 |
 | `contrast` | number | `1` | 0 to 2 |
+| `ditherCell` | number | `0.006` | 0.002 to 0.03. Dithered backgrounds only. |
+| `ditherAngle` | degrees | `45` | 0 to 90. `halftone`, `scanlines`, `crosshatch` and `riso` only. |
+| `palette` | `{ base, accents }` | absent | Frozen background colours — see [palette](#palette). |
 
 `blur`, `shapes`, `shapeOpacity`, `saturation` and `contrast` tune the generated
 background: how soft the mesh is, how many blobs it has, and how the whole
 backdrop is graded. They have no CLI flag and no MCP parameter — a scene file or
-a style is where they live.
+a style is where they live. So do `ditherCell` and `ditherAngle`.
+
+### Background series
+
+A generated background is drawn by the engine from the palette, and the same
+`seed` always gives the same pixels. A macOS or Windows wallpaper is an image
+shipped with screenmat: it ignores the palette and the seed.
+
+| Series | Values | Reads |
+| --- | --- | --- |
+| From the screenshot | `mesh` `gradient` `solid` | `blur`, `shapes`, `shapeOpacity` (mesh); `shapeOpacity` (gradient) |
+| macOS wallpapers | `golden-gate-light` `golden-gate-dark` `golden-gate-bridge` `tahoe-light` `tahoe-dark` `sequoia-light` `sequoia-dark` `sonoma-light` `sonoma-dark` `ventura-light` `ventura-dark` `monterey-light` `monterey-dark` `big-sur-day` `big-sur-night` | nothing — the image is drawn as is |
+| Windows wallpapers | `windows-11-light` `windows-11-dark` `windows-10` `windows-8` `windows-7` `windows-xp` | nothing — the image is drawn as is |
+| Dithered | `bayer` `halftone` `scanlines` `atkinson` `stipple` `crosshatch` `contours` `ridgelines` `riso` `glyphs` `truchet` | `ditherCell`, `ditherAngle`, `shapes`, `blur`, `seed` |
+
+The generated ones read `saturation` and `contrast`. `grain` applies to every
+background except the dithered ones, where it would blur the pattern, and the
+wallpapers, which are shown as they look on a desktop. They are © Apple Inc. and
+© Microsoft Corporation, and are not covered by screenmat's MIT licence. Only
+`windows-11-*` is 3840 px wide: `windows-10`, `-8` and `-7` are 1920 px and
+`windows-xp` 800 px, so they soften at scale 3. A dithered
+background is two tones — the lightest and the darkest colour of the palette —
+laid over the mesh: `ditherCell` is the cell size as a fraction of the width.
+
+| Pattern | What it draws |
+| --- | --- |
+| `bayer` | Ordered 4×4 dither, square cells |
+| `halftone` | Dots that grow with the light |
+| `scanlines` | Engraving lines that thicken with the shade |
+| `atkinson` | Atkinson error diffusion, the MacPaint look — exactly two colours |
+| `stipple` | Fixed-size dots, variable density |
+| `crosshatch` | Crossed engraving strokes, one more direction per level |
+| `contours` | Contour lines, the mesh read as terrain |
+| `ridgelines` | Horizontal lines lifted by the light, each hiding the ones behind |
+| `riso` | Two misregistered dot screens; the second ink is the palette accent |
+| `glyphs` | Monospace characters picked by density |
+| `truchet` | Quarter-circle tiles, oriented by the seed, thickened by the light |
 
 ## composition
 
@@ -152,6 +194,7 @@ the whole composition up or down.
 | `name` | string | `shot-1`, `shot-2`… | Truncated at 64 characters. |
 | `layers` | array, 0 to 64 | `[]` | Extra layers are dropped. |
 | `placement` | `{ scale, dx, dy }` | `{1, 0, 0}` | `scale`: 0.2 to 3. `dx`/`dy`: −3 to 3. |
+| `pan` | `{ x, y }` | `{0.5, 0.5}` | 0 to 1 per axis. |
 
 `placement` retouches one window on top of the layout: `scale` multiplies the
 common window width the composition computed, `dx` and `dy` shift that window in
@@ -162,6 +205,12 @@ A placement is deliberately invisible to framing: the canvas is sized and the
 composition centred on the layout alone. Move one window and nothing else moves
 or resizes — which also means a large enough offset pushes it past the edge, and
 that is your call, not a bug.
+
+`pan` only matters when a locked ratio (`deviceRatio`, `screenRatio`) crops the
+screenshot. It works like CSS `object-position`: per axis, 0 shows the start of
+the image, 1 the end, 0.5 the middle. An axis that fits is unaffected. Layers
+stay in the window frame — they do not follow a `pan` you change by hand, so ask
+[`inspect`](#coordinates) with the same `pan` before placing them.
 
 ## layers
 
@@ -175,17 +224,25 @@ before writing a single one.
 | --- | --- | --- | --- |
 | `kind` | one of the seven | required | An unknown kind drops the layer. |
 | `rect` | `{ x, y, w, h }` | `{0,0,0,0}` | `x`/`y`: −2 to 3. `w`/`h`: −3 to 3, **signed**. |
-| `text` | string | `""` | ≤ 280 characters. `kind=text`. |
-| `labelStyle` | `pill` `plain` `badge` | `pill` | |
+| `text` | string | `""` | ≤ 280 characters. `kind=text`. `\n` starts a new line. |
+| `font` | `sans` `mono` | `sans` | `kind=text`. Space Grotesk or JetBrains Mono, both bundled. |
+| `weight` | number | `600` | 400 to 700, rounded to the hundred. |
+| `align` | `left` `center` `right` | `left` | Lines inside the text box. |
+| `background` | object | see below | The plate behind a text. |
 | `redaction` | `blur` `pixel` `solid` | `blur` | `kind=redaction`. |
-| `color` | `#RRGGBB` | `#7DE2FF` | Six hex digits, or the default. `red` is not a colour here. |
-| `size` | number | `0.011` | 0.005 to 0.04 — font size. |
-| `strokeWidth` | number | `0.0022` | 0.0005 to 0.012 |
-| `radius` | number | `0.006` | 0 to 0.06 — box corners. |
-| `arrowHead` | number | `0.012` | 0.004 to 0.04 |
-| `fill` | number | `0` | 0 to 1. `0` is outline only. |
-| `opacity` | number | `1` | 0.1 to 1 |
-| `invert` | boolean | `false` | Flips a label's ink and plate. |
+| `redactionShape` | `rect` `ellipse` | `rect` | `kind=redaction`. The ellipse is inscribed in `rect`; its corners stay readable. |
+| `color` | `#RRGGBB` | `#FFD479` | Six hex digits, or the default. `red` is not a colour here. The stroke of a shape, the ink of a text. |
+| `size` | number | `0.024` text · `0.011` badge | 0.005 to 0.08 — font size. |
+| `strokeWidth` | number | `0.004` arrow · `0.003` line, box, ellipse · `0.0022` otherwise | 0.0005 to 0.012 |
+| `radius` | number | `0.012` box · `0.006` otherwise | 0 to 0.06 — box corners. |
+| `arrowHead` | number | `0.016` arrow · `0.012` otherwise | 0.004 to 0.04 |
+| `fill` | number | `0` | 0 to 1 — opacity of the fill. `0` is outline only. |
+| `fillColor` | `#RRGGBB` | same as `color` | `box`, `ellipse`: colour of the fill, independent of the stroke. |
+| `stroke` | boolean | `true` | `box`, `ellipse`: draws the outline. `false` needs `fill > 0` — a shape with neither would be invisible, so the outline is drawn anyway, at full opacity if `strokeOpacity` is `0`. |
+| `strokeOpacity` | number | `1` | 0 to 1 — `box`, `ellipse`: opacity of the outline, as `fill` is for the fill. The outline is centred on the edge, so its inner half sits over the fill. |
+| `opacity` | number | `1` | 0.1 to 1 — the whole layer, on top of `fill` and `strokeOpacity`. |
+| `shadow` | number | `0.4` text · `0` otherwise | 0 to 1. A drop shadow, scaled with the window. |
+| `invert` | boolean | `false` | Turns a badge into an outlined disc. |
 | `hidden` | boolean | `false` | Not drawn, and not exported either. |
 | `locked` | boolean | `false` | App only: not selectable by click. |
 | `name` | string | `""` | App only: the label in the layer stack. |
@@ -194,21 +251,29 @@ before writing a single one.
 
 | Kind | Reads | Ignores |
 | --- | --- | --- |
-| `text` | `text`, `labelStyle`, `size`, `color`, `invert`, `rect.x`/`rect.y` | `rect.w`/`rect.h` — a label sizes itself around its text. An empty `text` draws nothing. |
+| `text` | `text`, `font`, `weight`, `align`, `size`, `color`, `background`, `shadow`, `rect.x`/`rect.y`, `rect.w` | `rect.h` — the box grows with its lines. `rect.w > 0` wraps at that width, `0` fits the longest line. An empty `text` draws nothing. |
 | `badge` | `size`, `color`, `invert`, `rect.x`/`rect.y` | `text` — a badge shows its **rank** among the badges of that shot, and the number is never stored. |
 | `arrow` | `rect` (signed), `strokeWidth`, `arrowHead`, `color` | `fill`, `radius` — the head is filled with `color`. |
 | `line` | `rect` (signed), `strokeWidth`, `color` | `fill`, `radius`, `arrowHead` |
-| `box` | `rect`, `strokeWidth`, `radius`, `fill`, `color` | `arrowHead` |
-| `ellipse` | `rect`, `strokeWidth`, `fill`, `color` | `radius`, `arrowHead` |
-| `redaction` | `rect`, `redaction` | `color`, `radius`, `strokeWidth`, `opacity` — it hides, it does not draw. |
+| `box` | `rect`, `strokeWidth`, `radius`, `fill`, `fillColor`, `stroke`, `strokeOpacity`, `color` | `arrowHead` |
+| `ellipse` | `rect`, `strokeWidth`, `fill`, `fillColor`, `stroke`, `strokeOpacity`, `color` | `radius`, `arrowHead` |
+| `redaction` | `rect`, `redaction`, `redactionShape` | `color`, `radius`, `strokeWidth`, `opacity` — it hides, it does not draw. |
 
 `opacity` applies to every kind except `redaction`: a half-transparent mask
 would not be a mask. A `rect` smaller than one pixel is skipped.
 
-`invert` swaps plate and ink: a badge becomes an outlined disc with its number
-in the layer colour, a label becomes a coloured plate with black or white text
-picked by real WCAG contrast. It has no effect on `labelStyle: "plain"`, which
-has no plate to fill.
+`invert` turns a badge into an outlined disc with its number in the layer
+colour.
+
+A text's `background` is `{ on, color, opacity, padding, radius }`. Default:
+`on: true`, `#000000` at `0.85`, `padding: 0.5` and `radius: 0.3` — both in
+**ems**, so the plate follows the font size. `color` is the colour of the text
+itself.
+
+Scenes written before the text layer still render: a layer with `labelStyle`
+or `invert` and no `font` is read as the old label — monospace, `size 0.011`,
+a dark plate for `pill` and `badge`, none for `plain`, and a coloured plate
+with contrasting ink when it was inverted.
 
 > **Warning** — Redaction is baked into the pixels under the window clip, never
 > applied as a filter on top. What it covers is genuinely unreadable in the
@@ -245,6 +310,9 @@ The watermark is drawn last, over everything else.
 ```
 
 Freeze the colours instead of extracting them from the first screenshot. Useful
-for a batch that must look like one family. Each entry must be a `#RRGGBB`
+for a batch that must look like one family. The same object may live in
+`settings.palette` — that is where the app and a style keep it. Order of
+precedence: a valid `settings.palette`, then the top-level `palette`, then the
+style's. Each entry must be a `#RRGGBB`
 string; anything else is dropped, and an invalid `base` discards the whole
 palette so extraction takes over. Up to 8 accents are kept.

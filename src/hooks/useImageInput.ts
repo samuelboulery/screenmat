@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useRef, useState, type DragEvent, type RefObject } from 'react'
 import { loadImage, pickImages } from '../lib/image.ts'
+import { takeHandoff, type Handoff } from '../lib/store.ts'
+
+/** Lue une seule fois par chargement de page : le double montage de
+ *  `StrictMode` lirait sinon deux fois la capture avant qu'elle soit effacée. */
+let handoff: Promise<Handoff | undefined> | null = null
 
 type ImageInput = {
   error: string | null
@@ -65,6 +70,22 @@ export function useImageInput(onImages: (images: HTMLImageElement[], files: File
 
     window.addEventListener('paste', onPaste)
     return () => window.removeEventListener('paste', onPaste)
+  }, [accept])
+
+  // La capture collée sur la landing, déposée en IndexedDB avant d'arriver ici.
+  useEffect(() => {
+    let alive = true
+    handoff ??= takeHandoff()
+    handoff
+      .then((found) => {
+        if (alive && found) void accept([new File([found.blob], found.name, { type: found.blob.type })])
+      })
+      .catch((cause: unknown) => {
+        if (alive) setError(cause instanceof Error ? cause.message : 'Couldn’t pick up the screenshot from the home page.')
+      })
+    return () => {
+      alive = false
+    }
   }, [accept])
 
   const onInputChange = useCallback(() => {

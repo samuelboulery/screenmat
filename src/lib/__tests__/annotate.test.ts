@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import {
+  ANNOTATION_DEFAULTS,
+  ANNOTATION_LIMITS,
   badgeNumbers,
   bounds,
   createAnnotation,
+  defaultsFor,
   hitTest,
   normalizeRect,
   toFractions,
@@ -93,13 +96,21 @@ describe('bounds', () => {
     expect(area.x).toBeLessThan(toPixels(arrow.rect, window).x)
   })
 
-  it('suit la taille de police d’un label, pas le rectangle du tracé', () => {
+  it('suit la taille de police d’un texte à largeur libre', () => {
     const window = box()
-    const small = make('text', { x: 0.1, y: 0.1, w: 0.9, h: 0.9 }, { text: 'Hello', size: 0.01 })
+    const small = make('text', { x: 0.1, y: 0.1, w: 0, h: 0 }, { text: 'Hello', size: 0.01 })
     const large = { ...small, size: 0.03 }
 
     expect(bounds(large, window).w).toBeGreaterThan(bounds(small, window).w)
-    expect(bounds(small, window).w).toBeLessThan(0.9 * window.width)
+  })
+
+  it('prend la largeur fixée d’un texte replié, et grandit en hauteur', () => {
+    const window = box()
+    const wide = make('text', { x: 0.1, y: 0.1, w: 0.9, h: 0 }, { text: 'Hello world again', size: 0.01 })
+    const narrow = { ...wide, rect: { ...wide.rect, w: 0.05 } }
+
+    expect(bounds(wide, window).w).toBeCloseTo(0.9 * window.width, 6)
+    expect(bounds(narrow, window).h).toBeGreaterThan(bounds(wide, window).h)
   })
 
   it('reste attrapable pour un label posé d’un clic', () => {
@@ -173,5 +184,34 @@ describe('createAnnotation', () => {
     expect(annotation.strokeWidth).toBeGreaterThan(0)
     expect(annotation.opacity).toBe(1)
     expect(annotation.fill).toBe(0)
+  })
+
+  it('reprend le style mémorisé de l’outil par-dessus les défauts', () => {
+    const rect = { x: 0, y: 0, w: 0.2, h: 0.2 }
+    const annotation = createAnnotation('badge', rect, { color: '#FF0000', size: 0.02 })
+    expect(annotation.color).toBe('#FF0000')
+    expect(annotation.size).toBe(0.02)
+    expect(annotation.opacity).toBe(1)
+    expect(defaultsFor('badge').color).toBe(ANNOTATION_DEFAULTS.color)
+  })
+})
+
+describe('defaultsFor', () => {
+  it('donne à chaque type ses propres valeurs de départ', () => {
+    const arrow = createAnnotation('arrow', { x: 0, y: 0, w: 0.1, h: 0.1 })
+    const box = createAnnotation('box', { x: 0, y: 0, w: 0.1, h: 0.1 })
+    const line = createAnnotation('line', { x: 0, y: 0, w: 0.1, h: 0.1 })
+    expect(arrow.strokeWidth).toBeGreaterThan(line.strokeWidth)
+    expect(box.radius).toBeGreaterThan(ANNOTATION_DEFAULTS.radius)
+    expect(defaultsFor('redaction')).toEqual(ANNOTATION_DEFAULTS)
+  })
+
+  it('reste dans les bornes que l’inspecteur propose', () => {
+    for (const kind of ['text', 'badge', 'arrow', 'line', 'box', 'ellipse', 'redaction'] as const) {
+      const d = defaultsFor(kind)
+      expect(d.strokeWidth).toBeLessThanOrEqual(ANNOTATION_LIMITS.strokeWidth.max)
+      expect(d.radius).toBeLessThanOrEqual(ANNOTATION_LIMITS.radius.max)
+      expect(d.arrowHead).toBeLessThanOrEqual(ANNOTATION_LIMITS.arrowHead.max)
+    }
   })
 })

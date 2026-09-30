@@ -1,4 +1,5 @@
 import { loadImage, pickImage } from '../lib/image.ts'
+import { MAC, keyLabel } from '../lib/keys.ts'
 import { extractPalette } from '../lib/palette.ts'
 import { putHandoff } from '../lib/store.ts'
 import type { Annotation, Palette } from '../types.ts'
@@ -112,7 +113,7 @@ export function startHero(root: HTMLElement): void {
   function press(key: HeroKey) {
     if (!ready) return
     add(key).catch(fail)
-    say(`${HERO_KEYS[key]} added${key === 'b' ? ' — baked into the pixels' : ''} · ⌫ to undo`)
+    say(keyLabel(`${HERO_KEYS[key]} added${key === 'b' ? ' — baked into the pixels' : ''} · ⌫ to undo`, MAC))
   }
 
   function undo() {
@@ -181,7 +182,7 @@ function wireInputs(inputs: Inputs): void {
     if (key in HERO_KEYS) {
       event.preventDefault()
       press(key as HeroKey)
-    } else if (key === 'backspace') {
+    } else if (key === 'backspace' || key === 'delete') {
       event.preventDefault()
       undo()
     }
@@ -190,7 +191,7 @@ function wireInputs(inputs: Inputs): void {
     button.addEventListener('click', () => press(button.dataset.key as HeroKey)),
   )
   keys.querySelector('[data-replay]')?.addEventListener('click', replay)
-  keys.querySelector('[data-paste]')?.addEventListener('click', () => say('Copy a screenshot, then press ⌘V anywhere on this page — or drop it on the frame.'))
+  keys.querySelector('[data-paste]')?.addEventListener('click', () => say(keyLabel('Copy a screenshot, then press ⌘V anywhere on this page — or drop it on the frame.', MAC)))
   show.querySelector('[data-pick]')?.addEventListener('click', () => file.click())
 
   const take = (picked: File | null) => {

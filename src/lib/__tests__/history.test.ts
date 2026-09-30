@@ -25,6 +25,7 @@ const snapshot = (patch: Partial<Snapshot> = {}): Snapshot => ({
   shots: [shot('a')],
   settings: DEFAULT_SETTINGS,
   composition: DEFAULT_COMPOSITION,
+  members: ['a'],
   ...patch,
 })
 

@@ -185,6 +185,15 @@ describe('createAnnotation', () => {
     expect(annotation.opacity).toBe(1)
     expect(annotation.fill).toBe(0)
   })
+
+  it('reprend le style mémorisé de l’outil par-dessus les défauts', () => {
+    const rect = { x: 0, y: 0, w: 0.2, h: 0.2 }
+    const annotation = createAnnotation('badge', rect, { color: '#FF0000', size: 0.02 })
+    expect(annotation.color).toBe('#FF0000')
+    expect(annotation.size).toBe(0.02)
+    expect(annotation.opacity).toBe(1)
+    expect(defaultsFor('badge').color).toBe(ANNOTATION_DEFAULTS.color)
+  })
 })
 
 describe('defaultsFor', () => {

@@ -2,7 +2,9 @@ import BackgroundPalette from './BackgroundPalette.tsx'
 import BackgroundThumb from './BackgroundThumb.tsx'
 import { ImageIcon, ShuffleIcon } from './icons.tsx'
 import { DashedTile, MonoLabel, Section, Segmented, Slider } from './ui.tsx'
+import { DITHERS, isDither } from '../lib/dithered.ts'
 import { SERIES, seriesOf, type Series } from '../lib/series.ts'
+import { isWallpaper } from '../lib/wallpapers.ts'
 import type { Palette, Settings } from '../types.ts'
 
 /* Le fond et ses formes : la moitié la plus longue de l'inspecteur, sortie du
@@ -12,8 +14,9 @@ import type { Palette, Settings } from '../types.ts'
 
 const SERIES_OPTIONS: ReadonlyArray<{ value: Series; label: string; title: string }> = [
   { value: 'screenshot', label: 'Screenshot', title: 'Backgrounds drawn from the screenshot colours' },
-  { value: 'macos', label: 'macOS', title: 'Wallpaper-style backgrounds' },
   { value: 'dither', label: 'Dither', title: 'Two-tone dithered backgrounds' },
+  { value: 'macos', label: 'macOS', title: 'The macOS wallpapers, Big Sur to Golden Gate' },
+  { value: 'windows', label: 'Windows', title: 'The Windows wallpapers, XP to 11' },
 ]
 
 type BackgroundSectionProps = {
@@ -35,6 +38,11 @@ export default function BackgroundSection({
   // et en choisir un applique sa première variation.
   const series = seriesOf(kind) ?? 'screenshot'
   const colors = settings.palette ?? palette
+  // Une image — perso ou fond d'écran — couvre l'aplat : ni couleur, ni graine,
+  // ni saturation n'y changent rien. Le grain ne se pose que sur l'image perso :
+  // un fond d'écran se montre tel qu'il est sur un bureau.
+  const wallpaper = isWallpaper(kind)
+  const picture = kind === 'image' || wallpaper
 
   return (
     <>
@@ -43,7 +51,8 @@ export default function BackgroundSection({
           options={SERIES_OPTIONS}
           value={series}
           onPick={(next) => onChange({ background: SERIES[next][0] })}
-          className="w-full"
+          // Quatre séries ne tiennent pas sur une ligne de l'inspecteur : deux par deux.
+          className="grid! w-full grid-cols-2"
         />
         <div className="grid grid-cols-5 gap-1.5">
           {SERIES[series].map((variant) => (
@@ -68,7 +77,7 @@ export default function BackgroundSection({
         </div>
 
         {/* Seuls un aplat et une image n'ont rien à tirer au sort. */}
-        {kind !== 'solid' && kind !== 'image' && (
+        {kind !== 'solid' && !picture && (
           <div className="flex items-center justify-between">
             <MonoLabel>Seed {settings.seed}</MonoLabel>
             <button
@@ -82,7 +91,7 @@ export default function BackgroundSection({
           </div>
         )}
 
-        {kind !== 'image' && (
+        {!picture && (
           <BackgroundPalette
             palette={colors}
             frozen={Boolean(settings.palette)}
@@ -90,23 +99,20 @@ export default function BackgroundSection({
           />
         )}
 
-        {series === 'dither' && kind !== 'image' && <DitherSliders settings={settings} onChange={onChange} />}
+        {series === 'dither' && !picture && <DitherSliders settings={settings} onChange={onChange} />}
 
         {/* Une image de fond couvre l'aplat : la graduer ne se verrait pas. Une
             trame n'a que deux tons, poussés aux extrêmes : la saturation n'y
             change presque rien. */}
-        {kind !== 'image' && series !== 'dither' && (
+        {!picture && series !== 'dither' && (
           <Percent label="Saturation" value={settings.saturation} max={2} onInput={(saturation) => onChange({ saturation })} />
         )}
-        {kind !== 'image' && (
+        {!picture && (
           <Percent label="Contrast" value={settings.contrast} max={2} onInput={(contrast) => onChange({ contrast })} />
-        )}
-        {series === 'macos' && (
-          <Percent label="Opacity" value={settings.shapeOpacity} max={1} onInput={(shapeOpacity) => onChange({ shapeOpacity })} />
         )}
         {/* Le grain empêche un aplat de ressembler à du vide ; sur une trame, il
             brouillerait ce qu'elle a de net, et le moteur ne le dessine pas. */}
-        {series !== 'dither' || kind === 'image' ? (
+        {(series !== 'dither' && !wallpaper) || kind === 'image' ? (
           <Percent label="Grain" value={settings.grain} max={1} onInput={(grain) => onChange({ grain })} />
         ) : null}
       </Section>
@@ -127,7 +133,8 @@ function Percent({ label, value, max, onInput }: { label: string; value: number;
 }
 
 /** La trame : taille de cellule, en part de la largeur, et angle du réseau —
- *  une trame de Bayer est alignée sur les pixels, elle n'a pas d'angle. */
+ *  pour celles qui en ont un : `DITHERS` dit lesquelles sont alignées sur leur
+ *  grille. */
 function DitherSliders({ settings, onChange }: SlidersProps) {
   return (
     <>
@@ -140,7 +147,7 @@ function DitherSliders({ settings, onChange }: SlidersProps) {
         step={0.001}
         onInput={(ditherCell) => onChange({ ditherCell })}
       />
-      {settings.background !== 'bayer' && (
+      {isDither(settings.background) && DITHERS[settings.background].angle && (
         <Slider
           label="Angle"
           value={settings.ditherAngle}

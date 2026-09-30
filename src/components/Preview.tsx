@@ -4,18 +4,20 @@ import TextInput, { useCaretBlink } from './TextInput.tsx'
 import { toFractions, unionBounds, type Point } from '../lib/annotate.ts'
 import { draftRect } from '../lib/draft.ts'
 import { describeScene, marqueeStyle } from '../lib/describe.ts'
-import { marqueeCatch, paintDraft, type Drag } from '../lib/gesture.ts'
+import { COPY_THRESHOLD, marqueeCatch, paintDraft, panStart, type Drag } from '../lib/gesture.ts'
 import { applyHandle, resizeGroup, resizeText, scaleLayer, type Handle } from '../lib/handles.ts'
 import { inWindow, layerAt, windowAt, type Target } from '../lib/hit.ts'
 import type { Geometry } from '../lib/render.ts'
+import { panTo } from '../lib/screen.ts'
 import { expandSelection, flatten } from '../lib/tree.ts'
 import { pointAt, useCanvasScene, type Inset } from '../hooks/useCanvasScene.ts'
-import { useAltKey, useFrameThrottle } from '../hooks/usePointerInput.ts'
+import { useAltKey, useFrameThrottle, useSpaceKey } from '../hooks/usePointerInput.ts'
 import {
   DEFAULT_PLACEMENT,
   type Annotation,
   type AnnotationKind,
   type FractionRect,
+  type Pan,
   type Placement,
   type Scene,
 } from '../types.ts'
@@ -40,10 +42,14 @@ type PreviewProps = {
   /** `additive` ⇒ ⇧ ou ⌘ : le calque entre ou sort du lot. */
   onSelect?: (shotId: string | null, ids: string[], additive: boolean) => void
   onTranslate?: (shotId: string, ids: readonly string[], dx: number, dy: number) => void
+  /** ⌥ + glisser sur un calque : copie sur place, qui rend ses identifiants. */
+  onDuplicate?: (shotId: string, ids: readonly string[]) => string[]
   /** Poignées : un calque change de rect — et de taille, à plusieurs. */
   onPatch?: (shotId: string, id: string, patch: Partial<Annotation>) => void
   /** Retouche la fenêtre d'un shot : ⌥ + glisser la déplace dans le canvas. */
   onPlace?: (shotId: string, patch: Partial<Placement>) => void
+  /** Espace + glisser : le screenshot glisse dans son écran, calques compris. */
+  onPan?: (shotId: string, pan: Pan, travel: Point) => void
   onEdit?: (editing: Editing | null) => void
   onEditText?: (shotId: string, id: string, text: string) => void
   onGeometry?: (geometry: Geometry) => void
@@ -71,8 +77,10 @@ export default function Preview({
   onCreate,
   onSelect,
   onTranslate,
+  onDuplicate,
   onPatch,
   onPlace,
+  onPan,
   onEdit,
   onEditText,
   onGeometry,
@@ -83,10 +91,17 @@ export default function Preview({
   const [hover, setHover] = useState<{ id: string; target: Target } | null>(null)
   /** Dernière position d'un déplacement, en px canvas. */
   const lastPoint = useRef<Point | null>(null)
+  /** ⌥-glisser sur un calque : `pending` tant que la copie n'est pas née, puis
+   *  ses identifiants. En ref, comme `lastPoint` : le relâchement peut rejouer
+   *  un mouvement avant que React n'ait rendu, et dupliquerait deux fois. */
+  const copy = useRef<{ pending: boolean; ids: string[] | null }>({ pending: false, ids: null })
   const blink = useCaretBlink(editing !== null)
   const interactive = tool !== null
   /** ⌥ enfoncé : le curseur annonce qu'un glisser déplacera la fenêtre. */
   const altPressed = useAltKey(interactive && Boolean(onPlace))
+  /** Pointeur sur la preview : Espace n'y devient la « main » que là. */
+  const inside = useRef(false)
+  const spacePressed = useSpaceKey(interactive && Boolean(onPan), () => inside.current)
 
   /** La scène telle qu'elle doit être peinte : brouillon du tracé en cours et
    *  caret de saisie compris. L'export, lui, part de `scene` intacte. */
@@ -151,6 +166,34 @@ export default function Preview({
     lastPoint.current = point
     setHover(null)
     if (editing) commitEdit()
+    copy.current = { pending: false, ids: null }
+
+    // Espace + glisser : le screenshot glisse dans son écran. Testé en premier,
+    // la « main » prime sur tout autre geste — et s'il n'y a rien à faire
+    // glisser, le geste s'arrête là plutôt que de tracer ou de sélectionner.
+    if (spacePressed && onPan) {
+      const target = targetWindow(point)
+      if (target) setDrag(panStart(scene, geometry, target, point))
+      return
+    }
+
+    // ⌥ + glisser sur un calque le duplique, comme dans Figma : la copie part
+    // avec le curseur, l'original reste. Hors calque, ⌥ déplace la fenêtre.
+    const held = event.altKey && tool === 'select' && onDuplicate ? pick(point) : null
+    if (held) {
+      const kept = selectedIds.includes(held.annotation.id)
+      if (!kept) onSelect?.(held.target.shotId, [held.annotation.id], false)
+      const layers = scene.shots.find((item) => item.id === held.target.shotId)?.layers ?? []
+      copy.current = { pending: true, ids: null }
+      setDrag({
+        mode: 'move',
+        ids: expandSelection(layers, kept ? selectedIds : [held.annotation.id]),
+        target: held.target,
+        from: point,
+        to: point,
+      })
+      return
+    }
 
     // ⌥ + glisser déplace la fenêtre elle-même. Le modificateur n'est pas un
     // luxe : le clic simple trace déjà le rectangle de sélection, et ⇧ comme ⌘
@@ -172,8 +215,11 @@ export default function Preview({
     }
 
     // Un clic avec l'outil Texte sur un texte existant le rouvre plutôt que
-    // d'en poser un second par-dessus.
-    const hit = pick(point)
+    // d'en poser un second par-dessus. Sauf celui qu'on vient de quitter vide :
+    // `commitEdit` l'a supprimé, mais la scène de ce rendu le porte encore, et le
+    // rouvrir laisserait une saisie sans calque ni clavier.
+    const found = pick(point)
+    const hit = found && found.annotation.id === editing?.id && !found.annotation.text.trim() ? null : found
     if (tool === 'text' && hit && openText(hit)) return
 
     if (tool === 'select') {
@@ -299,13 +345,26 @@ export default function Preview({
     const to = inWindow(box, point)
     const delta = { x: (to.x - from.x) / box.width, y: (to.y - from.y) / box.width }
 
+    if (drag.mode === 'pan') {
+      // Absolu depuis le départ, comme le placement : l'image suit la main.
+      onPan?.(drag.shotId, panTo(drag.origin, delta, drag.travel), drag.travel)
+      return
+    }
+
     if (drag.mode === 'move') {
+      // Copie en attente : elle naît au premier vrai mouvement, et part du point
+      // de départ pour tomber sous le curseur.
+      const born = copy.current.pending
+      if (born) {
+        if (Math.hypot(point.x - drag.from.x, point.y - drag.from.y) < COPY_THRESHOLD) return
+        copy.current = { pending: false, ids: onDuplicate?.(drag.target.shotId, drag.ids) ?? null }
+      }
       // Le déplacement est relatif : on translate de l'écart depuis la dernière
       // position connue, pas depuis le point de départ.
-      const last = inWindow(box, previous)
+      const last = inWindow(box, born ? drag.from : previous)
       onTranslate?.(
         drag.target.shotId,
-        drag.ids,
+        copy.current.ids ?? drag.ids,
         (to.x - last.x) / box.width,
         (to.y - last.y) / box.width,
       )
@@ -395,7 +454,13 @@ export default function Preview({
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
-        onPointerLeave={() => setHover(null)}
+        onPointerEnter={() => {
+          inside.current = true
+        }}
+        onPointerLeave={() => {
+          inside.current = false
+          setHover(null)
+        }}
       >
         <canvas
           ref={canvasRef}
@@ -407,14 +472,23 @@ export default function Preview({
           tabIndex={editable ? 0 : undefined}
           onKeyDown={onKeys}
           onPointerDown={onPointerDown}
+          // Un clic qui rouvre un texte ne doit pas reprendre le focus au champ
+          // de saisie : son `blur` refermerait aussitôt ce qu'on vient d'ouvrir.
+          onMouseDown={(event) => {
+            if (editing) event.preventDefault()
+          }}
           onDoubleClick={onDoubleClick}
           className={`block touch-none rounded-sm ${
             !interactive
               ? ''
-              : drag?.mode === 'shot'
+              : drag?.mode === 'shot' || drag?.mode === 'pan'
                 ? 'cursor-grabbing'
-                : altPressed && onPlace
+                : spacePressed
                   ? 'cursor-grab'
+                  : altPressed && hovered
+                  ? 'cursor-copy'
+                  : altPressed && onPlace
+                    ? 'cursor-grab'
                   : tool === 'select'
                     ? hovered
                       ? 'cursor-move'

@@ -22,12 +22,15 @@ import { useOutputMode } from './hooks/useOutputMode.ts'
 import { useScene } from './hooks/useScene.ts'
 import { useStyleActions } from './hooks/useStyleActions.ts'
 import { useStyleEditing } from './hooks/useStyleEditing.ts'
+import { useWallpaper } from './hooks/useWallpaper.ts'
+import { useAnchoredSettings } from './hooks/useAnchoredSettings.ts'
 import { useShots } from './hooks/useShots.ts'
 import { useSideFile, type SideTarget } from './hooks/useSideFile.ts'
 import { useNarrow, useShortcuts } from './hooks/useShortcuts.ts'
 import { loadImage } from './lib/image.ts'
 import { getHistoryBlobs } from './lib/store.ts'
 import { exportStyle, parseSettings } from './lib/styles.ts'
+import { isWallpaper } from './lib/wallpapers.ts'
 
 /** Ce qu'un `<input type=file>` sert à choisir, selon le bouton cliqué. */
 type PickTarget = 'shot' | SideTarget
@@ -56,8 +59,6 @@ export default function App() {
   const narrow = useNarrow()
   const { confirm, dialog } = useConfirm()
   const help = useShortcutsPanel()
-  const output = useOutputMode(composition, compose, shots)
-
   const onImages = useCallback(
     (images: HTMLImageElement[], files: File[]) =>
       shots.add(
@@ -68,10 +69,15 @@ export default function App() {
   )
 
   const input = useImageInput(onImages)
-  const styles = useStyleActions(library, settings, setSettings)
+  const anchored = useAnchoredSettings(shots, settings, composition, patch, setSettings, compose)
+  const { retune, restyle } = anchored
+  const output = useOutputMode(composition, anchored.recompose, shots)
+  const styles = useStyleActions(library, settings, restyle)
   const { activeStyle, watermarkImage } = styles
 
   /* --- Scène ------------------------------------------------------------ */
+
+  const wallpaper = useWallpaper(settings.background, 'full', setFailure)
 
   const { scene, output: size } = useScene({
     shots: shots.shots,
@@ -80,7 +86,9 @@ export default function App() {
     settings,
     composition,
     scale,
-    backgroundImage: doc.backgroundImage,
+    // Un fond macOS prend la place de l'image perso, jamais l'inverse : pendant
+    // qu'il charge, c'est l'aplat qui doit se voir, pas l'image d'avant.
+    backgroundImage: isWallpaper(settings.background) ? wallpaper : doc.backgroundImage,
     activeStyle,
     watermarkImage,
   })
@@ -312,19 +320,21 @@ export default function App() {
               onRedo={history.redo}
               onNewSession={() => void newSession()}
               onKeys={onCanvasKeys}
-              onChange={patch}
-              onCompose={compose}
+              onChange={retune}
+              onCompose={anchored.recompose}
               onPlace={shots.place}
+              onPan={shots.pan}
               onMode={output.setMode}
               onActivate={shots.activate}
-              onToggleMember={shots.toggleMember}
-              onReorderShots={shots.reorder}
+              onToggleMember={anchored.toggleMember}
+              onReorderShots={anchored.reorder}
               onAddShot={() => pick('shot')}
               onPickBackgroundImage={() => pick('background')}
               onCreateAnnotation={shots.createAnnotation}
               onPatchAnnotation={shots.patchAnnotation}
               onPatchNode={shots.patchNode}
               onTranslateLayers={shots.translateLayers}
+              onDuplicateLayers={shots.duplicateLayers}
               onDeleteLayers={shots.deleteLayers}
               onMoveLayer={shots.moveLayer}
               onMoveLayers={shots.moveLayers}

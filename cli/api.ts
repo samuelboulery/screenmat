@@ -10,16 +10,19 @@
 import { supportsWebp } from './dom-shim.ts'
 import { createCanvas, loadImage, type Image } from '@napi-rs/canvas'
 import { readFile } from 'node:fs/promises'
+import { fileURLToPath } from 'node:url'
 import { resolveStyle } from './styles-dir.ts'
 import { BASE_WIDTH, computeGeometry, renderScene, type Geometry } from '../src/lib/render.ts'
-import { screenRect } from '../src/lib/frame.ts'
+import { screenRect, sourceRect } from '../src/lib/screen.ts'
 import { extractPalette } from '../src/lib/palette.ts'
-import { isImageSource, parseScene, type ImageSource, type SceneSpec } from '../src/lib/spec.ts'
+import { isImageSource, parsePan, parseScene, type ImageSource, type SceneSpec } from '../src/lib/spec.ts'
+import { isWallpaper, wallpaperPath, type Wallpaper } from '../src/lib/wallpapers.ts'
 import {
   DEFAULT_PLACEMENT,
   type FractionRect,
   type Format,
   type Palette,
+  type Pan,
   type Scene,
   type Settings,
   type Shot,
@@ -30,6 +33,8 @@ import {
 export type SimpleSpec = {
   input: ImageSource
   settings?: Partial<Settings>
+  /** Part du screenshot visible quand un ratio verrouillé le rogne. */
+  pan?: Partial<Pan>
   style?: string
   scale?: number
 }
@@ -50,6 +55,11 @@ export type InspectResult = {
    *  annotation calculée depuis les pixels de l'image se retrouve décalée de la
    *  hauteur de la barre de titre. */
   screen: FractionRect
+  /** La part du screenshot visible dans `screen`, en pixels de l'image. L'image
+   *  entière, sauf quand un ratio verrouillé la rogne. Un pixel `(px, py)` se
+   *  place à `screen.x + (px − source.x) × screen.w / source.w`, et de même en
+   *  `y` : l'échelle est la même sur les deux axes. */
+  source: { x: number; y: number; w: number; h: number }
   /** Hauteur de la barre de titre, même unité. 0 si elle est masquée. */
   titleBar: number
   canvas: { width: number; height: number }
@@ -63,6 +73,21 @@ export type InspectResult = {
  */
 function asElement(image: Image): HTMLImageElement {
   return image as unknown as HTMLImageElement
+}
+
+/** Les fonds d'écran embarqués, décodés une fois par processus : un lot ou un
+ *  serveur MCP redemandent le même, et 3840 px ne se décodent pas pour rien. */
+const wallpapers = new Map<Wallpaper, Promise<Image>>()
+
+function wallpaper(kind: Wallpaper): Promise<Image> {
+  const known = wallpapers.get(kind)
+  if (known) return known
+  const file = fileURLToPath(new URL(`../public/${wallpaperPath(kind, 'full')}`, import.meta.url))
+  const loading = decode(file)
+  wallpapers.set(kind, loading)
+  // Un échec ne reste pas en cache : le fichier peut revenir.
+  loading.catch(() => wallpapers.delete(kind))
+  return loading
 }
 
 async function decode(source: ImageSource): Promise<Image> {
@@ -92,7 +117,7 @@ const isSimple = (spec: SceneSpec | SimpleSpec | unknown): spec is SimpleSpec =>
  *  passe par `parseScene` elle aussi : un seul validateur, pas deux. */
 async function toSpec(spec: SceneSpec | SimpleSpec | unknown): Promise<SceneSpec> {
   const raw = isSimple(spec)
-    ? { style: spec.style, settings: spec.settings, scale: spec.scale, shots: [{ input: spec.input }] }
+    ? { style: spec.style, settings: spec.settings, scale: spec.scale, shots: [{ input: spec.input, pan: spec.pan }] }
     : spec
 
   const parsed = parseScene(raw)
@@ -142,6 +167,7 @@ async function buildScene(spec: SceneSpec): Promise<Scene> {
       palette: spec.palette ?? extractPalette(image),
       layers: shot.layers,
       placement: shot.placement,
+      pan: shot.pan,
     }
   })
 
@@ -154,6 +180,8 @@ async function buildScene(spec: SceneSpec): Promise<Scene> {
       throw new Error('`background: "image"` demande un champ `background` pointant une image')
     }
     scene.backgroundImage = asElement(await decode(spec.background))
+  } else if (isWallpaper(spec.settings.background)) {
+    scene.backgroundImage = asElement(await wallpaper(spec.settings.background))
   }
 
   if (spec.watermark) {
@@ -209,6 +237,7 @@ export async function render(input: SceneSpec | SimpleSpec | unknown): Promise<R
 export async function inspect(
   input: ImageSource,
   settings?: Partial<Settings>,
+  pan?: Partial<Pan>,
 ): Promise<InspectResult> {
   const spec = await toSpec({ input, settings })
   const image = await decode(input)
@@ -225,6 +254,7 @@ export async function inspect(
   // Même source que le cadre et que le floutage : le bezel d'un macbook ou d'un
   // iphone compte, et le recalculer ici l'avait fait oublier.
   const screen = screenRect(window, geometry, spec.settings)
+  const source = sourceRect(screen, image, parsePan(pan))
 
   return {
     imageWidth: image.naturalWidth,
@@ -236,6 +266,7 @@ export async function inspect(
       w: screen.width / window.width,
       h: screen.height / window.width,
     },
+    source,
     // `geometry.titleBar` vaut pour une fenêtre à l'échelle 1 : c'est celle-ci
     // qu'on décrit, donc son propre facteur s'applique avant le rapport.
     titleBar: (geometry.titleBar * window.scale) / window.width,

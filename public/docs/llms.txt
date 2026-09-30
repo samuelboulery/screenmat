@@ -20,7 +20,7 @@ concatenate all eight for the complete reference (roughly 2000 lines).
 - [MCP server](/docs/mcp.md): how to register the server, the write guard
   (`SCREENMAT_OUT`, never overwrites), and the three tools — `screenmat_render`,
   `screenmat_inspect`, `screenmat_list_styles` — with their full parameters.
-- [Node API](/docs/api.md): `render(spec)` and `inspect(input, settings)`,
+- [Node API](/docs/api.md): `render(spec)` and `inspect(input, settings, pan)`,
   their result types, and the errors they throw.
 - [Scene format](/docs/scene.md): the complete serialisable JSON — settings,
   composition, shots, layers, watermark, palette — every field with its default

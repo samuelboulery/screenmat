@@ -24,6 +24,7 @@ It takes either of two shapes and validates both through the same parser.
 type SimpleSpec = {
   input: string | Uint8Array
   settings?: Partial<Settings>
+  pan?: { x?: number; y?: number }
   style?: string
   scale?: number
 }
@@ -77,7 +78,11 @@ was just produced in memory — by Playwright, say — and never touched the dis
 ## inspect
 
 ```ts
-function inspect(input: string | Uint8Array, settings?: Partial<Settings>): Promise<InspectResult>
+function inspect(
+  input: string | Uint8Array,
+  settings?: Partial<Settings>,
+  pan?: { x?: number; y?: number },
+): Promise<InspectResult>
 ```
 
 Returns where the screenshot lands inside its window. Call it before computing
@@ -88,22 +93,27 @@ type InspectResult = {
   imageWidth: number
   imageHeight: number
   screen: { x: number; y: number; w: number; h: number }
+  source: { x: number; y: number; w: number; h: number }
   titleBar: number
   canvas: { width: number; height: number }
 }
 ```
 
 `screen` and `titleBar` are in fractions of the **window width** — the frame
-layers live in. `imageWidth` and `imageHeight` are the raw pixels of the source
-image. Pass the same geometry settings you intend to render with: `frame`,
-`ratio`, `padding`, `radius`, `rotateY` and `titleBar` all move the screenshot.
+layers live in. `source` is the part of the screenshot visible in `screen`, in
+the image's own pixels: the whole image, unless a locked ratio crops it.
+`imageWidth` and `imageHeight` are the raw pixels of the source image. Pass the
+same geometry settings you intend to render with: `frame`, `ratio`, `padding`,
+`radius`, `rotateY`, `titleBar`, `deviceRatio` and `screenRatio` all move the
+screenshot — and the same `pan`, when a ratio is locked.
 
 ```ts
-const { screen, imageWidth } = await inspect('login.png', { frame: 'macbook' })
+const { screen, source } = await inspect('login.png', { frame: 'macbook' })
 
 // A button found at (1180, 640) in the screenshot's own pixels:
-const x = 1180 / imageWidth
-const y = screen.y + 640 / imageWidth
+const k = screen.w / source.w
+const x = screen.x + (1180 - source.x) * k
+const y = screen.y + (640 - source.y) * k
 ```
 
 The reasoning behind that conversion is in [Coordinates](#coordinates).

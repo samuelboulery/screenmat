@@ -32,7 +32,7 @@ the default — speak; it is never overwritten with `undefined`.
 | `--scale` | `1` `2` `3` | `2` | Export scale. Anything else falls back to `2`. |
 | `--format` | `png` `webp` | `webp` | Falls back to PNG where the WebP encoder is missing. |
 | `--frame` | `browser` `macbook` `iphone` `none` | `none` | |
-| `--background` | `mesh` `gradient` `solid` `waves` `dunes` `aurora` `ribbons` `bayer` `halftone` `scanlines` | `mesh` | `image` needs a scene file. Series: see the scene reference. |
+| `--background` | `mesh` `gradient` `solid`, a dithered pattern such as `halftone` or `atkinson`, or a macOS or Windows wallpaper such as `tahoe-dark` or `windows-11-dark` | `mesh` | `image` needs a scene file. Full lists: `--help`, or the scene reference. |
 | `--ratio` | `auto` `4:3` `1:1` `16:9` `9:16` | `4:3` | |
 | `--theme` | `auto` `light` `dark` | `auto` | Frame chrome, not the background. |
 | `--url` | text | `example.com` | Address bar text, `frame=browser` only. Truncated at 200 characters. |
@@ -43,13 +43,18 @@ the default — speak; it is never overwritten with `undefined`.
 | `--grain` | 0 to 1 | `0.35` | Film grain over the background. |
 | `--rotate-y` | −24 to 24 | `0` | Degrees of window tilt. |
 | `--no-title-bar` | flag | title bar shown | Removes the window chrome bar. |
+| `--device-ratio` | flag | off | `frame=macbook` or `iphone`: the screen keeps the device ratio (16:10, 19.5:9) and crops the screenshot. |
+| `--screen-ratio` | `auto` `16:10` `16:9` `4:3` `1:1` | `auto` | `frame=browser` or `none`: ratio of the screen. Anything but `auto` crops the screenshot. |
+| `--island-side` | `left` `right` | `left` | `frame=iphone` with a landscape screenshot: the short edge that carries the island. |
+| `--pan` | `x,y`, each 0 to 1 | `0.5,0.5` | Which part of a cropped screenshot shows: 0 start, 1 end. |
 | `--json` | flag | human line | Machine-readable result on stdout. |
 | `-h, --help` | flag | — | |
 
 Out-of-range numbers are clamped, not rejected: `--padding 5` renders at `0.3`.
-An unknown value for an enumerated flag falls back to the default. The two
-exceptions that do fail are an unknown flag (rejected by `parseArgs`) and a
-`--style` name that does not exist — see [Errors](#cli-errors).
+An unknown value for an enumerated flag falls back to the default. What does
+fail: an unknown flag (rejected by `parseArgs`), a `--style` name that does not
+exist, and a `--screen-ratio`, `--island-side` or `--pan` value outside what the
+table lists — see [Errors](#cli-errors).
 
 Five settings have no flag, because they are background-tuning dials that a
 command line rarely needs: `blur`, `shapes`, `shapeOpacity`, `saturation` and
@@ -93,7 +98,7 @@ Prints where the screenshot lands inside its window — the frame you need befor
 computing any layer position. See [Coordinates](#coordinates).
 
 ```bash
-pnpm cli inspect screenshot.png --json
+pnpm cli inspect screenshot.png --frame browser --json
 ```
 
 ```json
@@ -101,6 +106,7 @@ pnpm cli inspect screenshot.png --json
   "imageWidth": 2880,
   "imageHeight": 1800,
   "screen": { "x": 0, "y": 0.035, "w": 1, "h": 0.625 },
+  "source": { "x": 0, "y": 0, "w": 2880, "h": 1800 },
   "titleBar": 0.035,
   "canvas": { "width": 1600, "height": 1200 },
   "input": "screenshot.png"
@@ -108,8 +114,9 @@ pnpm cli inspect screenshot.png --json
 ```
 
 The geometry flags apply here too: `--frame`, `--ratio`, `--padding`,
-`--radius`, `--rotate-y` and `--no-title-bar` all move the screenshot inside its
-window, so pass the same ones you will pass to the render.
+`--radius`, `--rotate-y`, `--no-title-bar`, `--device-ratio`, `--screen-ratio`
+and `--pan` all move the screenshot inside its window, so pass the same ones you
+will pass to the render.
 
 ## styles
 
@@ -166,6 +173,9 @@ stdout is either the report or the JSON, so a pipeline can read stdout safely.
 | `Impossible de lire <path> : …` | File missing or unreadable. |
 | `Impossible de décoder <path> : …` | Not an image, or an unsupported codec. |
 | `Style « x » introuvable dans <dir> — disponibles : …` | Unknown `--style`. The available names are listed for you. |
+| `--screen-ratio attend … — reçu « x »` | `--screen-ratio` outside the listed ratios. |
+| `--island-side attend left ou right — reçu « x »` | `--island-side` is neither `left` nor `right`. |
+| `--pan attend deux nombres…` | `--pan` is not `x,y`. |
 | `Scène illisible : ce n'est pas du JSON` | `--spec` file is not valid JSON. |
 | `Une scène a besoin d'au moins un shot…` | No entry in `shots` had a usable `input`. |
 

@@ -7,6 +7,9 @@
 /fonts/*
   Cache-Control: public, max-age=31536000, immutable
 
+/wallpapers/*
+  Cache-Control: public, max-age=31536000, immutable
+
 # `llms.txt` promet qu'un LLM ou `curl` peut lire ces fichiers : ils doivent
 # s'afficher, pas se télécharger.
 /docs/*.md

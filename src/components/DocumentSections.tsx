@@ -1,5 +1,6 @@
 import BackgroundSection from './BackgroundSection.tsx'
 import { FRAME_ICON, LAYOUT_ICON } from './icons.tsx'
+import ScreenRatioControl from './ScreenRatioControl.tsx'
 import { MonoLabel, Section, Segmented, Slider, Tile, Toggle } from './ui.tsx'
 import { DEFAULT_PLACEMENT } from '../types.ts'
 import type {
@@ -12,6 +13,7 @@ import type {
   Settings,
   Shot,
 } from '../types.ts'
+import { MAC, keyLabel } from '../lib/keys.ts'
 
 const FRAMES: Array<{ value: FrameStyle; label: string }> = [
   { value: 'none', label: 'none' },
@@ -40,6 +42,8 @@ export type DocumentSectionsProps = {
   palette: Palette
   /** Largeur d'une fenêtre à l'échelle 1 : sert à afficher l'élévation en px. */
   windowWidth: number
+  /** L'image de tête est paysage : un cadre `phone` est couché. */
+  landscape: boolean
   /** Mode combiné : les images cochées forment une seule scène. */
   combined: boolean
   activeShot: Shot | null
@@ -58,6 +62,7 @@ export default function DocumentSections({
   composition,
   palette,
   windowWidth,
+  landscape,
   combined,
   activeShot,
   onChange,
@@ -90,6 +95,7 @@ export default function DocumentSections({
             )
           })}
         </div>
+        <ScreenRatioControl settings={settings} landscape={landscape} onChange={onChange} />
         {/* Un cadre d'appareil impose son propre rayon (`frameRadius`) : le
             régler ici ne produirait rien. */}
         {settings.frame !== 'macbook' && settings.frame !== 'iphone' && (
@@ -288,7 +294,7 @@ export default function DocumentSections({
         <Section
           title="Shot"
           collapsible
-          aside={<MonoLabel>{combined ? activeShot.name : '⌥-drag to move'}</MonoLabel>}
+          aside={<MonoLabel>{combined ? activeShot.name : keyLabel('⌥-drag to move', MAC)}</MonoLabel>}
         >
           <Slider
             label="Size"

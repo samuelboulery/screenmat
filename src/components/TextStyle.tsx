@@ -1,6 +1,6 @@
 import ColorPicker from './ColorPicker.tsx'
 import { Section, Segmented, Slider, Toggle, type Option } from './ui.tsx'
-import { ANNOTATION_LIMITS } from '../lib/annotate.ts'
+import { ANNOTATION_LIMITS, percent } from '../lib/annotate.ts'
 import type { Annotation, TextAlign, TextBackground, TextFont } from '../types.ts'
 
 const FONTS: ReadonlyArray<Option<TextFont>> = [
@@ -30,11 +30,6 @@ type TextStyleProps = {
   annotation: Annotation
   accents: readonly string[]
   onPatch: (patch: Partial<Annotation>) => void
-}
-
-/** Pourcentage lisible pour une fraction de la largeur de la fenêtre. */
-function percent(value: number): string {
-  return `${(value * 100).toFixed(2)} %`
 }
 
 /** Réglages d'un calque texte : le texte lui-même, puis sa plaque. */

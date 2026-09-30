@@ -14,16 +14,23 @@ l'export doit correspondre à la preview par construction, pas par vigilance.
 
 ```
 render.ts       renderScene(ctx, scene, scale) — LE MOTEUR, et computeGeometry
-frame.ts        cadres browser/macbook/iphone/none, rotation Y, screenRect
+frame.ts        dessin des cadres browser/macbook/iphone/none, rotation Y
+screen.ts       où le screenshot atterrit : windowAspect, screenRect, sourceRect, pan
+anchor.ts       calques recalés quand le screenshot bouge dans sa fenêtre
 background.ts   dispatch des fonds, backgroundColors, + cache
-series.ts       SERIES : capture · macOS · trame — source unique des types de fond
-wallpapers.ts   fonds façon macOS : waves · dunes · aurora · ribbons
-dithered.ts     fonds tramés : bayer · halftone · scanlines (sur le mesh)
+series.ts       SERIES : capture · macOS · Windows · trame — source unique des types de fond
+wallpapers.ts   catalogue des vrais fonds macOS et Windows (images de public/wallpapers/)
+dithered.ts     fonds tramés : DITHERS, source unique — bayer · halftone · scanlines
+dither-patterns.ts  huit motifs dessinés : atkinson · stipple · crosshatch · contours ·
+                ridgelines · riso · glyphs · truchet (encre claire, fond sombre)
 dither.ts       ditherPixels, Bayer 4×4 — partagé avec la landing
 noise.ts        tuile de grain, générée une fois, blittée à l'échelle
 palette.ts      couleurs dominantes + harmonisation d'un lot
-layers.ts       rendu des calques, floutage cuit
+layers.ts       rendu des calques
+redact.ts       floutage cuit dans les pixels, rectangle ou ellipse
 annotate.ts     modèle et géométrie des calques, hit-test, bornes
+keys.ts         une touche, en capsules et selon la plateforme (⌘ ou Ctrl)
+tool-style.ts   dernier style de chaque outil, en localStorage
 tree.ts         arbre de calques : groupes, aplatissement, déplacement
 draft.ts        tracé en cours : rect aimanté, scène augmentée
 handles.ts      poignées : redimensionnement, aimantation, nudge
@@ -81,10 +88,34 @@ random.ts       mulberry32
   une flèche de pointer dans les quatre quadrants. Passer par `bounds()`
   (`annotate.ts`) pour un rectangle normalisé — c'est la source unique du
   hit-test et du cadre de sélection.
-- **`screenRect()` (`frame.ts`) dit où le screenshot atterrit dans sa fenêtre.**
-  Source unique : le cadre le dessine là, le floutage y échantillonne, `inspect()`
-  le publie. Le recalculer ailleurs, c'est le voir diverger — c'est ce qui faisait
-  ignorer le bezel du macbook à `inspect()`.
+- **`screenRect()` (`screen.ts`) dit où le screenshot atterrit dans sa fenêtre,
+  `sourceRect()` quelle part de l'image s'y voit.** Sources uniques : le cadre
+  dessine ce rectangle-là à cet endroit-là, le floutage y échantillonne,
+  `inspect()` les publie. Les recalculer ailleurs, c'est les voir diverger — c'est
+  ce qui faisait ignorer le bezel du macbook à `inspect()`.
+- **Le screenshot n'est jamais étiré.** `windowAspect()` donne à l'écran le
+  rapport de l'image (bezel compris dans celui de la fenêtre) ; quand un ratio
+  est verrouillé (`deviceRatio`, `screenRatio`) ou qu'un shot n'a pas le rapport
+  du premier, `sourceRect()` le rogne en « cover », et `Shot.pan` dit où.
+- **Un calque suit son image, pas sa fenêtre.** Tout geste qui déplace un
+  screenshot sous ses calques les recale (`reanchorShots`, `anchor.ts`), d'une
+  `View` à l'autre : réglages de cadre et de ratio, mais aussi l'ordre des
+  images, les membres de la composition et le passage séparé/combiné, puisque la
+  première image donne son rapport aux fenêtres des autres. Ces gestes passent
+  tous par `useAnchoredSettings` ; en brancher un directement sur `useShots` ou
+  `compose`, c'est rouvrir la fuite — un floutage découvre ce qu'il masquait.
+  L'historique restaure les membres avec les images pour la même raison. Le
+  rendu machine, lui, ne recale rien (`coordinates.md`, règle 5).
+- **Les cotes d'un iPhone se lisent sur son petit côté** (`frameUnit`) : un
+  screenshot paysage le couche, îlot sur le bord court que dit
+  `settings.islandSide`, sans grossir son bezel ni son rayon. L'îlot se dessine
+  par-dessus l'écran : son côté ne déplace ni screenshot ni calque.
+- **Quand le screenshot bouge dans sa fenêtre, les calques le suivent**
+  (`anchor.ts`) : glisser de l'image (`panShot`), changement de cadre, de barre
+  de titre ou de ratio (`reanchorShots`, sur toutes les images). Sans ça un
+  floutage découvre ce qu'il masquait. Un nouveau réglage qui déplace le
+  screenshot s'ajoute à `ANCHOR_KEYS`. Le rendu machine, lui, reste déclaratif :
+  `render()` ne déplace aucun calque.
 - **Le contraste d'une encre sur un aplat se décide par `inkOn()`** (`color.ts`),
   qui compare les rapports WCAG réels. Ne pas reposer un seuil de luminance dans
   un coin : `luminance()` n'est pas corrigée en gamma et se trompe sur les tons
@@ -110,7 +141,17 @@ random.ts       mulberry32
   **L'échantillon vient du screenshot source, jamais de `ctx.canvas`** : relire le
   canvas de destination force le rasteriseur à vider la frame en cours puis à en
   rasteriser la suite une seconde fois — une frame passait de 3 ms à 372 ms dès
-  qu'une seule zone existait.
+  qu'une seule zone existait. **L'aplat des zones masquées ne se pose que sous ce
+  qui déborde vraiment du screenshot** (`overflows`, un demi-pixel de marge) et
+  la zone se cale sur les pixels quand la fenêtre est de face : comparé à
+  l'égalité de flottants, l'aplat passait sous deux flous sur trois et ressortait
+  en filet sombre. Une zone `redactionShape: 'ellipse'` est le même dessin sous
+  un clip local ; l'échantillon reste celui de sa boîte.
+- **Une forme a deux couleurs** : `color` pour le trait, `fillColor` pour le
+  fond, chacune son opacité — `strokeOpacity` et `fill`. `stroke: false` coupe
+  le contour, sauf sans fond, où il se trace même à `strokeOpacity: 0` — une
+  forme ne peut pas être invisible, et c'est `strokeAndFill` qui le garantit,
+  pas le parseur.
 - La rotation Y est une approximation affine (compression horizontale +
   cisaillement vertical), pas un vrai mapping projectif : une matrice reste
   homothétique à l'export, un découpage en bandes ne le garantirait pas.

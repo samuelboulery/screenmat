@@ -27,7 +27,7 @@ project, so a file produced here is identical to what the app would export.
 ## What you can drive
 
 - Frame a screenshot (`browser`, `macbook`, `iphone`, or no frame at all).
-- Generate a deterministic background — from the screenshot colours (`mesh`, `gradient`, `solid`), wallpaper-style (`waves`, `dunes`, `aurora`, `ribbons`), dithered (`bayer`, `halftone`, `scanlines`) — or use an image.
+- Generate a deterministic background — from the screenshot colours (`mesh`, `gradient`, `solid`), the real macOS wallpapers from Big Sur to Golden Gate (`tahoe-dark`, `sonoma-light`, …), the Windows ones from XP to 11 (`windows-11-dark`, `windows-xp`, …), dithered (`bayer`, `halftone`, `atkinson`, `contours`, `truchet`, … eleven patterns) — or use an image.
 - Place annotations: text, badges, arrows, lines, boxes, ellipses.
 - Redact a region — blurred, pixelated, or filled, **baked into the pixels**.
 - Compose several shots (`stack`, `side`, `tilt3d`) in one visual.

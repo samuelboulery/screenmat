@@ -1,14 +1,30 @@
 import { css, luminance, withLuminance, type Rgb } from './color.ts'
 import type { BackgroundColors } from './background.ts'
 import { ditherPixels } from './dither.ts'
+import { PATTERNS } from './dither-patterns.ts'
+import { mulberry32 } from './random.ts'
 import type { Settings } from '../types.ts'
 
 /* La série tramée : le fond `mesh`, réduit à une grille de cellules, puis rendu
-   en deux tons — trame de Bayer, points de similigravure ou lignes de gravure.
-   C'est l'effet de la landing, en fond. La cellule est une fraction de la
-   largeur (`ditherCell`) : même trame à 1× et à 3×. */
+   en deux tons — trame de Bayer, points de similigravure, lignes de gravure, et
+   les motifs dessinés de `dither-patterns.ts`. C'est l'effet de la landing, en
+   fond. La cellule est une fraction de la largeur (`ditherCell`) : même trame à
+   1× et à 3×. */
 
-export type Dither = 'bayer' | 'halftone' | 'scanlines'
+/** Source unique des trames : la série, l'interface et la doc lisent cette
+ *  table, dans cet ordre. `angle` dit lesquelles lisent `ditherAngle`. */
+export const DITHERS = {
+  bayer: { angle: false },
+  halftone: { angle: true },
+  scanlines: { angle: true },
+  ...PATTERNS,
+} as const
+
+export type Dither = keyof typeof DITHERS
+
+export function isDither(kind: string): kind is Dither {
+  return Object.hasOwn(DITHERS, kind)
+}
 
 /** Les deux tons : la teinte la plus claire et la plus sombre du fond. */
 function tones(colors: BackgroundColors): { light: Rgb; dark: Rgb } {
@@ -25,7 +41,7 @@ function tones(colors: BackgroundColors): { light: Rgb; dark: Rgb } {
 /** La grille de luminance : `source` porte déjà le mesh, à une cellule par pixel.
  *  Étirée de son minimum à son maximum : le mesh d'une capture sombre tient entre
  *  0 et 0,1, et la trame n'y verrait qu'un aplat. */
-function lumaGrid(source: HTMLCanvasElement): (x: number, y: number) => number {
+function lumaGrid(source: HTMLCanvasElement): { at: (x: number, y: number) => number; smooth: (x: number, y: number) => number } {
   const ctx = source.getContext('2d', { willReadFrequently: true })
   if (!ctx) throw new Error('Canvas 2D is unavailable')
   const { data } = ctx.getImageData(0, 0, source.width, source.height)
@@ -38,10 +54,25 @@ function lumaGrid(source: HTMLCanvasElement): (x: number, y: number) => number {
     high = Math.max(high, value)
   }
   const range = Math.max(1, high - low)
-  return (x, y) => {
-    const cx = Math.min(source.width - 1, Math.max(0, Math.floor(x)))
-    const cy = Math.min(source.height - 1, Math.max(0, Math.floor(y)))
-    return (luma[cy * source.width + cx]! - low) / range
+  const cell = (cx: number, cy: number) => (luma[cy * source.width + cx]! - low) / range
+  const clamp = (value: number, max: number) => Math.min(max, Math.max(0, value))
+  return {
+    at: (x, y) => cell(clamp(Math.floor(x), source.width - 1), clamp(Math.floor(y), source.height - 1)),
+    // Interpolé entre les centres des cellules : une courbe de niveau ou une
+    // ligne de crête lue au plus proche voisin sortirait en escalier.
+    smooth: (x, y) => {
+      const fx = clamp(x - 0.5, source.width - 1)
+      const fy = clamp(y - 0.5, source.height - 1)
+      const x0 = Math.floor(fx)
+      const y0 = Math.floor(fy)
+      const x1 = Math.min(source.width - 1, x0 + 1)
+      const y1 = Math.min(source.height - 1, y0 + 1)
+      const tx = fx - x0
+      const ty = fy - y0
+      const top = cell(x0, y0) + (cell(x1, y0) - cell(x0, y0)) * tx
+      const bottom = cell(x0, y1) + (cell(x1, y1) - cell(x0, y1)) * tx
+      return top + (bottom - top) * ty
+    },
   }
 }
 
@@ -52,13 +83,14 @@ function lumaGrid(source: HTMLCanvasElement): (x: number, y: number) => number {
 export function drawDithered(ctx: CanvasRenderingContext2D, width: number, height: number, colors: BackgroundColors, settings: Settings, source: HTMLCanvasElement, kind: Dither): void {
   const { light, dark } = tones(colors)
   if (kind === 'bayer') return bayer(ctx, width, height, source, light, dark)
+  if (kind !== 'halftone' && kind !== 'scanlines') return pattern(ctx, width, height, colors, settings, source, kind)
   // Similigravure : des points clairs sur le ton sombre, qui grossissent avec
   // la lumière. L'inverse noyait un fond sombre sous des points jointifs.
   const [ground, ink] = kind === 'halftone' ? [dark, light] : [light, dark]
   ctx.fillStyle = css(ground)
   ctx.fillRect(0, 0, width, height)
   ctx.fillStyle = css(ink)
-  const luma = lumaGrid(source)
+  const luma = lumaGrid(source).at
   const cell = width / source.width
   const angle = (settings.ditherAngle * Math.PI) / 180
   // Le réseau tourne autour du centre : on le parcourt en coordonnées tournées,
@@ -78,6 +110,31 @@ export function drawDithered(ctx: CanvasRenderingContext2D, width: number, heigh
       else bar(ctx, x, y, cell / 2, (cell * 0.9 * (1 - level)) / 2, cos, sin)
     }
   }
+}
+
+/** Un motif dessiné : encre claire sur fond sombre, comme la similigravure — un
+ *  fond sombre laisse la fenêtre se détacher. La seconde encre, pour les motifs
+ *  qui en ont deux, est l'accent de la palette. */
+function pattern(ctx: CanvasRenderingContext2D, width: number, height: number, colors: BackgroundColors, settings: Settings, source: HTMLCanvasElement, kind: keyof typeof PATTERNS): void {
+  const { light, dark } = tones(colors)
+  const accent = colors.blobs[0] ?? light
+  const luma = lumaGrid(source).smooth
+  ctx.fillStyle = css(dark)
+  ctx.fillRect(0, 0, width, height)
+  ctx.save()
+  ctx.fillStyle = css(light)
+  ctx.strokeStyle = css(light)
+  PATTERNS[kind].paint(ctx, {
+    width,
+    height,
+    cell: width / source.width,
+    angle: (settings.ditherAngle * Math.PI) / 180,
+    amount: (x, y) => luma((x / width) * source.width, (y / height) * source.height),
+    accent: css(withLuminance(accent, Math.max(0.4, luminance(accent)))),
+    ground: css(dark),
+    random: mulberry32(settings.seed),
+  })
+  ctx.restore()
 }
 
 function bayer(ctx: CanvasRenderingContext2D, width: number, height: number, source: HTMLCanvasElement, light: Rgb, dark: Rgb): void {

@@ -1,6 +1,8 @@
+import { loadWallpaper } from './image.ts'
 import { harmonizePalettes } from './palette.ts'
 import { renderScene } from './render.ts'
 import { loadTextFonts, textFontsReady } from './text.ts'
+import { isWallpaper } from './wallpapers.ts'
 import { makeZip, type ZipEntry } from './zip.ts'
 import type { Format, Ratio, Scene, Settings, Shot } from '../types.ts'
 
@@ -132,7 +134,14 @@ export async function renderToBlob(scene: Scene, scale: number): Promise<Blob> {
   // Une fois chargées, plus d'attente : le rendu reste synchrone jusqu'à
   // l'encodage, ce que `runBatch` suppose pour sérialiser ses rendus.
   if (!textFontsReady) await loadTextFonts()
-  renderScene(context, scene, scale)
+  // Un fond macOS se charge à la demande : exporter avant qu'il soit arrivé
+  // livrerait l'aplat qui tient sa place dans la preview.
+  const kind = scene.settings.background
+  const ready =
+    isWallpaper(kind) && !scene.backgroundImage
+      ? { ...scene, backgroundImage: await loadWallpaper(kind, 'full') }
+      : scene
+  renderScene(context, ready, scale)
   return canvasToBlob(canvas, scene.settings.format)
 }
 

@@ -1,6 +1,8 @@
-import { renderAnnotations, renderRedactions } from './layers.ts'
+import { renderAnnotations } from './layers.ts'
+import { renderRedactions } from './redact.ts'
 import { renderBackground } from './background.ts'
 import { SKEW, renderFrame, windowTransform } from './frame.ts'
+import { TITLE_BAR, titleBarOf, windowAspect } from './screen.ts'
 import { renderWatermark } from './watermark.ts'
 import { flatten } from './tree.ts'
 import {
@@ -24,9 +26,7 @@ function visible(shot: Shot): Annotation[] {
 /** Largeur de référence à l'échelle 1. Les exports 2× et 3× la multiplient. */
 export const BASE_WIDTH = 1600
 
-/** Hauteur de la barre de titre, en fraction de la largeur de la fenêtre.
- *  Mesuré sur les captures de référence : 48 px pour une fenêtre de 1382 px. */
-export const TITLE_BAR = 0.035
+export { TITLE_BAR }
 
 const RATIOS: Record<Exclude<Ratio, 'auto'>, number> = {
   '4:3': 4 / 3,
@@ -218,11 +218,11 @@ export function computeGeometry(
   placements: readonly Placement[] = [DEFAULT_PLACEMENT],
 ): Geometry {
   const width = Math.max(1, Math.round(BASE_WIDTH * scale))
-  const bar = settings.titleBar && settings.frame === 'browser' ? TITLE_BAR : 0
+  const bar = titleBarOf(settings)
 
-  // Rapport hauteur/largeur d'une fenêtre : l'image, plus la barre de titre qui
-  // est elle-même exprimée en fraction de la largeur de la fenêtre.
-  const aspect = imageHeight / imageWidth + bar
+  // Rapport hauteur/largeur d'une fenêtre : son écran — au ratio du screenshot,
+  // ou à celui que le cadre verrouille —, plus la barre de titre ou le bezel.
+  const aspect = windowAspect(imageWidth, imageHeight, settings)
   // Ratio visé pour choisir les colonnes d'une grille. En `auto`, le canvas
   // épouse son contenu : on prend 4:3 comme forme de référence.
   const targetRatio = settings.ratio === 'auto' ? 4 / 3 : RATIOS[settings.ratio]
@@ -324,11 +324,11 @@ export function renderScene(
   for (const { box, shot, layers } of painted) {
     ctx.save()
     windowTransform(ctx, box)
-    renderFrame(ctx, box, geometry, shot.image, shot.palette, settings)
+    renderFrame(ctx, box, geometry, shot.image, shot.palette, settings, shot.pan)
     ctx.restore()
     // Le floutage est cuit dans les pixels, sous le clip de la fenêtre : la
     // donnée masquée ne se retrouve jamais dans le fichier exporté.
-    renderRedactions(ctx, box, geometry, shot.image, layers, settings)
+    renderRedactions(ctx, box, geometry, shot.image, layers, settings, shot.pan)
   }
 
   // Les calques non destructifs passent après toutes les fenêtres : en

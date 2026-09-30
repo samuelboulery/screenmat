@@ -160,14 +160,16 @@ export function resizeGroup(rect: FractionRect, handle: Handle, delta: Point): F
 
 /** Reporte l'homothétie `from → to` sur un calque : son rect suit, son signe
  *  reste (une flèche pointe toujours du même côté), et la taille d'un texte ou
- *  d'un badge grandit avec le reste. Le trait, lui, ne bouge pas. */
+ *  d'un badge grandit avec le reste. Le trait, lui, ne bouge pas. `floor` est
+ *  le plus petit rapport admis : celui d'une poignée qu'on écrase, par défaut. */
 export function scaleLayer(
   layer: Pick<Annotation, 'kind' | 'rect' | 'size'>,
   from: FractionRect,
   to: FractionRect,
+  floor = MIN_GROUP_SCALE,
 ): Pick<Annotation, 'rect' | 'size'> {
   const ratio = from.w > 0 ? to.w / from.w : to.h / from.h
-  const scale = Math.max(MIN_GROUP_SCALE, Number.isFinite(ratio) ? ratio : 1)
+  const scale = Math.max(floor, Number.isFinite(ratio) ? ratio : 1)
   const { rect } = layer
   return {
     rect: {

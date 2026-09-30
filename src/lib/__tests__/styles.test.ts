@@ -42,6 +42,27 @@ describe('parseStyle', () => {
     expect(style.settings.seed).toBe(DEFAULT_SETTINGS.seed)
   })
 
+  it('relit le côté de l’île, à gauche quand il manque ou ment', () => {
+    const read = (settings: unknown) =>
+      parseStyle(wrap({ id: 'a', name: 'a', createdAt: 1, settings })).settings
+
+    expect(read({ islandSide: 'right' }).islandSide).toBe('right')
+    expect(read({}).islandSide).toBe('left')
+    expect(read({ islandSide: 'top' }).islandSide).toBe('left')
+  })
+
+  it('relit les ratios d’écran, et retombe sur Auto quand ils manquent ou mentent', () => {
+    const read = (settings: unknown) =>
+      parseStyle(wrap({ id: 'a', name: 'a', createdAt: 1, settings })).settings
+
+    expect(read({ deviceRatio: true, screenRatio: '16:9' })).toMatchObject({ deviceRatio: true, screenRatio: '16:9' })
+    expect(read({})).toMatchObject({ deviceRatio: false, screenRatio: 'auto' })
+    expect(read({ deviceRatio: 'yes', screenRatio: '__proto__' })).toMatchObject({
+      deviceRatio: false,
+      screenRatio: 'auto',
+    })
+  })
+
   it('borne les valeurs numériques hors plage', () => {
     const style = parseStyle(wrap({ name: 'x', settings: { padding: 99, grain: -4, blur: 1e6 } }))
     expect(style.settings.padding).toBe(0.3)

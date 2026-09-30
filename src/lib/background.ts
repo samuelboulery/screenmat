@@ -2,8 +2,9 @@ import { css, hexToRgb, luminance, withLuminance, type Rgb } from './color.ts'
 import { applyGrain } from './noise.ts'
 import { saturation, withSaturation } from './palette.ts'
 import { mulberry32 } from './random.ts'
-import { drawDithered, type Dither } from './dithered.ts'
-import { WALLPAPERS, type Wallpaper } from './wallpapers.ts'
+import { drawDithered, isDither } from './dithered.ts'
+import { textFontsReady } from './text.ts'
+import { isWallpaper } from './wallpapers.ts'
 import type { Palette, Settings } from '../types.ts'
 import type { Geometry } from './render.ts'
 
@@ -105,6 +106,9 @@ export function backgroundKey(
     settings.seed,
     settings.ditherCell,
     settings.ditherAngle,
+    // La trame en glyphes dessine du texte : peinte avant l'arrivée de la police,
+    // elle resterait en cache dans la police de secours.
+    textFontsReady,
     palette.base,
     palette.accents.join(','),
     imageId(image),
@@ -156,8 +160,8 @@ export function renderBackground(
 }
 
 /**
- * Dessine le fond choisi, puis le grain — sauf sur une trame. C'est le grain qui
- * empêche un aplat de ressembler à du vide.
+ * Dessine le fond choisi, puis le grain — sauf sur une trame et sur un fond
+ * d'écran. C'est le grain qui empêche un aplat de ressembler à du vide.
  */
 export function paintBackground(
   ctx: CanvasRenderingContext2D,
@@ -174,16 +178,20 @@ export function paintBackground(
   ctx.fillRect(0, 0, width, height)
 
   const kind = settings.background
+  if (isWallpaper(kind)) {
+    // Un fond d'écran est une image comme une autre ; tant qu'elle charge,
+    // l'aplat tient sa place. Pas de grain : un bureau n'en a pas.
+    if (image) drawCover(ctx, width, height, image)
+    return
+  }
   if (kind === 'image' && image) {
     drawCover(ctx, width, height, image)
   } else if (kind === 'gradient') {
     drawGradient(ctx, width, height, colors, settings)
   } else if (kind === 'mesh' && settings.shapes > 0 && settings.shapeOpacity > 0) {
     drawBlobs(ctx, width, height, colors.blobs, settings)
-  } else if (kind in WALLPAPERS) {
-    WALLPAPERS[kind as Wallpaper](ctx, width, height, colors, settings, mulberry32(settings.seed))
-  } else if (kind === 'bayer' || kind === 'halftone' || kind === 'scanlines') {
-    drawDithered(ctx, width, height, colors, settings, meshCells(width, height, colors, settings), kind satisfies Dither)
+  } else if (isDither(kind)) {
+    drawDithered(ctx, width, height, colors, settings, meshCells(width, height, colors, settings), kind)
     // Pas de grain sur une trame : il brouillerait ce qu'elle a de net.
     return
   }

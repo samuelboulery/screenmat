@@ -1,7 +1,9 @@
 import { useCallback, useMemo, useState } from 'react'
-import { createAnnotation, nextId } from '../lib/annotate.ts'
+import { moved, panShot, reanchorShots, toggled, type View } from '../lib/anchor.ts'
+import { createAnnotation, nextId, type Point } from '../lib/annotate.ts'
 import { DUPLICATE_OFFSET } from '../lib/handles.ts'
 import { extractPalette } from '../lib/palette.ts'
+import { toolStyle } from '../lib/tool-style.ts'
 import {
   findNode,
   groupNodes,
@@ -19,6 +21,7 @@ import type {
   FractionRect,
   LayerGroup,
   LayerNode,
+  Pan,
   Placement,
   Shot,
 } from '../types.ts'
@@ -52,6 +55,12 @@ export type ShotsState = {
   reorder: (from: number, to: number) => void
   /** Retouche la fenêtre d'un shot : taille et décalages dans le canvas. */
   place: (shotId: string, patch: Partial<Placement>) => void
+  /** Fait glisser le screenshot dans son écran. Ses calques le suivent :
+   *  `travel` est le débord de l'image, en largeurs de fenêtre (`panTravel`). */
+  pan: (shotId: string, next: Pan, travel: Point) => void
+  /** Recale les calques de toutes les images d'une vue à l'autre : un réglage,
+   *  un ordre ou une composition qui déplace le screenshot dans sa fenêtre. */
+  reanchor: (before: View, after: View) => void
   /** Renvoie l'identifiant du calque créé — l'appelant en a besoin tout de
    *  suite, pour ouvrir la saisie d'un label par exemple. */
   createAnnotation: (shotId: string, kind: AnnotationKind, rect: FractionRect) => string
@@ -59,7 +68,9 @@ export type ShotsState = {
   patchNode: (shotId: string, id: string, patch: NodePatch) => void
   translateLayers: (shotId: string, ids: readonly string[], dx: number, dy: number) => void
   deleteLayers: (shotId: string, ids: readonly string[]) => void
-  duplicateLayers: (shotId: string, ids: readonly string[]) => void
+  /** Rend les identifiants des copies. `offset` nul : la copie naît sur
+   *  l'original, pour un glisser qui l'emporte aussitôt. */
+  duplicateLayers: (shotId: string, ids: readonly string[], offset?: number) => string[]
   moveLayer: (shotId: string, id: string, direction: 'up' | 'down') => void
   /** Dépôt du glisser-déposer : `parentId` à `null` pour la racine. */
   moveLayers: (shotId: string, ids: readonly string[], parentId: string | null, index: number) => void
@@ -67,7 +78,7 @@ export type ShotsState = {
   ungroupLayer: (shotId: string, groupId: string) => void
   selectLayers: (ids: readonly string[], mode?: SelectMode) => void
   /** Réinjecte un état complet — utilisé par l'annulation. */
-  restore: (shots: Shot[]) => void
+  restore: (shots: Shot[], members: readonly string[]) => void
   reset: () => void
 }
 
@@ -108,17 +119,7 @@ export function useShots(): ShotsState {
     setSelectedLayerIds([])
   }, [])
 
-  const toggleMember = useCallback((id: string) => {
-    // Le dernier membre reste : une composition vide retomberait en silence sur
-    // la première image, que la liste montrerait pourtant décochée.
-    setSelection((current) =>
-      current.includes(id)
-        ? current.length > 1
-          ? current.filter((item) => item !== id)
-          : current
-        : [...current, id],
-    )
-  }, [])
+  const toggleMember = useCallback((id: string) => setSelection((current) => [...toggled(current, id)]), [])
 
   const setMembers = useCallback((ids: readonly string[]) => setSelection([...ids]), [])
 
@@ -136,15 +137,7 @@ export function useShots(): ShotsState {
   )
 
   const reorder = useCallback((from: number, to: number) => {
-    setShots((current) => {
-      if (from === to || from < 0 || to < 0 || from >= current.length || to >= current.length) {
-        return current
-      }
-      const next = [...current]
-      const [moved] = next.splice(from, 1)
-      next.splice(to, 0, moved)
-      return next
-    })
+    setShots((current) => moved(current, from, to))
   }, [])
 
   const place = useCallback((shotId: string, patch: Partial<Placement>) => {
@@ -155,6 +148,14 @@ export function useShots(): ShotsState {
           : shot,
       ),
     )
+  }, [])
+
+  const pan = useCallback((shotId: string, next: Pan, travel: Point) => {
+    setShots((current) => current.map((shot) => (shot.id === shotId ? panShot(shot, next, travel) : shot)))
+  }, [])
+
+  const reanchor = useCallback((before: View, after: View) => {
+    setShots((current) => reanchorShots(current, before, after))
   }, [])
 
   const patchLayers = useCallback(
@@ -180,7 +181,7 @@ export function useShots(): ShotsState {
 
   const create = useCallback(
     (shotId: string, kind: AnnotationKind, rect: FractionRect) => {
-      const annotation = createAnnotation(kind, rect)
+      const annotation = createAnnotation(kind, rect, toolStyle(kind))
       patchLayers(shotId, (layers) => [...layers, annotation])
       setActiveShotId(shotId)
       setSelectedLayerIds([annotation.id])
@@ -236,7 +237,7 @@ export function useShots(): ShotsState {
   )
 
   const duplicateLayers = useCallback(
-    (shotId: string, ids: readonly string[]) => {
+    (shotId: string, ids: readonly string[], offset = DUPLICATE_OFFSET) => {
       // Les identifiants sont tirés avant la mise à jour : un updater React doit
       // rester pur, et on en a besoin tout de suite pour sélectionner les copies.
       const copyIds = ids.map(() => nextId('copy'))
@@ -250,8 +251,8 @@ export function useShots(): ShotsState {
               id: copyIds[index],
               rect: {
                 ...found.node.rect,
-                x: found.node.rect.x + DUPLICATE_OFFSET,
-                y: found.node.rect.y + DUPLICATE_OFFSET,
+                x: found.node.rect.x + offset,
+                y: found.node.rect.y + offset,
               },
             }
           })
@@ -259,6 +260,7 @@ export function useShots(): ShotsState {
         return [...layers, ...copies]
       })
       setSelectedLayerIds(copyIds)
+      return copyIds
     },
     [patchLayers],
   )
@@ -314,13 +316,14 @@ export function useShots(): ShotsState {
     [shots, activeShotId],
   )
 
-  const restore = useCallback((next: Shot[]) => {
+  const restore = useCallback((next: Shot[], members: readonly string[]) => {
     setShots(next)
     const alive = new Set(next.flatMap((shot) => nodeIds(shot.layers)))
     setSelectedLayerIds((current) => current.filter((id) => alive.has(id)))
-    // Annuler un ajout d'images ne doit pas laisser d'identifiants morts.
+    // Les membres reviennent avec les images : leurs calques sont ancrés sur la
+    // fenêtre que cette composition leur donnait.
     const shotIds = new Set(next.map((shot) => shot.id))
-    setSelection((current) => current.filter((id) => shotIds.has(id)))
+    setSelection(members.filter((id) => shotIds.has(id)))
     setActiveShotId((current) => (shotIds.has(current) ? current : (next[0]?.id ?? '')))
   }, [])
 
@@ -346,6 +349,8 @@ export function useShots(): ShotsState {
     focusShot,
     reorder,
     place,
+    pan,
+    reanchor,
     createAnnotation: create,
     patchAnnotation,
     patchNode,

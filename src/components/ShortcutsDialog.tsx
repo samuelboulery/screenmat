@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { CancelIcon } from './icons.tsx'
+import Keys from './Keys.tsx'
 import { IconButton, MonoLabel } from './ui.tsx'
 import { SHORTCUTS, type ShortcutEntry } from '../hooks/useShortcuts.ts'
+import { MAC, keyLabel } from '../lib/keys.ts'
 import { TOOLS, TOOL_KEYS, TOOL_TITLES } from '../lib/tools.ts'
 
 /** Les outils ouvrent le panneau : c'est ce qu'on cherche en premier. */
@@ -15,7 +17,7 @@ const TOOL_GROUP = {
  * Le panneau des raccourcis, sur `?` ou le bouton de la barre haute. Même
  * `<dialog>` natif que la confirmation : focus piégé puis rendu, `Esc`, fond
  * inerte. Il ne lit que `SHORTCUTS` et `TOOL_KEYS` — aucune touche n'est
- * réécrite ici.
+ * réécrite ici : `Keys` les met en capsules, pour le clavier de la plateforme.
  */
 export function useShortcutsPanel(): { open: () => void; dialog: ReactNode } {
   const ref = useRef<HTMLDialogElement>(null)
@@ -51,12 +53,10 @@ export function useShortcutsPanel(): { open: () => void; dialog: ReactNode } {
                 <p className="t-ui-small text-dim">{group.hint}</p>
                 <dl className="space-y-1.5">
                   {group.items.map((item) => (
-                    <div key={item.keys} className="flex items-baseline justify-between gap-4">
-                      <dt className="t-ui text-ink-soft">{item.label}</dt>
+                    <div key={item.keys} className="flex items-center justify-between gap-4">
+                      <dt className="t-ui text-ink-soft">{keyLabel(item.label, MAC)}</dt>
                       <dd>
-                        <kbd className="t-mono-micro rounded-xs border border-hairline-strong px-1.5 py-0.5 whitespace-nowrap">
-                          {item.keys}
-                        </kbd>
+                        <Keys shortcut={item.keys} />
                       </dd>
                     </div>
                   ))}

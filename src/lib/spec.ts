@@ -18,6 +18,7 @@ import { parsePalette, parseSettings } from './styles.ts'
 import { WATERMARK_POSITIONS } from './watermark.ts'
 import {
   DEFAULT_COMPOSITION,
+  DEFAULT_PAN,
   DEFAULT_PLACEMENT,
   type Annotation,
   type AnnotationKind,
@@ -25,12 +26,13 @@ import {
   type FractionRect,
   type TextBackground,
   type Palette,
+  type Pan,
   type Placement,
   type Settings,
   type WatermarkPosition,
 } from '../types.ts'
 
-const ANNOTATION_KINDS = [
+export const ANNOTATION_KINDS = [
   'text',
   'badge',
   'arrow',
@@ -55,6 +57,7 @@ export type ShotSpec = {
   name: string
   layers: Annotation[]
   placement: Placement
+  pan: Pan
 }
 
 /** Le filigrane d'une scène désigne un fichier, là où un style embarque une
@@ -131,7 +134,28 @@ function parseShots(value: unknown): ShotSpec[] {
         : `shot-${index + 1}`,
       layers: parseLayers(shot.layers),
       placement: parsePlacement(shot.placement),
+      pan: parsePan(shot.pan),
     }))
+}
+
+/** Position du screenshot dans son écran. Bornée à 0..1 : au-delà, l'écran
+ *  montrerait du vide. Exportée pour `inspect()`, qui la reçoit hors scène. */
+export function parsePan(value: unknown): Pan {
+  if (!isRecord(value)) return DEFAULT_PAN
+  return {
+    x: clamp(num(value.x, DEFAULT_PAN.x), 0, 1),
+    y: clamp(num(value.y, DEFAULT_PAN.y), 0, 1),
+  }
+}
+
+/** Le `x,y` d'un drapeau de ligne de commande. Deux nombres, ou l'erreur le
+ *  dit : `Number('')` vaut 0, et un `--pan 0.5,` cadrerait le bord haut sans un mot. */
+export function panFromText(text: string): Pan {
+  const parts = text.split(',').map((part) => (part.trim() === '' ? Number.NaN : Number(part)))
+  if (parts.length !== 2 || !parts.every(Number.isFinite)) {
+    throw new Error(`\`--pan\` attend deux nombres entre 0 et 1, « x,y » — reçu « ${text} »`)
+  }
+  return parsePan({ x: parts[0], y: parts[1] })
 }
 
 /** Retouche manuelle d'une fenêtre. Bornes larges mais finies : un `scale` nul
@@ -160,7 +184,7 @@ function parseLayers(value: unknown): Annotation[] {
     .map(parseAnnotation)
 }
 
-function parseAnnotation(value: Record<string, unknown>): Annotation {
+export function parseAnnotation(value: Record<string, unknown>): Annotation {
   const kind = oneOf(value.kind, ANNOTATION_KINDS, 'box')
   const limits = ANNOTATION_LIMITS
   const d = defaultsFor(kind)
@@ -181,6 +205,7 @@ function parseAnnotation(value: Record<string, unknown>): Annotation {
     invert: bool(value.invert, d.invert),
     size: clamp(num(value.size, legacy ? LEGACY_LABEL_SIZE : d.size), limits.size.min, limits.size.max),
     redaction: oneOf(value.redaction, ['blur', 'pixel', 'solid'] as const, 'blur'),
+    redactionShape: oneOf(value.redactionShape, ['rect', 'ellipse'] as const, 'rect'),
     color: legacyInvert ? inkOn(color, '#000000') : color,
     strokeWidth: clamp(
       num(value.strokeWidth, d.strokeWidth),
@@ -190,6 +215,11 @@ function parseAnnotation(value: Record<string, unknown>): Annotation {
     radius: clamp(num(value.radius, d.radius), limits.radius.min, limits.radius.max),
     arrowHead: clamp(num(value.arrowHead, d.arrowHead), limits.arrowHead.min, limits.arrowHead.max),
     fill: clamp(num(value.fill, d.fill), limits.fill.min, limits.fill.max),
+    // Sans couleur de fond, celle du trait : une scène d'avant la dissociation
+    // rend comme avant.
+    fillColor: typeof value.fillColor === 'string' && HEX.test(value.fillColor) ? value.fillColor : color,
+    stroke: bool(value.stroke, d.stroke),
+    strokeOpacity: clamp(num(value.strokeOpacity, d.strokeOpacity), limits.strokeOpacity.min, limits.strokeOpacity.max),
     opacity: clamp(num(value.opacity, d.opacity), limits.opacity.min, limits.opacity.max),
     shadow: clamp(num(value.shadow, legacy ? 0 : d.shadow), limits.shadow.min, limits.shadow.max),
   }

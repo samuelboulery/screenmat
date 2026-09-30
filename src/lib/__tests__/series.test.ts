@@ -12,16 +12,26 @@ describe('séries de fonds', () => {
 
   it('retrouve la série d’un fond, et aucune pour l’image', () => {
     expect(seriesOf('mesh')).toBe('screenshot')
-    expect(seriesOf('waves')).toBe('macos')
+    expect(seriesOf('tahoe-dark')).toBe('macos')
+    expect(seriesOf('windows-10')).toBe('windows')
+    expect(seriesOf('windows-xp')).toBe('windows')
     expect(seriesOf('halftone')).toBe('dither')
+    expect(seriesOf('truchet')).toBe('dither')
     expect(seriesOf('image')).toBeNull()
   })
 })
 
 describe('parseSettings — fonds', () => {
   it('accepte les nouveaux fonds et retombe sur le défaut pour un inconnu', () => {
-    expect(parseSettings({ background: 'dunes' }).background).toBe('dunes')
+    expect(parseSettings({ background: 'sonoma-light' }).background).toBe('sonoma-light')
+    expect(parseSettings({ background: 'windows-11-dark' }).background).toBe('windows-11-dark')
     expect(parseSettings({ background: 'plasma' }).background).toBe(DEFAULT_SETTINGS.background)
+  })
+
+  it('retombe sur le défaut pour un fond procédural retiré', () => {
+    // `waves`, `dunes`, `aurora`, `ribbons` ont laissé la place aux vrais fonds
+    // macOS : un style qui les cite encore ne doit pas casser.
+    expect(parseSettings({ background: 'waves' }).background).toBe(DEFAULT_SETTINGS.background)
   })
 
   it('borne la trame', () => {

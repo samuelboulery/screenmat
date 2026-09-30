@@ -11,6 +11,7 @@ import {
 import { Badge, IconButton, Section } from './ui.tsx'
 import { findNode, isGroup } from '../lib/tree.ts'
 import type { Annotation, AnnotationKind, Shot } from '../types.ts'
+import { MAC, keyLabel } from '../lib/keys.ts'
 
 /* L'inspecteur d'un calque sélectionné : ses réglages, puis ses actions. La
    pile elle-même vit dans le panneau gauche, sous les images. */
@@ -81,13 +82,13 @@ export default function LayerInspector({
                 <>
                   <IconButton
                     icon={BackwardIcon}
-                    label="Send backward (⌘↓)"
+                    label={keyLabel('Send backward (⌘↓)', MAC)}
                     disabled={!found || found.index <= 0}
                     onClick={() => onMove(shot.id, node.id, 'down')}
                   />
                   <IconButton
                     icon={ForwardIcon}
-                    label="Bring forward (⌘↑)"
+                    label={keyLabel('Bring forward (⌘↑)', MAC)}
                     disabled={!found || found.index >= siblings.length - 1}
                     onClick={() => onMove(shot.id, node.id, 'up')}
                   />
@@ -96,21 +97,21 @@ export default function LayerInspector({
               {node && isGroup(node) ? (
                 <IconButton
                   icon={UngroupIcon}
-                  label="Ungroup (⇧⌘G)"
+                  label={keyLabel('Ungroup (⇧⌘G)', MAC)}
                   onClick={() => onUngroup(shot.id, node.id)}
                 />
               ) : (
                 selectedIds.length > 1 && (
                   <IconButton
                     icon={GroupIcon}
-                    label="Group (⌘G)"
+                    label={keyLabel('Group (⌘G)', MAC)}
                     onClick={() => onGroup(shot.id, selectedIds)}
                   />
                 )
               )}
               <IconButton
                 icon={DeleteIcon}
-                label="Delete (⌫)"
+                label={keyLabel('Delete (⌫)', MAC)}
                 tone="danger"
                 onClick={() => onDelete(shot.id, selectedIds)}
               />

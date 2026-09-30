@@ -1,3 +1,5 @@
+import { wallpaperPath, type Wallpaper } from './wallpapers.ts'
+
 /** Types acceptés à l'import. Le presse-papier de macOS produit du PNG, les
  *  captures partagées arrivent souvent en JPEG ou WebP. */
 const ACCEPTED = /^image\/(png|jpeg|webp|gif|avif)$/
@@ -43,6 +45,45 @@ export function loadImage(blob: Blob): Promise<HTMLImageElement> {
 
     image.src = url
   })
+}
+
+/** Un décodage par fichier : la tuile, la preview et l'export d'un même fond
+ *  macOS attendent la même promesse. */
+const wallpapers = new Map<string, Promise<HTMLImageElement>>()
+/** Ceux qui sont arrivés, lisibles sans attendre : revenir à un fond déjà vu ne
+ *  doit pas repasser par l'aplat le temps d'une promesse. */
+const decoded = new Map<string, HTMLImageElement>()
+
+export function loadedWallpaper(kind: Wallpaper, size: 'full' | 'thumb'): HTMLImageElement | undefined {
+  return decoded.get(`/${wallpaperPath(kind, size)}`)
+}
+
+/**
+ * Charge un fond macOS embarqué (`public/wallpapers/`). Même origine, comme les
+ * polices : aucune donnée ne sort. Un échec — hors ligne, fichier jamais vu —
+ * sort du cache, pour qu'un nouvel essai puisse réussir.
+ */
+export function loadWallpaper(kind: Wallpaper, size: 'full' | 'thumb'): Promise<HTMLImageElement> {
+  const url = `/${wallpaperPath(kind, size)}`
+  const known = wallpapers.get(url)
+  if (known) return known
+
+  const loading = new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new Image()
+    image.onload = () => {
+      decoded.set(url, image)
+      resolve(image)
+    }
+    image.onerror = () => {
+      wallpapers.delete(url)
+      // ponytail: pas de nouvel essai automatique — il faut changer de fond puis
+      // y revenir. Écouter `online` si le cas hors ligne devient courant.
+      reject(new Error(`Could not load the ${kind} wallpaper. Check your connection, then pick another background and come back to it.`))
+    }
+    image.src = url
+  })
+  wallpapers.set(url, loading)
+  return loading
 }
 
 /** Charge une dataURL (watermark stocké dans un style). */

@@ -1,5 +1,6 @@
 import '../index.css'
 import './landing.css'
+import { MAC, keyLabel } from '../lib/keys.ts'
 import { THEME_KEY, resolveTheme, type Theme } from '../lib/theme.ts'
 
 /* La landing est du HTML statique : ce module ne fait que le thème, puis charge
@@ -44,6 +45,14 @@ function themeToggle() {
 }
 
 themeToggle()
+
+// Le HTML est écrit pour un Mac. Ailleurs, ⌘ n'existe pas : les touches citées
+// (`data-keys`) se réécrivent pour le clavier de la plateforme.
+if (!MAC) {
+  for (const item of document.querySelectorAll<HTMLElement>('[data-keys]')) {
+    item.textContent = keyLabel(item.textContent ?? '', false)
+  }
+}
 
 const hero = document.querySelector<HTMLElement>('[data-hero]')
 if (hero) {

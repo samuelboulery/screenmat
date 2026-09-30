@@ -5,6 +5,8 @@ import { CloseSheetIcon, OpenSheetIcon, RedoIcon, UndoIcon } from './icons.tsx'
 import Inspector from './Inspector.tsx'
 import Preview, { type Editing } from './Preview.tsx'
 import ToolRail from './ToolRail.tsx'
+import type { Point } from '../lib/annotate.ts'
+import { rememberToolStyle } from '../lib/tool-style.ts'
 import { toolForKey, type Tool } from '../lib/tools.ts'
 import { IconButton, Panel } from './ui.tsx'
 import { displayOrder, findAnnotation } from '../lib/tree.ts'
@@ -15,6 +17,7 @@ import type {
   Composition,
   FractionRect,
   OutputMode,
+  Pan,
   Placement,
   QueueItem,
   Scene,
@@ -66,6 +69,7 @@ export type EditorScreenProps = {
   onChange: (patch: Partial<Settings>) => void
   onCompose: (patch: Partial<Composition>) => void
   onPlace: (shotId: string, patch: Partial<Placement>) => void
+  onPan: (shotId: string, pan: Pan, travel: Point) => void
   onMode: (mode: OutputMode) => void
   onActivate: (id: string) => void
   onToggleMember: (id: string) => void
@@ -76,6 +80,7 @@ export type EditorScreenProps = {
   onPatchAnnotation: (shotId: string, id: string, patch: Partial<Annotation>) => void
   onPatchNode: (shotId: string, id: string, patch: NodePatch) => void
   onTranslateLayers: (shotId: string, ids: readonly string[], dx: number, dy: number) => void
+  onDuplicateLayers: (shotId: string, ids: readonly string[], offset?: number) => string[]
   onDeleteLayers: (shotId: string, ids: readonly string[]) => void
   onMoveLayer: (shotId: string, id: string, direction: 'up' | 'down') => void
   onMoveLayers: (shotId: string, ids: readonly string[], parentId: string | null, index: number) => void
@@ -91,10 +96,8 @@ export type EditorScreenProps = {
  */
 export default function EditorScreen(props: EditorScreenProps) {
   const { scene, shots, narrow } = props
+  /** L'outil reste en main après un tracé : `Escape` ou `V` le rendent. */
   const [tool, setTool] = useState<Tool>('SEL')
-  /** Outil verrouillé (double-clic sur le rail) : il reste en main après un
-   *  tracé. Sinon, comme dans Figma, on revient à la sélection. */
-  const [locked, setLocked] = useState(false)
   const [sheetOpen, setSheetOpen] = useState(false)
   const [editing, setEditing] = useState<Editing | null>(null)
   /** Point d'ancrage d'une sélection de plage (⇧-clic dans le panneau). */
@@ -112,20 +115,26 @@ export default function EditorScreen(props: EditorScreenProps) {
   // Largeur d'une fenêtre à l'échelle 1 : l'inspecteur en a besoin pour
   // afficher l'élévation en pixels plutôt qu'en fraction abstraite.
   const windowWidth = useMemo(() => scene.shots[0]?.image.naturalWidth ?? 0, [scene.shots])
+  // L'image de tête donne son rapport à la fenêtre : paysage, elle couche un iPhone.
+  const lead = scene.shots[0]?.image
+  const landscape = lead ? lead.naturalWidth > lead.naturalHeight : false
 
   const activeShot = shots.find((shot) => shot.id === props.activeShotId) ?? shots[0] ?? null
 
-  const { onCreateAnnotation, onDeleteLayers, onSelectLayers, onKeys } = props
+  const { onCreateAnnotation, onDeleteLayers, onPatchAnnotation, onSelectLayers, onKeys } = props
 
-  const pickTool = useCallback((next: Tool) => {
-    setTool(next)
-    setLocked(false)
-  }, [])
-
-  const lockTool = useCallback((next: Tool) => {
-    setTool(next)
-    setLocked(true)
-  }, [])
+  /** Un réglage fait à l'inspecteur devient le style de son outil : le prochain
+   *  calque du même type le reprend. Les poignées du canvas n'y écrivent pas —
+   *  étirer un groupe change des tailles qu'on n'a pas choisies. */
+  const patchAnnotation = useCallback(
+    (shotId: string, id: string, patch: Partial<Annotation>) => {
+      const shot = shots.find((item) => item.id === shotId)
+      const annotation = shot ? findAnnotation(shot.layers, id) : null
+      if (annotation) rememberToolStyle(annotation.kind, patch)
+      onPatchAnnotation(shotId, id, patch)
+    },
+    [shots, onPatchAnnotation],
+  )
 
   /** Touches nues propres à l'éditeur, avant celles de l'app : le choix d'un
    *  outil, et le dernier cran d'`Escape` — sortir de la saisie (géré par le
@@ -136,17 +145,17 @@ export default function EditorScreen(props: EditorScreenProps) {
       const picked = bare ? toolForKey(event.key) : null
       if (picked) {
         event.preventDefault()
-        pickTool(picked)
+        setTool(picked)
         return
       }
       if (event.key === 'Escape' && props.selectedLayerIds.length === 0 && tool !== 'SEL') {
         event.preventDefault()
-        pickTool('SEL')
+        setTool('SEL')
         return
       }
       onKeys(event)
     },
-    [onKeys, pickTool, props.selectedLayerIds.length, tool],
+    [onKeys, props.selectedLayerIds.length, tool],
   )
 
   /** Fin de saisie : un label resté vide ne laisse pas de calque fantôme. */
@@ -166,10 +175,9 @@ export default function EditorScreen(props: EditorScreenProps) {
     (shotId: string, kind: AnnotationKind, rect: FractionRect) => {
       const id = onCreateAnnotation(shotId, kind, rect)
       if (kind === 'text') setEditing({ shotId, id, caret: 0 })
-      if (!locked) setTool('SEL')
       return id
     },
-    [onCreateAnnotation, locked],
+    [onCreateAnnotation],
   )
 
   /** ⇧-clic dans le panneau : la plage se lit dans l'ordre affiché, que seul
@@ -213,16 +221,18 @@ export default function EditorScreen(props: EditorScreenProps) {
           props.onSelectLayers(shotId, ids, additive)
         }}
         onTranslate={props.onTranslateLayers}
+        onDuplicate={(shotId, ids) => props.onDuplicateLayers(shotId, ids, 0)}
         onPlace={props.onPlace}
-        onPatch={props.onPatchAnnotation}
+        onPan={props.onPan}
+        onPatch={onPatchAnnotation}
         onEdit={closeEdit}
-        onEditText={(shotId, id, text) => props.onPatchAnnotation(shotId, id, { text })}
+        onEditText={(shotId, id, text) => onPatchAnnotation(shotId, id, { text })}
       />
 
       {/* Barre d'outils et barre du document, centrées sur la zone de dessin
           et non sur l'écran : les panneaux latéraux n'ont pas la même largeur. */}
       <div className="pointer-events-none absolute inset-x-0 top-4 z-10 flex justify-center" style={center}>
-        <ToolRail active={tool} locked={locked} onPick={pickTool} onLock={lockTool} />
+        <ToolRail active={tool} onPick={setTool} />
       </div>
       <div className="pointer-events-none absolute inset-x-0 bottom-4 z-10 flex flex-col items-center gap-2" style={center}>
         <FirstTips />
@@ -284,7 +294,7 @@ export default function EditorScreen(props: EditorScreenProps) {
               ? {
                   shot: activeShot,
                   selectedIds: props.selectedLayerIds,
-                  onPatch: props.onPatchAnnotation,
+                  onPatch: patchAnnotation,
                   onDelete: props.onDeleteLayers,
                   onMove: props.onMoveLayer,
                   onGroup: props.onGroupLayers,
@@ -297,6 +307,7 @@ export default function EditorScreen(props: EditorScreenProps) {
             composition: scene.composition,
             palette: scene.palette,
             windowWidth,
+            landscape,
             combined: props.mode === 'combined',
             activeShot,
             onChange: props.onChange,

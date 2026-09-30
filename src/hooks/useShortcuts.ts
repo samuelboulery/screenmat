@@ -64,8 +64,9 @@ export const SHORTCUTS: { title: string; hint: string; items: ShortcutEntry[] }[
     items: [
       { keys: '⇧ drag', label: 'Snap to 45°, keep proportions' },
       { keys: '⇧ click', label: 'Add to the selection' },
-      { keys: '⌥ drag', label: 'Move a whole image' },
-      { keys: 'Double-click', label: 'Edit a text · lock a tool' },
+      { keys: '⌥ drag', label: 'Duplicate a layer · move a whole image' },
+      { keys: 'Space drag', label: 'Reposition the image in its frame' },
+      { keys: 'Double-click', label: 'Edit a text' },
     ],
   },
 ]

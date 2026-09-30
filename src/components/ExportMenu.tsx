@@ -2,6 +2,7 @@ import Menu from './Menu.tsx'
 import { CancelIcon, CopiedIcon, CopyIcon, ExpandedIcon, ExportAllIcon, ExportIcon } from './icons.tsx'
 import { Button, CheckBox, Row, Section, Segmented, buttonClass } from './ui.tsx'
 import type { Format, Ratio } from '../types.ts'
+import { MAC, keyLabel } from '../lib/keys.ts'
 
 /** Les échelles d'export, en toutes lettres : `useShortcuts` pose les mêmes
  *  sur 1/2/3, et les deux doivent dire la même chose. */
@@ -60,8 +61,8 @@ export default function ExportMenu(props: ExportMenuProps) {
       <Button
         variant="primary"
         onClick={props.onExport}
-        title="Export this image (⌘E)"
-        aria-label={`Export this image at ${scale}× (⌘E)`}
+        title={keyLabel('Export this image (⌘E)', MAC)}
+        aria-label={keyLabel(`Export this image at ${scale}× (⌘E)`, MAC)}
         className="rounded-r-none"
       >
         <ExportIcon />
@@ -94,7 +95,7 @@ export default function ExportMenu(props: ExportMenuProps) {
                   close()
                 }}
                 className="w-full justify-center"
-                title="Copy (⌘C)"
+                title={keyLabel('Copy (⌘C)', MAC)}
               >
                 {copied ? <CopiedIcon /> : <CopyIcon />}
                 {copied ? 'Copied' : 'Copy to clipboard'}

@@ -25,6 +25,46 @@ export function useAltKey(enabled: boolean): boolean {
 }
 
 /**
+ * Espace maintenu — la « main » de Figma : le prochain glisser déplace le
+ * screenshot dans son écran. Lu sur `window`, comme `⌥`, mais armé seulement
+ * quand `active()` le dit (pointeur sur la preview) et que le clavier est au
+ * canvas ou nulle part : sur un bouton, une bascule ou un champ, Espace presse,
+ * coche ou écrit, et doit continuer de le faire (WCAG 2.1.1).
+ */
+export function useSpaceKey(enabled: boolean, active: () => boolean): boolean {
+  const [pressed, setPressed] = useState(false)
+  const armed = useRef(active)
+  armed.current = active
+
+  useEffect(() => {
+    if (!enabled) return
+    const down = (event: KeyboardEvent) => {
+      if (event.code !== 'Space' || event.metaKey || event.ctrlKey || event.altKey || !armed.current()) return
+      if (event.target !== document.body && !(event.target instanceof HTMLCanvasElement)) return
+      // Sans ça : la page défile, ou le bouton resté focalisé se déclenche.
+      event.preventDefault()
+      setPressed(true)
+    }
+    const up = (event: KeyboardEvent) => {
+      if (event.code === 'Space') setPressed(false)
+    }
+    const clear = () => setPressed(false)
+    window.addEventListener('keydown', down)
+    window.addEventListener('keyup', up)
+    window.addEventListener('blur', clear)
+    return () => {
+      window.removeEventListener('keydown', down)
+      window.removeEventListener('keyup', up)
+      window.removeEventListener('blur', clear)
+      // Désarmé touche enfoncée, le relâchement ne serait plus entendu.
+      setPressed(false)
+    }
+  }, [enabled])
+
+  return enabled && pressed
+}
+
+/**
  * Un geste ne se traite qu'une fois par frame. Une souris à 1000 Hz émettait
  * autant de `pointermove`, et chacun coûtait trois passes de rendu React —
  * l'état du glissement, l'état du document, la pile d'annulation — pour un

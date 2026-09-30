@@ -1,6 +1,7 @@
 import { nextId } from './annotate.ts'
 import { triggerDownload } from './export.ts'
-import { HEX, clamp, isRecord, num, oneOf } from './parse.ts'
+import { HEX, bool, clamp, isRecord, num, oneOf } from './parse.ts'
+import { SCREEN_RATIOS } from './screen.ts'
 import { WATERMARK_POSITIONS } from './watermark.ts'
 import { BACKGROUND_KINDS } from './series.ts'
 import {
@@ -135,6 +136,9 @@ export function parseSettings(value: unknown): Settings {
     ditherAngle: clamp(num(value.ditherAngle, d.ditherAngle), 0, 90),
     format: oneOf(value.format, ['png', 'webp'] as const, d.format),
     frame: oneOf(value.frame, ['browser', 'macbook', 'iphone', 'none'] as const, d.frame),
+    deviceRatio: bool(value.deviceRatio, d.deviceRatio),
+    screenRatio: oneOf(value.screenRatio, SCREEN_RATIOS, d.screenRatio),
+    islandSide: oneOf(value.islandSide, ['left', 'right'] as const, d.islandSide),
     background: oneOf(value.background, BACKGROUND_KINDS, d.background),
     rotateY: clamp(num(value.rotateY, d.rotateY), -24, 24),
     shadow: clamp(num(value.shadow, d.shadow), 0, 2),

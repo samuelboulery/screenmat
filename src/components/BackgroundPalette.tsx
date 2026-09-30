@@ -38,7 +38,7 @@ export default function BackgroundPalette({ palette, frozen, onChange }: Backgro
             au clavier. */}
         <label
           title={full ? `${MAX_PALETTE_ACCENTS} colors maximum` : 'Add a color'}
-          className={`relative flex size-8 items-center justify-center rounded-xs border border-dashed border-ink/15 text-dim ${
+          className={`relative flex size-5 items-center justify-center rounded-xs border border-dashed border-ink/15 text-dim ${
             full ? 'pointer-events-none opacity-40' : 'hover:border-ink/25 hover:text-ink-soft'
           }`}
         >
@@ -84,7 +84,7 @@ function ColorTile({
       <label
         title={`${label} — ${color}`}
         style={{ background: color }}
-        className="relative flex size-8 items-center justify-center rounded-xs border border-ink/10"
+        className="relative flex size-5 items-center justify-center rounded-xs border border-ink/10"
       >
         <input
           type="color"

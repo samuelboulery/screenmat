@@ -2,7 +2,9 @@ import { useEffect, useRef } from 'react'
 import Menu from './Menu.tsx'
 import { AddIcon, ExpandedIcon, JsonIcon, PickFileIcon, StylesIcon, UpdateStyleIcon } from './icons.tsx'
 import { Button, MonoLabel, Row, buttonClass } from './ui.tsx'
+import { useWallpaper } from '../hooks/useWallpaper.ts'
 import { BASE_WIDTH, renderScene } from '../lib/render.ts'
+import { isWallpaper } from '../lib/wallpapers.ts'
 import type { Scene, Style } from '../types.ts'
 
 /** Largeur de la miniature, en pixels CSS. */
@@ -13,13 +15,25 @@ const THUMB = 56
  * tout le reste : une miniature qui ne passerait pas par le moteur mentirait
  * sur le rendu.
  */
+const warn = (message: string) => console.warn('[styles] vignette de fond impossible', message)
+
 function StyleThumb({ scene, style }: { scene: Scene; style: Style }) {
   const ref = useRef<HTMLCanvasElement>(null)
 
   // Ce qui change la miniature, et rien d'autre : un calque déplacé ne la
   // redessine pas, et elle ne montre pas les calques.
   const shot = scene.shots[0]
-  const { palette, composition, backgroundImage } = scene
+  const { palette, composition } = scene
+  // Le fond macOS du style, pas celui de la scène en cours : sa vignette suffit
+  // à une miniature de 56 px.
+  const wallpaper = useWallpaper(style.settings.background, 'thumb', warn)
+  // Quand la scène porte un fond macOS, son image n'est pas l'image perso : un
+  // style au fond `image` n'a alors rien à montrer, plutôt que le mauvais fond.
+  const backgroundImage = isWallpaper(style.settings.background)
+    ? (wallpaper ?? undefined)
+    : isWallpaper(scene.settings.background)
+      ? undefined
+      : scene.backgroundImage
 
   useEffect(() => {
     const ctx = ref.current?.getContext('2d')

@@ -63,18 +63,21 @@ pnpm cli --spec redact.json
 `blur` and `pixel` sample the pixels underneath; `solid` covers them flat. All
 three are **baked into the exported pixels**, so what they hide is genuinely
 gone from the file — not merely covered by a filter someone could peel off.
+Keep the default `"redactionShape": "rect"` over text: an `ellipse` leaves the
+corners of its box untouched.
 
 ## Point at something
 
 Get the frame first, then place the layers.
 
 ```bash
-pnpm cli inspect signup.png --json
-# {"imageWidth":2880,"imageHeight":1800,"screen":{"x":0,"y":0.035,"w":1,"h":0.625},…}
+pnpm cli inspect signup.png --frame browser --json
+# {"imageWidth":2880,"imageHeight":1800,"screen":{"x":0,"y":0.035,"w":1,"h":0.625},"source":{"x":0,"y":0,"w":2880,"h":1800},…}
 ```
 
 ```json
 {
+  "settings": { "frame": "browser" },
   "shots": [
     {
       "input": "signup.png",

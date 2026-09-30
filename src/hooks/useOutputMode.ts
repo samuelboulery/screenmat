@@ -10,8 +10,10 @@ import type { Composition, LayoutKind, OutputMode } from '../types.ts'
  */
 export function useOutputMode(
   composition: Composition,
-  compose: (patch: Partial<Composition>) => void,
-  shots: Pick<ShotsState, 'shots' | 'selection' | 'setMembers'>,
+  /** Le patch de composition, et les membres quand le geste les remplace :
+   *  l'appelant recale les calques sur la fenêtre que le mode leur donne. */
+  compose: (patch: Partial<Composition>, members?: readonly string[]) => void,
+  shots: Pick<ShotsState, 'shots' | 'selection'>,
 ): { mode: OutputMode; setMode: (mode: OutputMode) => void } {
   const mode: OutputMode = composition.layout === 'single' ? 'separate' : 'combined'
   const lastLayout = useRef<Exclude<LayoutKind, 'single'>>('stack')
@@ -26,8 +28,8 @@ export function useOutputMode(
       }
       // Une composition d'une seule image ne compose rien : à moins de deux
       // cochées, on les prend toutes.
-      if (shots.selection.length < 2) shots.setMembers(shots.shots.map((shot) => shot.id))
-      compose({ layout: lastLayout.current })
+      const all = shots.selection.length < 2 ? shots.shots.map((shot) => shot.id) : undefined
+      compose({ layout: lastLayout.current }, all)
     },
     [mode, composition.layout, compose, shots],
   )

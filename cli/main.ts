@@ -12,7 +12,10 @@ import { basename, extname, join } from 'node:path'
 import { readFile, writeFile } from 'node:fs/promises'
 import { STYLES_DIR, listStyles } from './styles-dir.ts'
 import type { RenderResult } from './api.ts'
-import type { Settings } from '../src/types.ts'
+import { SCREEN_RATIOS } from '../src/lib/screen.ts'
+import { SERIES } from '../src/lib/series.ts'
+import { panFromText } from '../src/lib/spec.ts'
+import type { Pan, Settings } from '../src/types.ts'
 
 /** `api.ts` tire `@napi-rs/canvas`, dont le chargement de l'addon natif coûte
  *  une centaine de millisecondes. `--help` et `styles` n'en ont pas besoin :
@@ -38,9 +41,20 @@ const OPTIONS = {
   grain: { type: 'string' },
   'rotate-y': { type: 'string' },
   'no-title-bar': { type: 'boolean' },
+  'device-ratio': { type: 'boolean' },
+  'screen-ratio': { type: 'string' },
+  'island-side': { type: 'string' },
+  pan: { type: 'string' },
   json: { type: 'boolean' },
   help: { type: 'boolean', short: 'h' },
 } as const
+
+/** Une liste trop longue pour une ligne d'aide, repliée par paquets. */
+function wrap(items: readonly string[], per: number, indent: string): string {
+  const lines: string[] = []
+  for (let i = 0; i < items.length; i += per) lines.push(indent + items.slice(i, i + per).join('|'))
+  return lines.join('\n')
+}
 
 const HELP = `screenmat — un screenshot brut, un visuel prêt à partager.
 
@@ -56,15 +70,26 @@ Options
       --scale 1|2|3      échelle d'export (défaut : 2)
       --format png|webp
       --frame browser|macbook|iphone|none
-      --background mesh|gradient|solid       depuis la capture
-                   waves|dunes|aurora|ribbons façon macOS
-                   bayer|halftone|scanlines   tramés
+      --background ${SERIES.screenshot.join('|')}       depuis la capture
+                   tramés :
+${wrap(SERIES.dither, 4, '                     ')}
+                   vrais fonds d'écran macOS :
+${wrap(SERIES.macos, 3, '                     ')}
+                   vrais fonds d'écran Windows :
+${wrap(SERIES.windows, 3, '                     ')}
       --ratio auto|4:3|1:1|16:9|9:16
       --theme auto|light|dark
       --url <texte>      texte de la barre d'adresse
       --padding <n> --radius <n> --seed <n> --shadow <n> --grain <n>
       --rotate-y <deg>   inclinaison de la fenêtre (-24 à 24)
       --no-title-bar
+      --device-ratio     macbook, iphone : l'écran garde le ratio de l'appareil
+      --screen-ratio ${SCREEN_RATIOS.join('|')}
+                         browser, none : ratio de l'écran
+      --island-side left|right
+                         iphone couché : bord qui porte l'île (défaut : left)
+      --pan <x,y>        part visible d'un screenshot rogné, 0 à 1 par axe
+                         (défaut : 0.5,0.5)
       --json             résultat machine sur stdout
   -h, --help
 
@@ -96,8 +121,25 @@ function settingsFromFlags(flags: Flags): Partial<Settings> {
   put('grain', asNumber(flags.grain))
   put('rotateY', asNumber(flags['rotate-y']))
   if (flags['no-title-bar']) settings.titleBar = false
+  if (flags['device-ratio']) settings.deviceRatio = true
+  const ratio = flags['screen-ratio']
+  // Un ratio inconnu retomberait sur `auto` sans un mot : autre cadrage, même code de sortie.
+  if (typeof ratio === 'string' && !(SCREEN_RATIOS as readonly string[]).includes(ratio)) {
+    throw new Error(`\`--screen-ratio\` attend ${SCREEN_RATIOS.join(', ')} — reçu « ${ratio} »`)
+  }
+  put('screenRatio', ratio)
+  const side = flags['island-side']
+  if (typeof side === 'string' && side !== 'left' && side !== 'right') {
+    throw new Error(`\`--island-side\` attend left ou right — reçu « ${side} »`)
+  }
+  put('islandSide', side)
 
   return settings as Partial<Settings>
+}
+
+/** `--pan x,y`. */
+function panFromFlags(flags: Flags): Pan | undefined {
+  return typeof flags.pan === 'string' ? panFromText(flags.pan) : undefined
 }
 
 function outputPath(input: string, flags: Flags, format: string): string {
@@ -169,7 +211,7 @@ async function main(): Promise<void> {
     const target = rest[0]
     if (!target) throw new Error('`inspect` attend le chemin d’une image')
     const { inspect } = await engine()
-    report(json, { ...(await inspect(target, settingsFromFlags(flags))), input: target })
+    report(json, { ...(await inspect(target, settingsFromFlags(flags), panFromFlags(flags))), input: target })
     return
   }
 
@@ -183,6 +225,7 @@ async function main(): Promise<void> {
     const result = await render({
       input,
       settings: settingsFromFlags(flags),
+      pan: panFromFlags(flags),
       ...(typeof flags.style === 'string' ? { style: flags.style } : {}),
       ...(typeof flags.scale === 'string' ? { scale: Number(flags.scale) } : {}),
     })

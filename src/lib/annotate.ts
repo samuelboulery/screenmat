@@ -36,6 +36,9 @@ export const ANNOTATION_DEFAULTS = {
   radius: 0.006,
   arrowHead: 0.012,
   fill: 0,
+  fillColor: ANNOTATION_ACCENT,
+  stroke: true,
+  strokeOpacity: 1,
   opacity: 1,
   shadow: 0,
   /** Taille de police d'un badge ou d'un texte, en fraction de la largeur. */
@@ -74,6 +77,7 @@ export const ANNOTATION_LIMITS = {
   radius: { min: 0, max: 0.06, step: 0.002 },
   arrowHead: { min: 0.004, max: 0.04, step: 0.001 },
   fill: { min: 0, max: 1, step: 0.05 },
+  strokeOpacity: { min: 0, max: 1, step: 0.05 },
   opacity: { min: 0.1, max: 1, step: 0.05 },
   shadow: { min: 0, max: 1, step: 0.05 },
   weight: { min: 400, max: 700, step: 100 },
@@ -102,7 +106,34 @@ export function nextId(prefix: string): string {
   return `${prefix}-${counter.toString(36)}-${Math.floor(Math.random() * 1e6).toString(36)}`
 }
 
-export function createAnnotation(kind: AnnotationKind, rect: FractionRect): Annotation {
+/** Ce qu'un outil retient d'un calque à l'autre : son apparence, jamais son
+ *  contenu ni sa place. Liste fermée — un champ absent d'ici ne se mémorise pas. */
+export const TOOL_STYLE_KEYS = [
+  'color',
+  'strokeWidth',
+  'radius',
+  'arrowHead',
+  'fill',
+  'fillColor',
+  'stroke',
+  'strokeOpacity',
+  'opacity',
+  'shadow',
+  'size',
+  'invert',
+  'font',
+  'weight',
+  'align',
+  'background',
+  'redaction',
+  'redactionShape',
+] as const satisfies readonly (keyof Annotation)[]
+
+export type ToolStyle = Partial<Pick<Annotation, (typeof TOOL_STYLE_KEYS)[number]>>
+
+/** `style` est le dernier réglage de l'outil (`tool-style.ts`), posé par-dessus
+ *  les défauts. Une scène externe n'en passe pas : elle lit `defaultsFor`. */
+export function createAnnotation(kind: AnnotationKind, rect: FractionRect, style: ToolStyle = {}): Annotation {
   return {
     id: nextId(kind),
     kind,
@@ -115,7 +146,9 @@ export function createAnnotation(kind: AnnotationKind, rect: FractionRect): Anno
     align: 'left',
     background: TEXT_BACKGROUND,
     redaction: 'blur',
+    redactionShape: 'rect',
     ...defaultsFor(kind),
+    ...style,
   }
 }
 
@@ -143,6 +176,11 @@ export function toFractions(rect: Rect, box: WindowBox): FractionRect {
 }
 
 /** Longueur en pixels d'une fraction de la largeur de la fenêtre. */
+/** Pourcentage lisible pour une fraction de la largeur de la fenêtre. */
+export function percent(value: number): string {
+  return `${(value * 100).toFixed(2)} %`
+}
+
 export function toLength(fraction: number, box: WindowBox): number {
   return fraction * box.width
 }

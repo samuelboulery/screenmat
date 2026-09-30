@@ -1,9 +1,10 @@
 import ColorPicker from './ColorPicker.tsx'
-import { REDACTION_ICON } from './icons.tsx'
+import { KIND_ICON, REDACTION_ICON } from './icons.tsx'
+import ShapeStyle from './ShapeStyle.tsx'
 import TextStyle from './TextStyle.tsx'
 import { Section, Slider, Tile, Toggle } from './ui.tsx'
-import { ANNOTATION_LIMITS, isSegment } from '../lib/annotate.ts'
-import type { Annotation, Palette, RedactionMode } from '../types.ts'
+import { ANNOTATION_LIMITS, isSegment, percent } from '../lib/annotate.ts'
+import type { Annotation, Palette, RedactionMode, RedactionShape } from '../types.ts'
 
 /* Éditeurs de propriétés d'un calque. Séparés de la liste des calques pour
    qu'aucun des deux fichiers ne devienne un fourre-tout. */
@@ -12,6 +13,12 @@ const REDACTIONS: Array<{ value: RedactionMode; label: string }> = [
   { value: 'blur', label: 'blur' },
   { value: 'pixel', label: 'pixel' },
   { value: 'solid', label: 'solid' },
+]
+
+/** La forme d'une zone floutée porte l'icône de l'outil qui trace la même. */
+const SHAPES: Array<{ value: RedactionShape; label: string; icon: 'box' | 'ellipse' }> = [
+  { value: 'rect', label: 'rectangle', icon: 'box' },
+  { value: 'ellipse', label: 'ellipse', icon: 'ellipse' },
 ]
 
 /** Couleurs de la DA, toujours proposées. Les accents du screenshot viennent
@@ -24,23 +31,34 @@ type AnnotationStyleProps = {
   onPatch: (patch: Partial<Annotation>) => void
 }
 
-/** Pourcentage lisible pour une fraction de la largeur de la fenêtre. */
-function percent(value: number): string {
-  return `${(value * 100).toFixed(2)} %`
-}
-
 export default function AnnotationStyle({
   annotation,
   palette,
   onPatch,
 }: AnnotationStyleProps) {
   const { kind } = annotation
-  const closed = kind === 'box' || kind === 'ellipse'
-  const stroked = closed || isSegment(kind)
+  const stroked = isSegment(kind)
 
   if (kind === 'redaction') {
     return (
       <Section title="Redaction">
+        <div className="grid grid-cols-2 gap-1">
+          {SHAPES.map((shape) => {
+            const Icon = KIND_ICON[shape.icon]
+            return (
+              <Tile
+                key={shape.value}
+                tone="danger"
+                active={annotation.redactionShape === shape.value}
+                onClick={() => onPatch({ redactionShape: shape.value })}
+                className="h-11 font-mono text-[10px]"
+              >
+                <Icon />
+                {shape.label}
+              </Tile>
+            )
+          })}
+        </div>
         <div className="grid grid-cols-3 gap-1">
           {REDACTIONS.map((mode) => {
             const Icon = REDACTION_ICON[mode.value]
@@ -66,6 +84,10 @@ export default function AnnotationStyle({
   }
 
   const colors = [...BASE_COLORS, ...palette.accents.slice(0, 4)]
+
+  if (kind === 'box' || kind === 'ellipse') {
+    return <ShapeStyle annotation={annotation} colors={colors} onPatch={onPatch} />
+  }
 
   return (
     <>
@@ -123,15 +145,6 @@ export default function AnnotationStyle({
             {...ANNOTATION_LIMITS.strokeWidth}
             onInput={(strokeWidth) => onPatch({ strokeWidth })}
           />
-          {kind === 'box' && (
-            <Slider
-              label="Corners"
-              value={annotation.radius}
-              display={percent(annotation.radius)}
-              {...ANNOTATION_LIMITS.radius}
-              onInput={(radius) => onPatch({ radius })}
-            />
-          )}
           {kind === 'arrow' && (
             <Slider
               label="Head"
@@ -139,15 +152,6 @@ export default function AnnotationStyle({
               display={percent(annotation.arrowHead)}
               {...ANNOTATION_LIMITS.arrowHead}
               onInput={(arrowHead) => onPatch({ arrowHead })}
-            />
-          )}
-          {closed && (
-            <Slider
-              label="Fill"
-              value={annotation.fill}
-              display={annotation.fill === 0 ? 'none' : `${Math.round(annotation.fill * 100)} %`}
-              {...ANNOTATION_LIMITS.fill}
-              onInput={(fill) => onPatch({ fill })}
             />
           )}
         </Section>

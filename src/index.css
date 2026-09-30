@@ -353,6 +353,29 @@ input[type='color']:not(:disabled) {
   font-size: 10px;
 }
 
+/* Capsule d'une touche de clavier (`Keys.tsx`). Carrée pour une lettre, elle
+   s'élargit pour un nom. Un symbole — ⌘ ⇧ ⌥ ⌫, les flèches — n'existe pas dans
+   la mono embarquée : il prend la police système, plus grand, sans changer la
+   hauteur de la capsule. */
+@utility t-key {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border: 1px solid var(--color-hairline-strong);
+  border-radius: var(--radius-xs);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 1;
+}
+
+@utility t-key-glyph {
+  font-family: system-ui, -apple-system, 'Segoe UI Symbol', sans-serif;
+  font-size: 13px;
+}
+
 /* Slider : piste 3px, remplissage à l'encre, poignée 11px pleine.
    Le pourcentage de remplissage est posé en variable par le composant. */
 .sf-slider {

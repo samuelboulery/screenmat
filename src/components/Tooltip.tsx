@@ -1,4 +1,5 @@
 import { useEffect, type ReactNode } from 'react'
+import Keys from './Keys.tsx'
 
 type TooltipProps = {
   label: string
@@ -37,7 +38,7 @@ export default function Tooltip({ label, shortcut, side = 'bottom', children }: 
         className={`t-ui-small pointer-events-none absolute left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 rounded-sm border border-hairline bg-panel-solid px-2 py-1 whitespace-nowrap text-ink opacity-0 transition-opacity duration-100 group-hover/tip:opacity-100 group-hover/tip:delay-300 group-has-[:focus-visible]/tip:opacity-100 [html[data-tips-off]_&]:opacity-0! ${SIDE[side]}`}
       >
         {label}
-        {shortcut && <kbd className="t-mono-micro rounded-xs border border-hairline-strong px-1 text-ink-soft">{shortcut}</kbd>}
+        {shortcut && <Keys shortcut={shortcut} className="text-ink-soft" />}
       </span>
     </span>
   )

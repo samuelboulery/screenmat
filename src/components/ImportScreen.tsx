@@ -1,6 +1,7 @@
 import { CopiedIcon, PickFileIcon, SaveStyleIcon } from './icons.tsx'
 import { Button, ErrorNote, MonoLabel } from './ui.tsx'
 import type { HistoryMeta } from '../lib/store.ts'
+import { MAC } from '../lib/keys.ts'
 
 type ImportScreenProps = {
   dragging: boolean
@@ -43,7 +44,7 @@ export default function ImportScreen({
         }`}
       >
         <span className="rounded-md border border-accent/30 bg-accent/[.08] px-4 py-3 font-mono text-[15px] text-accent-ink">
-          ⌘ V
+          {MAC ? '⌘ V' : 'Ctrl + V'}
         </span>
         <h1 className="t-headline text-[34px]">Paste a screenshot</h1>
         <p className="text-[14px] text-ink-soft">

@@ -1,3 +1,7 @@
+import type { Dither } from './lib/dithered.ts'
+import type { ScreenRatio } from './lib/screen.ts'
+import type { Wallpaper } from './lib/wallpapers.ts'
+
 export type Ratio = '4:3' | '1:1' | '16:9' | '9:16' | 'auto'
 
 export type Format = 'png' | 'webp'
@@ -5,20 +9,15 @@ export type Format = 'png' | 'webp'
 /** Style de fenêtre dessiné autour du screenshot. */
 export type FrameStyle = 'browser' | 'macbook' | 'iphone' | 'none'
 
-/** Trois séries — tirée de la capture, façon macOS, tramée — plus l'image
- *  perso, fournie dans la `Scene`. La série se déduit du type (`SERIES`,
+/** Quatre séries — tirée de la capture, fonds d'écran macOS et Windows, tramée — plus
+ *  l'image perso, fournie dans la `Scene`. La série se déduit du type (`SERIES`,
  *  `lib/series.ts`). */
 export type BackgroundKind =
   | 'mesh'
   | 'gradient'
   | 'solid'
-  | 'waves'
-  | 'dunes'
-  | 'aurora'
-  | 'ribbons'
-  | 'bayer'
-  | 'halftone'
-  | 'scanlines'
+  | Wallpaper
+  | Dither
   | 'image'
 
 /** Disposition multi-shot. `single` n'affiche que le shot actif. */
@@ -38,6 +37,10 @@ export type AnnotationKind =
   | 'redaction'
 
 export type RedactionMode = 'blur' | 'pixel' | 'solid'
+
+export type RedactionShape = 'rect' | 'ellipse'
+
+export type IslandSide = 'left' | 'right'
 
 export type TextFont = 'sans' | 'mono'
 
@@ -98,6 +101,15 @@ export type Settings = {
    *  identique — mesuré à l'échelle 3, 11,5 Mo contre 1,5 Mo. */
   format: Format
   frame: FrameStyle
+  /** Cadres `macbook` et `iphone` : l'écran garde le ratio de l'appareil
+   *  (16:10, 19,5:9 — couché si le screenshot est paysage) au lieu de suivre
+   *  celui du screenshot, qui est alors rogné. */
+  deviceRatio: boolean
+  /** Cadres `browser` et `none` : ratio de l'écran. `auto` ⇒ celui du screenshot. */
+  screenRatio: ScreenRatio
+  /** Bord qui porte l'île d'un `iphone` couché. Sans effet debout, et sans
+   *  effet sur la géométrie : l'île se dessine par-dessus l'écran. */
+  islandSide: IslandSide
   background: BackgroundKind
   /** Rotation autour de l'axe Y, en degrés. Simulée par matrice (voir `depth.ts`). */
   rotateY: number
@@ -155,6 +167,8 @@ export type Annotation = {
   size: number
   /** Mode de floutage. Ignoré hors `redaction`. */
   redaction: RedactionMode
+  /** Forme de la zone floutée, inscrite dans `rect`. Ignoré hors `redaction`. */
+  redactionShape: RedactionShape
   /** Couleur du trait et du texte, en hexadécimal. */
   color: string
   /** Épaisseur du trait, en fraction de la largeur de la fenêtre. */
@@ -165,6 +179,13 @@ export type Annotation = {
   arrowHead: number
   /** Opacité du remplissage d'un `box` ou d'une `ellipse`. 0 ⇒ contour seul. */
   fill: number
+  /** Couleur du remplissage, distincte de celle du trait. */
+  fillColor: string
+  /** Contour d'un `box` ou d'une `ellipse`. Sans fond, il se trace quand même :
+   *  une forme ne peut pas être invisible. */
+  stroke: boolean
+  /** Opacité du contour d'un `box` ou d'une `ellipse`, comme `fill` pour le fond. */
+  strokeOpacity: number
   /** Opacité du calque entier. */
   opacity: number
   /** Ombre portée, 0 → 1. Sans effet sur un masquage, qui cache sans dessiner. */
@@ -199,6 +220,13 @@ export type Placement = {
 
 export const DEFAULT_PLACEMENT: Placement = { scale: 1, dx: 0, dy: 0 }
 
+/** Position du screenshot dans un écran plus petit que lui, à la manière
+ *  d'`object-position` : par axe, la part du débord rognée avant. 0 montre le
+ *  début de l'image, 1 la fin, 0,5 le milieu. Sans effet sur un axe qui tient. */
+export type Pan = { x: number; y: number }
+
+export const DEFAULT_PAN: Pan = { x: 0.5, y: 0.5 }
+
 export type Shot = {
   id: string
   name: string
@@ -209,6 +237,8 @@ export type Shot = {
   layers: LayerNode[]
   /** Retouche manuelle de cette fenêtre. Absent ⇒ `DEFAULT_PLACEMENT`. */
   placement?: Placement
+  /** Part du screenshot visible quand il déborde de son écran. Absent ⇒ centré. */
+  pan?: Pan
 }
 
 export type Composition = {
@@ -316,6 +346,9 @@ export const DEFAULT_SETTINGS: Settings = {
   // navigateur : tout screenshot ne vient pas du web, et le cadre `browser`
   // reste à un clic.
   frame: 'none',
+  deviceRatio: false,
+  screenRatio: 'auto',
+  islandSide: 'left',
   background: 'mesh',
   rotateY: 0,
   shadow: 1,

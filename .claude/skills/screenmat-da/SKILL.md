@@ -52,7 +52,12 @@ rail) et épaisseur du trait (1.5) sont posées une fois en CSS sur la classe
 Icône seule là où l'espace est compté et où le geste est évident (rail, œil et
 cadenas d'un calque, undo/redo) ; icône **et** mot sur la navigation et les
 actions de fin de course. Un raccourci clavier (`⌘V`, `⌫`) s'écrit, il ne se
-dessine pas. Cinq noms de rayon (`--radius-xs|sm|md|lg|xl`) qui valent tous
+dessine pas — et il s'écrit pour le clavier de celui qui regarde : `Keys`
+(une capsule par touche) dans un panneau ou une infobulle, `keyLabel` dans un
+`title`, tous deux lus dans `lib/keys.ts`. La table reste rédigée en symboles
+Mac ; hors Mac elle sort en `Ctrl` `Shift` `Alt` `Del`. Ne jamais écrire `⌘`
+en dur dans un composant. Les symboles prennent la police système
+(`t-key-glyph`) : la mono embarquée ne les contient pas. Cinq noms de rayon (`--radius-xs|sm|md|lg|xl`) qui valent tous
 2 px : le nom dit le rôle, la valeur est celle du papier.
 
 ## L'espace de travail
@@ -84,11 +89,40 @@ cadres, poignées, caret — ne se dessine que quand un calque est sélectionné
 qu'un instrument de tracé est en main : avec `SEL` et rien de sélectionné, le
 canvas montre exactement ce que l'export produira, et `Escape` y ramène.
 
-**La section Background range les fonds en séries** — `Screenshot · macOS ·
-Dither`, un `Segmented` dont la valeur se déduit du type de fond. Les tuiles sont
+**Une couleur se choisit partout par le même `ColorPicker`** : la pastille
+courante (28 px, c'est elle qui ouvre le sélecteur natif), son hex éditable, puis
+le nuancier en pastilles de 20 px — la palette du fond aux mêmes 20 px. Un hex
+incomplet ou faux ne s'applique pas. **Une forme a un fond et un contour, chacun
+sa bascule, sa couleur et sa transparence** (`ShapeStyle`, pour `BOX` et `ELL`) :
+sections `Fill`, `Stroke`, puis `Appearance` (coins pour `BOX`, ombre). La
+transparence se saisit dans un champ `%` à droite de l'hex, jamais au curseur ;
+l'opacité du calque n'est pas proposée pour une forme — ce serait un troisième
+réglage pour la même chose. Le champ va de 1 à 100 : une couleur se coupe à sa
+bascule, pas en la rendant invisible. Couper le fond rallume le contour, dont la bascule se grise alors : une forme ne peut pas être invisible.
+Le fond d'une forme neuve est l'ambre des annotations, pas la couleur de son
+trait. **Un floutage se
+choisit en `Rectangle` ou `Ellipse`** dans son inspecteur, deux tuiles au-dessus
+de `blur · pixel · solid` — pas de second instrument dans la barre ; le choix
+suit l'outil, comme tout réglage de style.
+
+**La section Background range les fonds en séries** — `Screenshot · Dither` puis
+`macOS · Windows`, un `Segmented` en grille 2×2 (les fonds générés sur une ligne,
+les fonds d'écran sur l'autre) dont la valeur se déduit du type de fond. Les tuiles sont
 des miniatures dessinées par le moteur (`BackgroundThumb`), jamais un dégradé CSS :
 elles suivent la palette retouchée. Seuls les réglages que la série lit
-s'affichent. Pas d'image Apple : leurs fonds sont sous licence.
+s'affichent. Les séries macOS et Windows montrent les vrais fonds d'écran d'Apple
+(Big Sur à Golden Gate) et de Microsoft (XP à Windows 11), embarqués dans
+`public/wallpapers/` (© Apple, © Microsoft, hors licence MIT, voir `NOTICE.md`) :
+ni palette, ni graine, ni grain — le fond tel qu'il est sur un bureau. Leurs
+tuiles chargent une vignette de 192 px, jamais l'image entière. Seul Windows 11
+existe en 3840 px ; 10, 8 et 7 sont en 1920 px, XP en 800 — flous à l'export 3×.
+
+**Le ratio de l'écran se règle dans la section Frame** (`ScreenRatioControl`) :
+une bascule `Device ratio` pour `mac` et `phone`, une grille `Screen ratio` pour
+`none` et `browser`. Verrouillé, l'écran rogne le screenshot ; **Espace + glisser**
+sur le canvas choisit la part visible, image par image, et les calques suivent.
+Un screenshot paysage couche le `phone` ; `Island · Left / Right` choisit alors
+le bord qui porte l'îlot, et n'apparaît pas pour un screenshot portrait.
 
 Sous 1100 px, l'inspecteur devient une feuille rétractable. Pas de version
 mobile — l'outil vit à côté d'un screenshot pris sur desktop.
@@ -126,8 +160,12 @@ tirant une poignée, il conserve les proportions et aimante de même. Sur le can
 avec l'outil Select : `⇧`/`⌘`-clic ajoute au lot, glisser sur le vide trace un
 rectangle de sélection.
 
-**Après chaque tracé, l'outil revient à `V`**, comme dans Figma ; un double-clic
-sur le rail le verrouille (point d'encre au coin), un clic le libère. Au survol,
+**Un outil reste en main après un tracé** : `Escape` ou `V` le rendent. Il
+retient aussi son dernier style — couleur, épaisseur, taille, ombre… — d'un
+calque au suivant et d'une session à l'autre (`lib/tool-style.ts`,
+`localStorage`) : un réglage fait à l'inspecteur devient celui de son outil.
+`⌥`-glisser sur un calque le duplique, la copie part avec le curseur ; hors
+calque, `⌥`-glisser déplace l'image entière. Au survol,
 un trait fin montre ce qu'un clic attraperait. Une sélection multiple porte sa
 boîte englobante, pointillée, avec quatre poignées de coin homothétiques.
 

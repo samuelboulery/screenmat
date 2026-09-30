@@ -3,6 +3,7 @@ import LayersPanel, { type LayersPanelProps } from './LayersPanel.tsx'
 import { AddIcon, NewSessionIcon } from './icons.tsx'
 import { CheckBox, IconButton, Panel, SELECTED, Section, Segmented } from './ui.tsx'
 import type { OutputMode, QueueItem, Shot } from '../types.ts'
+import { MAC, keyLabel } from '../lib/keys.ts'
 
 const MODES = [
   { value: 'separate', label: 'Separate', title: 'One file per image' },
@@ -41,7 +42,7 @@ export default function ImagesPanel(props: ImagesPanelProps) {
     <Panel className="absolute top-4 bottom-4 left-5 z-10 flex w-60 flex-col gap-4 overflow-hidden p-4">
       <Section
         title={`Images — ${shots.length}`}
-        aside={<IconButton icon={AddIcon} label="Add images (⌘V)" onClick={props.onAdd} />}
+        aside={<IconButton icon={AddIcon} label={keyLabel('Add images (⌘V)', MAC)} onClick={props.onAdd} />}
       >
         {shots.length > 1 && (
           <Segmented className="w-full" options={MODES} value={mode} onPick={props.onMode} />

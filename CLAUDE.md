@@ -95,6 +95,12 @@ pnpm mcp                # serveur MCP sur stdio
   Aucune donnée d'image ne sort, aucune dépendance à un service distant pour le
   rendu : bloqué ou hors ligne, l'app fonctionne à l'identique, polices
   comprises. `cli/` n'appelle rien du tout.
+- Les fonds macOS et Windows (`public/wallpapers/`) sont servis par la même
+  origine et chargés à la demande, comme les polices ; hors ligne, un fond jamais
+  affiché ne vient pas, et l'app le dit. Ces images sont © Apple et © Microsoft,
+  hors licence MIT
+  (`public/wallpapers/NOTICE.md`) : les produire passe par
+  `docs/assets/wallpapers.ts`, jamais par un dépôt à la main.
 - Ne pas installer de dépendance sans demander — en particulier pas de librairie
   de couleur, de canvas, de zip ou de composants UI : tout est écrit à la main
   ici. `lucide-react` est la seule exception, et elle ne fournit que des icônes.

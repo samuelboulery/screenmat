@@ -10,6 +10,10 @@ export type Snapshot = {
   shots: Shot[]
   settings: Settings
   composition: Composition
+  /** Les images de la composition. Elles décident de la fenêtre de chacune,
+   *  donc de l'endroit où ses calques sont ancrés : les restaurer sans elles
+   *  poserait un floutage à côté de ce qu'il masque. */
+  members: readonly string[]
 }
 
 export type History = {

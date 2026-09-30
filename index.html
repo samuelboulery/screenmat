@@ -94,7 +94,7 @@
             <button type="button" class="keycap" data-key="r" disabled><b>R</b>Box</button>
             <button type="button" class="keycap" data-key="b" disabled><b>B</b>Blur</button>
             <span class="w-2"></span>
-            <button type="button" class="keycap" data-paste><b>⌘V</b>Paste yours</button>
+            <button type="button" class="keycap" data-paste><b data-keys>⌘V</b>Paste yours</button>
             <button type="button" class="keycap" data-pick>Choose a file</button>
             <button type="button" class="keycap" data-replay aria-label="Replay the intro"><b>↻</b></button>
             <button type="button" data-hero-continue hidden class="sheen bg-accent rounded-xs px-4 py-2.5 text-[13px] font-semibold text-stage">Continue in editor →</button>
@@ -109,7 +109,7 @@
         <h2 class="t-headline mt-4 text-[28px]">Three moves, no settings to learn.</h2>
         <ol class="mt-10 grid gap-8 md:grid-cols-3">
           <li class="flex flex-col gap-2">
-            <span class="font-mono text-[12px] text-dim">01 · ⌘V</span>
+            <span data-keys class="font-mono text-[12px] text-dim">01 · ⌘V</span>
             <h3 class="text-[18px] font-semibold">Paste</h3>
             <p class="text-[15px] leading-relaxed text-ink-soft">A screenshot, or a folder of them. The background is drawn from its own dominant colours, so it looks right before you touch anything.</p>
           </li>
@@ -119,7 +119,7 @@
             <p class="text-[15px] leading-relaxed text-ink-soft">Frame, corners, tilt. Text, arrows, boxes, numbered badges. Blur what should stay private — it is baked into the pixels, not laid on top.</p>
           </li>
           <li class="flex flex-col gap-2">
-            <span class="font-mono text-[12px] text-dim">03 · ⌘E</span>
+            <span data-keys class="font-mono text-[12px] text-dim">03 · ⌘E</span>
             <h3 class="text-[18px] font-semibold">Export</h3>
             <p class="text-[15px] leading-relaxed text-ink-soft">WebP or PNG at 1×, 2× or 3× — up to 4800 px wide. A whole batch leaves as one zip, every image in the same style.</p>
           </li>

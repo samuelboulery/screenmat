@@ -398,7 +398,7 @@ export function Swatch({
       aria-pressed={active}
       onClick={onClick}
       style={{ background: color }}
-      className={`size-10 rounded-md border border-ink/10 ${active ? 'ring-selected' : ''}`}
+      className={`size-5 rounded-xs border border-ink/15 ${active ? 'ring-selected' : ''}`}
     />
   )
 }

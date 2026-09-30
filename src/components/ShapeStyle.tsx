@@ -1,6 +1,7 @@
 import ColorPicker from './ColorPicker.tsx'
 import { Section, Slider, Toggle } from './ui.tsx'
 import { ANNOTATION_LIMITS, percent } from '../lib/annotate.ts'
+import { m } from '../lib/i18n/index.ts'
 import type { Annotation } from '../types.ts'
 
 type ShapeStyleProps = {
@@ -23,10 +24,10 @@ export default function ShapeStyle(props: ShapeStyleProps) {
     <>
       <FillSection {...props} />
       <StrokeSection {...props} />
-      <Section title="Appearance">
+      <Section title={m.inspector.shape.appearance}>
         {annotation.kind === 'box' && (
           <Slider
-            label="Corners"
+            label={m.inspector.common.corners}
             value={annotation.radius}
             display={percent(annotation.radius)}
             {...ANNOTATION_LIMITS.radius}
@@ -34,9 +35,9 @@ export default function ShapeStyle(props: ShapeStyleProps) {
           />
         )}
         <Slider
-          label="Shadow"
+          label={m.inspector.common.shadow}
           value={annotation.shadow}
-          display={annotation.shadow === 0 ? 'none' : `${Math.round(annotation.shadow * 100)} %`}
+          display={annotation.shadow === 0 ? m.inspector.common.noShadow : `${Math.round(annotation.shadow * 100)} %`}
           {...ANNOTATION_LIMITS.shadow}
           onInput={(shadow) => onPatch({ shadow })}
         />
@@ -50,11 +51,11 @@ function FillSection({ annotation, colors, onPatch }: ShapeStyleProps) {
 
   return (
     <Section
-      title="Fill"
+      title={m.inspector.shape.fill}
       aside={
         <Toggle
           checked={filled}
-          label="Fill"
+          label={m.inspector.shape.fill}
           // Couper le fond d'une forme sans contour le lui rend.
           onChange={(on) => onPatch(on ? { fill: 1 } : { fill: 0, stroke: true })}
         />
@@ -64,7 +65,7 @@ function FillSection({ annotation, colors, onPatch }: ShapeStyleProps) {
         <ColorPicker
           colors={colors}
           value={annotation.fillColor}
-          label="Fill color"
+          label={m.inspector.shape.fillColor}
           onPick={(fillColor) => onPatch({ fillColor })}
           alpha={annotation.fill}
           onAlpha={(fill) => onPatch({ fill })}
@@ -80,13 +81,13 @@ function StrokeSection({ annotation, colors, onPatch }: ShapeStyleProps) {
 
   return (
     <Section
-      title="Stroke"
+      title={m.inspector.common.stroke}
       aside={
         <Toggle
           checked={stroked}
-          label="Stroke"
+          label={m.inspector.common.stroke}
           disabled={!filled}
-          title={filled ? undefined : 'A shape needs a fill or a stroke'}
+          title={filled ? undefined : m.inspector.shape.needsInk}
           onChange={(stroke) => onPatch({ stroke })}
         />
       }
@@ -96,13 +97,13 @@ function StrokeSection({ annotation, colors, onPatch }: ShapeStyleProps) {
           <ColorPicker
             colors={colors}
             value={annotation.color}
-            label="Stroke color"
+            label={m.inspector.shape.strokeColor}
             onPick={(color) => onPatch({ color })}
             alpha={annotation.strokeOpacity}
             onAlpha={(strokeOpacity) => onPatch({ strokeOpacity })}
           />
           <Slider
-            label="Width"
+            label={m.inspector.common.width}
             value={annotation.strokeWidth}
             display={percent(annotation.strokeWidth)}
             {...ANNOTATION_LIMITS.strokeWidth}

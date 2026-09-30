@@ -3,12 +3,8 @@ import LayersPanel, { type LayersPanelProps } from './LayersPanel.tsx'
 import { AddIcon, NewSessionIcon } from './icons.tsx'
 import { CheckBox, IconButton, Panel, SELECTED, Section, Segmented } from './ui.tsx'
 import type { OutputMode, QueueItem, Shot } from '../types.ts'
+import { m } from '../lib/i18n/index.ts'
 import { MAC, keyLabel } from '../lib/keys.ts'
-
-const MODES = [
-  { value: 'separate', label: 'Separate', title: 'One file per image' },
-  { value: 'combined', label: 'Combined', title: 'The checked images, composed into one file' },
-] as const
 
 type ImagesPanelProps = {
   shots: readonly Shot[]
@@ -37,15 +33,19 @@ export default function ImagesPanel(props: ImagesPanelProps) {
   const { shots, activeId, members, mode } = props
   const dragged = useRef<number | null>(null)
   const combined = mode === 'combined'
+  const modes = [
+    { value: 'separate', label: m.workspace.images.separate, title: m.workspace.images.onePerImage },
+    { value: 'combined', label: m.workspace.images.combined, title: m.workspace.images.combinedHint },
+  ] as const
 
   return (
     <Panel className="absolute top-4 bottom-4 left-5 z-10 flex w-60 flex-col gap-4 overflow-hidden p-4">
       <Section
-        title={`Images — ${shots.length}`}
-        aside={<IconButton icon={AddIcon} label={keyLabel('Add images (⌘V)', MAC)} onClick={props.onAdd} />}
+        title={m.workspace.images.heading(shots.length)}
+        aside={<IconButton icon={AddIcon} label={keyLabel(m.workspace.images.add, MAC)} onClick={props.onAdd} />}
       >
         {shots.length > 1 && (
-          <Segmented className="w-full" options={MODES} value={mode} onPick={props.onMode} />
+          <Segmented className="w-full" options={modes} value={mode} onPick={props.onMode} />
         )}
         <ul className="-m-1 max-h-[38vh] space-y-1 overflow-y-auto p-1">
           {shots.map((shot, index) => {
@@ -71,8 +71,8 @@ export default function ImagesPanel(props: ImagesPanelProps) {
                   <button
                     type="button"
                     aria-pressed={member}
-                    title={member ? 'Remove from the composition' : 'Add to the composition'}
-                    aria-label={`${shot.name} in the composition`}
+                    title={member ? m.workspace.images.removeMember : m.workspace.images.addMember}
+                    aria-label={m.workspace.images.member(shot.name)}
                     onClick={() => props.onToggleMember(shot.id)}
                     className="flex size-6 shrink-0 items-center justify-center"
                   >
@@ -112,9 +112,9 @@ export default function ImagesPanel(props: ImagesPanelProps) {
 
       <div className="flex items-center justify-between border-t border-hairline pt-3">
         <span className="t-mono-micro text-dim">
-          {combined ? `${members.length} of ${shots.length} combined` : 'One file per image'}
+          {combined ? m.workspace.images.combinedCount(members.length, shots.length) : m.workspace.images.onePerImage}
         </span>
-        <IconButton icon={NewSessionIcon} label="New session" onClick={props.onNewSession} />
+        <IconButton icon={NewSessionIcon} label={m.workspace.images.newSession} onClick={props.onNewSession} />
       </div>
     </Panel>
   )

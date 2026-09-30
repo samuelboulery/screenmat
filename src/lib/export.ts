@@ -1,3 +1,4 @@
+import { m } from './i18n/index.ts'
 import { loadWallpaper } from './image.ts'
 import { harmonizePalettes } from './palette.ts'
 import { renderScene } from './render.ts'
@@ -41,11 +42,11 @@ export function canvasToBlob(canvas: HTMLCanvasElement, format: Format): Promise
         // dans les deux cas il ne faut pas livrer un fichier qui ment sur son
         // extension.
         if (!blob) {
-          reject(new Error(`This browser could not encode ${format.toUpperCase()}`))
+          reject(new Error(m.messages.export.encodeFailed(format.toUpperCase())))
           return
         }
         if (blob.type !== MIME[format]) {
-          reject(new Error(`${format.toUpperCase()} is not supported by this browser`))
+          reject(new Error(m.messages.export.unsupported(format.toUpperCase())))
           return
         }
         resolve(blob)
@@ -113,8 +114,8 @@ export function batchFilename(
 
 export function humanSize(bytes: number): string {
   return bytes < 1024 * 1024
-    ? `${Math.round(bytes / 1024)} KB`
-    : `${(bytes / 1024 / 1024).toFixed(1)} MB`
+    ? m.messages.export.kilobytes(bytes / 1024)
+    : m.messages.export.megabytes(bytes / 1024 / 1024)
 }
 
 /**
@@ -129,7 +130,7 @@ export function humanSize(bytes: number): string {
 export async function renderToBlob(scene: Scene, scale: number): Promise<Blob> {
   const canvas = document.createElement('canvas')
   const context = canvas.getContext('2d')
-  if (!context) throw new Error('Canvas 2D is unavailable')
+  if (!context) throw new Error(m.messages.export.noCanvas)
 
   // Une fois chargées, plus d'attente : le rendu reste synchrone jusqu'à
   // l'encodage, ce que `runBatch` suppose pour sérialiser ses rendus.
@@ -164,7 +165,7 @@ export async function exportScene(scene: Scene, scale: number): Promise<Blob> {
  */
 export async function copyScene(scene: Scene, scale: number): Promise<void> {
   if (typeof ClipboardItem === 'undefined' || !navigator.clipboard?.write) {
-    throw new Error('Copying images is not supported by this browser')
+    throw new Error(m.messages.export.copyUnsupported)
   }
 
   const png: Scene = { ...scene, settings: { ...scene.settings, format: 'png' } }

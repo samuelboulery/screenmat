@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { SHORTCUTS, handleBare, type KeyEvent, type Shortcuts } from '../../hooks/useShortcuts.ts'
+import { shortcuts, handleBare, type KeyEvent, type Shortcuts } from '../../hooks/useShortcuts.ts'
 import { TOOLS, TOOL_KEYS } from '../tools.ts'
 
 const press = (key: string, shiftKey = false): KeyEvent => ({
@@ -46,7 +46,7 @@ describe('raccourcis', () => {
   it('ne donne jamais deux sens à une même touche du panneau', () => {
     const keys = [
       ...TOOLS.map((tool) => TOOL_KEYS[tool]),
-      ...SHORTCUTS.flatMap((group) => group.items.map((item) => item.keys)),
+      ...shortcuts().flatMap((group) => group.items.map((item) => item.keys)),
     ]
     expect(new Set(keys).size).toBe(keys.length)
   })

@@ -53,6 +53,10 @@
     {
       "source": "/app",
       "destination": "/app/index.html"
+    },
+    {
+      "source": "/fr",
+      "destination": "/fr/index.html"
     }
   ]
 }

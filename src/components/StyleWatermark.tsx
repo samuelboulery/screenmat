@@ -1,5 +1,6 @@
 import { DeleteIcon, ImageIcon, POSITION_ICON } from './icons.tsx'
 import { Button, DashedTile, SELECTED, Section } from './ui.tsx'
+import { m } from '../lib/i18n/index.ts'
 import { WATERMARK_POSITIONS } from '../lib/watermark.ts'
 import type { Style, WatermarkPosition } from '../types.ts'
 
@@ -18,7 +19,7 @@ export default function StyleWatermark({
   const mark = style.watermark
 
   return (
-    <Section title="Watermark">
+    <Section title={m.inspector.watermark.title}>
       <div className="flex items-start gap-3">
         <div className="flex shrink-0 flex-col gap-1.5">
           <DashedTile onClick={onPick} className="h-[86px] w-[96px] font-mono text-[10px]">
@@ -27,7 +28,7 @@ export default function StyleWatermark({
             ) : (
               <span className="flex flex-col items-center gap-1.5">
                 <ImageIcon />
-                drop logo.svg
+                {m.inspector.watermark.drop}
               </span>
             )}
           </DashedTile>
@@ -36,7 +37,7 @@ export default function StyleWatermark({
           {mark && (
             <Button variant="ghost" onClick={onRemove} className="justify-center text-danger">
               <DeleteIcon />
-              Remove logo
+              {m.inspector.watermark.remove}
             </Button>
           )}
         </div>

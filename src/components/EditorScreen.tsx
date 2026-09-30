@@ -7,6 +7,7 @@ import Preview, { type Editing } from './Preview.tsx'
 import ToolRail from './ToolRail.tsx'
 import type { Point } from '../lib/annotate.ts'
 import { rememberToolStyle } from '../lib/tool-style.ts'
+import { m } from '../lib/i18n/index.ts'
 import { toolForKey, type Tool } from '../lib/tools.ts'
 import { IconButton, Panel } from './ui.tsx'
 import { displayOrder, findAnnotation } from '../lib/tree.ts'
@@ -204,6 +205,7 @@ export default function EditorScreen(props: EditorScreenProps) {
   )
 
   const center = { paddingLeft: inset.left, paddingRight: inset.right }
+  const sheetLabel = sheetOpen ? m.workspace.editor.closeInspector : m.workspace.editor.openInspector
 
   return (
     <div className="stage-grain absolute inset-x-0 top-[58px] bottom-0">
@@ -237,8 +239,8 @@ export default function EditorScreen(props: EditorScreenProps) {
       <div className="pointer-events-none absolute inset-x-0 bottom-4 z-10 flex flex-col items-center gap-2" style={center}>
         <FirstTips />
         <Panel className="pointer-events-auto flex items-center gap-1 rounded-lg px-2 py-1.5">
-          <IconButton icon={UndoIcon} label="Undo" shortcut="⌘Z" tipSide="top" disabled={!props.canUndo} onClick={props.onUndo} />
-          <IconButton icon={RedoIcon} label="Redo" shortcut="⇧⌘Z" tipSide="top" disabled={!props.canRedo} onClick={props.onRedo} />
+          <IconButton icon={UndoIcon} label={m.core.shortcuts.undo} shortcut="⌘Z" tipSide="top" disabled={!props.canUndo} onClick={props.onUndo} />
+          <IconButton icon={RedoIcon} label={m.core.shortcuts.redo} shortcut="⇧⌘Z" tipSide="top" disabled={!props.canRedo} onClick={props.onRedo} />
           {props.output && (
             <span className="t-mono-micro px-2 whitespace-nowrap text-dim">
               {props.output.width} × {props.output.height}
@@ -276,8 +278,8 @@ export default function EditorScreen(props: EditorScreenProps) {
           type="button"
           onClick={() => setSheetOpen((open) => !open)}
           aria-expanded={sheetOpen}
-          title={sheetOpen ? 'Close the inspector' : 'Open the inspector'}
-          aria-label={sheetOpen ? 'Close the inspector' : 'Open the inspector'}
+          title={sheetLabel}
+          aria-label={sheetLabel}
           className="panel absolute top-4 right-5 z-20 flex size-9 items-center justify-center rounded-md text-ink-soft hover:text-ink"
         >
           {sheetOpen ? <CloseSheetIcon /> : <OpenSheetIcon />}

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { m } from '../lib/i18n/index.ts'
 
 export type Shortcuts = {
   onExport: () => void
@@ -29,47 +30,50 @@ export type ShortcutEntry = { keys: string; label: string }
  * pas : `TOOL_KEYS` (`lib/tools.ts`) les porte, et le panneau les lit là.
  * Une ligne ajoutée à un handler sans l'être ici est un raccourci introuvable.
  */
-export const SHORTCUTS: { title: string; hint: string; items: ShortcutEntry[] }[] = [
-  {
-    title: 'Everywhere',
-    hint: 'With a modifier key',
-    items: [
-      { keys: '⌘V', label: 'Paste a screenshot' },
-      { keys: '⌘E', label: 'Export' },
-      { keys: '⌘C', label: 'Copy the image' },
-      { keys: '⌘Z', label: 'Undo' },
-      { keys: '⇧⌘Z', label: 'Redo' },
-      { keys: '⌘D', label: 'Duplicate layer' },
-      { keys: '⌘A', label: 'Select all layers' },
-      { keys: '⌘G', label: 'Group' },
-      { keys: '⇧⌘G', label: 'Ungroup' },
-      { keys: '⌘↑ ⌘↓', label: 'Move in the layer stack' },
-    ],
-  },
-  {
-    title: 'On the canvas',
-    hint: 'Single keys, when the canvas has focus',
-    items: [
-      { keys: '⇧R', label: 'New background' },
-      { keys: '1 2 3', label: 'Export scale' },
-      { keys: '⌫', label: 'Delete layer' },
-      { keys: '← ↑ → ↓', label: 'Nudge — ⇧ for ×5' },
-      { keys: 'Esc', label: 'Deselect, then back to Select' },
-      { keys: '?', label: 'This panel' },
-    ],
-  },
-  {
-    title: 'With the mouse',
-    hint: 'Gestures on the canvas',
-    items: [
-      { keys: '⇧ drag', label: 'Snap to 45°, keep proportions' },
-      { keys: '⇧ click', label: 'Add to the selection' },
-      { keys: '⌥ drag', label: 'Duplicate a layer · move a whole image' },
-      { keys: 'Space drag', label: 'Reposition the image in its frame' },
-      { keys: 'Double-click', label: 'Edit a text' },
-    ],
-  },
-]
+export type ShortcutGroup = { title: string; hint: string; items: ShortcutEntry[] }
+
+/** Appelée au rendu : les libellés suivent la langue, les `keys` jamais. */
+export function shortcuts(): ShortcutGroup[] {
+  const t = m.core.shortcuts
+  return [
+    {
+      ...t.everywhere,
+      items: [
+        { keys: '⌘V', label: t.paste },
+        { keys: '⌘E', label: t.export },
+        { keys: '⌘C', label: t.copy },
+        { keys: '⌘Z', label: t.undo },
+        { keys: '⇧⌘Z', label: t.redo },
+        { keys: '⌘D', label: t.duplicate },
+        { keys: '⌘A', label: t.selectAll },
+        { keys: '⌘G', label: t.group },
+        { keys: '⇧⌘G', label: t.ungroup },
+        { keys: '⌘↑ ⌘↓', label: t.stack },
+      ],
+    },
+    {
+      ...t.canvas,
+      items: [
+        { keys: '⇧R', label: t.shuffle },
+        { keys: '1 2 3', label: t.scale },
+        { keys: '⌫', label: t.remove },
+        { keys: '← ↑ → ↓', label: t.nudge },
+        { keys: 'Esc', label: t.escape },
+        { keys: '?', label: t.help },
+      ],
+    },
+    {
+      ...t.mouse,
+      items: [
+        { keys: '⇧ drag', label: t.snap },
+        { keys: '⇧ click', label: t.addToSelection },
+        { keys: '⌥ drag', label: t.altDrag },
+        { keys: 'Space drag', label: t.pan },
+        { keys: 'Double-click', label: t.editText },
+      ],
+    },
+  ]
+}
 
 /** Direction de chaque flèche du clavier. */
 const ARROWS: Record<string, [number, number]> = {

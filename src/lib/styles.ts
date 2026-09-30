@@ -1,5 +1,6 @@
 import { nextId } from './annotate.ts'
 import { triggerDownload } from './export.ts'
+import { m } from './i18n/index.ts'
 import { HEX, bool, clamp, isRecord, num, oneOf } from './parse.ts'
 import { SCREEN_RATIOS } from './screen.ts'
 import { WATERMARK_POSITIONS } from './watermark.ts'
@@ -94,15 +95,15 @@ export function parseStyle(raw: string): Style {
   try {
     parsed = JSON.parse(raw)
   } catch {
-    throw new Error('Unreadable file: not JSON')
+    throw new Error(m.messages.style.notJson)
   }
 
   if (!isRecord(parsed) || parsed.kind !== 'screenmat-style' || !isRecord(parsed.style)) {
-    throw new Error('This file is not a screenmat style')
+    throw new Error(m.messages.style.notStyle)
   }
 
   const style = parsed.style
-  const name = typeof style.name === 'string' && style.name.trim() ? style.name.trim() : 'Imported'
+  const name = typeof style.name === 'string' && style.name.trim() ? style.name.trim() : m.messages.style.imported
 
   return {
     id: nextId('style'),

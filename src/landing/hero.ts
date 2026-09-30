@@ -1,3 +1,4 @@
+import { m } from '../lib/i18n/index.ts'
 import { loadImage, pickImage } from '../lib/image.ts'
 import { MAC, keyLabel } from '../lib/keys.ts'
 import { extractPalette } from '../lib/palette.ts'
@@ -46,7 +47,7 @@ export function startHero(root: HTMLElement): void {
   const scene = () => heroScene(source!.image, source!.palette, layers)
   const say = (text: string) => (hint.textContent = text)
   const whole = () => ({ x: 0, y: 0, w: stage.width, h: stage.height })
-  const fail = (cause: unknown) => say(cause instanceof Error ? cause.message : 'The demo stopped.')
+  const fail = (cause: unknown) => say(cause instanceof Error ? cause.message : m.landing.stopped)
   const start = () => void intro().catch(fail)
   /** Un redimensionnement par frame au plus : trame et rendu coûtent cher. */
   const schedule = () => {
@@ -84,7 +85,7 @@ export function startHero(root: HTMLElement): void {
     moveMarks(marks, whole(), 950)
     await stage.tween(950, (k) => (stage.frame = k))
     if (!alive()) return
-    caption.textContent = 'screenmat.webp · 3200 × 2400 · background from its own colours'
+    caption.textContent = m.landing.caption
     // `alive()` avant chaque calque : une autre capture a pu arriver entre-temps.
     for (const key of source!.demo ? (['r', 't', 'a'] as const) : []) {
       if (!alive()) return
@@ -113,7 +114,7 @@ export function startHero(root: HTMLElement): void {
   function press(key: HeroKey) {
     if (!ready) return
     add(key).catch(fail)
-    say(keyLabel(`${HERO_KEYS[key]} added${key === 'b' ? ' — baked into the pixels' : ''} · ⌫ to undo`, MAC))
+    say(keyLabel(m.landing.added(m.landing.keys[key], key === 'b'), MAC))
   }
 
   function undo() {
@@ -132,10 +133,10 @@ export function startHero(root: HTMLElement): void {
       if (me !== loads || (demo && source)) return
       source = { image, palette: extractPalette(image), blob, name, demo }
       proceed.hidden = demo
-      if (!demo) say('Your screenshot, rendered locally. Try T A R B.')
+      if (!demo) say(m.landing.yours)
       start()
     } catch (cause: unknown) {
-      say(cause instanceof Error ? cause.message : 'That file could not be read as an image.')
+      say(cause instanceof Error ? cause.message : m.landing.unreadable)
     }
   }
 
@@ -146,11 +147,11 @@ export function startHero(root: HTMLElement): void {
 
   void fetch('/landing/demo.webp')
     .then((response) => {
-      if (!response.ok) throw new Error(`Demo capture unavailable (${response.status})`)
+      if (!response.ok) throw new Error(m.landing.demoUnavailable(response.status))
       return response.blob()
     })
     .then((blob) => use(blob, 'raw.png', true))
-    .catch((cause: unknown) => say(cause instanceof Error ? cause.message : 'The demo could not load.'))
+    .catch((cause: unknown) => say(cause instanceof Error ? cause.message : m.landing.demoFailed))
 }
 
 type Inputs = {
@@ -179,7 +180,7 @@ function wireInputs(inputs: Inputs): void {
   show.addEventListener('keydown', (event) => {
     if (event.metaKey || event.ctrlKey || event.altKey) return
     const key = event.key.toLowerCase()
-    if (key in HERO_KEYS) {
+    if ((HERO_KEYS as readonly string[]).includes(key)) {
       event.preventDefault()
       press(key as HeroKey)
     } else if (key === 'backspace' || key === 'delete') {
@@ -191,12 +192,12 @@ function wireInputs(inputs: Inputs): void {
     button.addEventListener('click', () => press(button.dataset.key as HeroKey)),
   )
   keys.querySelector('[data-replay]')?.addEventListener('click', replay)
-  keys.querySelector('[data-paste]')?.addEventListener('click', () => say(keyLabel('Copy a screenshot, then press ⌘V anywhere on this page — or drop it on the frame.', MAC)))
+  keys.querySelector('[data-paste]')?.addEventListener('click', () => say(keyLabel(m.landing.pasteHow, MAC)))
   show.querySelector('[data-pick]')?.addEventListener('click', () => file.click())
 
   const take = (picked: File | null) => {
     if (picked) void use(picked, picked.name || 'pasted.png', false)
-    else say('No image in there. Paste a screenshot, or drop a PNG, JPEG or WebP.')
+    else say(m.landing.noImage)
   }
   file.addEventListener('change', () => take(pickImage(file.files)))
   addEventListener('paste', (event) => {
@@ -227,6 +228,6 @@ function wireInputs(inputs: Inputs): void {
     if (!current) return
     putHandoff({ blob: current.blob, name: current.name.replace(/\.[a-z0-9]+$/i, '') })
       .then(() => location.assign('/app/'))
-      .catch((cause: unknown) => say(cause instanceof Error ? cause.message : 'Could not hand the screenshot to the editor.'))
+      .catch((cause: unknown) => say(cause instanceof Error ? cause.message : m.landing.handoffFailed))
   })
 }

@@ -3,6 +3,7 @@ import BackgroundThumb from './BackgroundThumb.tsx'
 import { ImageIcon, ShuffleIcon } from './icons.tsx'
 import { DashedTile, MonoLabel, Section, Segmented, Slider } from './ui.tsx'
 import { DITHERS, isDither } from '../lib/dithered.ts'
+import { m } from '../lib/i18n/index.ts'
 import { SERIES, seriesOf, type Series } from '../lib/series.ts'
 import { isWallpaper } from '../lib/wallpapers.ts'
 import type { Palette, Settings } from '../types.ts'
@@ -12,12 +13,8 @@ import type { Palette, Settings } from '../types.ts'
    la seule règle qui vaille ici : un réglage que le fond choisi ne lit pas ne
    s'affiche pas. `paintBackground` (`lib/background.ts`) dit lequel lit quoi. */
 
-const SERIES_OPTIONS: ReadonlyArray<{ value: Series; label: string; title: string }> = [
-  { value: 'screenshot', label: 'Screenshot', title: 'Backgrounds drawn from the screenshot colours' },
-  { value: 'dither', label: 'Dither', title: 'Two-tone dithered backgrounds' },
-  { value: 'macos', label: 'macOS', title: 'The macOS wallpapers, Big Sur to Golden Gate' },
-  { value: 'windows', label: 'Windows', title: 'The Windows wallpapers, XP to 11' },
-]
+/* L'ordre des onglets ; libellés et infobulles se lisent au rendu. */
+const SERIES_ORDER: readonly Series[] = ['screenshot', 'dither', 'macos', 'windows']
 
 type BackgroundSectionProps = {
   settings: Settings
@@ -46,9 +43,9 @@ export default function BackgroundSection({
 
   return (
     <>
-      <Section title="Background" collapsible open>
+      <Section title={m.inspector.common.background} collapsible open>
         <Segmented
-          options={SERIES_OPTIONS}
+          options={SERIES_ORDER.map((value) => ({ value, ...m.inspector.background.series[value] }))}
           value={series}
           onPick={(next) => onChange({ background: SERIES[next][0] })}
           // Quatre séries ne tiennent pas sur une ligne de l'inspecteur : deux par deux.
@@ -69,8 +66,8 @@ export default function BackgroundSection({
           <DashedTile
             onClick={onPickBackgroundImage}
             className={`h-10 ${kind === 'image' ? 'ring-selected' : ''}`}
-            title="Use an image as background"
-            aria-label="Use an image as background"
+            title={m.inspector.background.useImage}
+            aria-label={m.inspector.background.useImage}
           >
             <ImageIcon />
           </DashedTile>
@@ -79,14 +76,14 @@ export default function BackgroundSection({
         {/* Seuls un aplat et une image n'ont rien à tirer au sort. */}
         {kind !== 'solid' && !picture && (
           <div className="flex items-center justify-between">
-            <MonoLabel>Seed {settings.seed}</MonoLabel>
+            <MonoLabel>{m.inspector.background.seed(settings.seed)}</MonoLabel>
             <button
               type="button"
               onClick={() => onChange({ seed: settings.seed + 1 })}
               className="t-ui-small flex items-center gap-1 text-accent hover:underline"
             >
               <ShuffleIcon />
-              shuffle
+              {m.inspector.background.shuffle}
             </button>
           </div>
         )}
@@ -105,15 +102,15 @@ export default function BackgroundSection({
             trame n'a que deux tons, poussés aux extrêmes : la saturation n'y
             change presque rien. */}
         {!picture && series !== 'dither' && (
-          <Percent label="Saturation" value={settings.saturation} max={2} onInput={(saturation) => onChange({ saturation })} />
+          <Percent label={m.inspector.background.saturation} value={settings.saturation} max={2} onInput={(saturation) => onChange({ saturation })} />
         )}
         {!picture && (
-          <Percent label="Contrast" value={settings.contrast} max={2} onInput={(contrast) => onChange({ contrast })} />
+          <Percent label={m.inspector.background.contrast} value={settings.contrast} max={2} onInput={(contrast) => onChange({ contrast })} />
         )}
         {/* Le grain empêche un aplat de ressembler à du vide ; sur une trame, il
             brouillerait ce qu'elle a de net, et le moteur ne le dessine pas. */}
         {(series !== 'dither' && !wallpaper) || kind === 'image' ? (
-          <Percent label="Grain" value={settings.grain} max={1} onInput={(grain) => onChange({ grain })} />
+          <Percent label={m.inspector.background.grain} value={settings.grain} max={1} onInput={(grain) => onChange({ grain })} />
         ) : null}
       </Section>
 
@@ -139,7 +136,7 @@ function DitherSliders({ settings, onChange }: SlidersProps) {
   return (
     <>
       <Slider
-        label="Cell size"
+        label={m.inspector.background.cellSize}
         value={settings.ditherCell}
         display={`${(settings.ditherCell * 100).toFixed(1)} %`}
         min={0.002}
@@ -149,7 +146,7 @@ function DitherSliders({ settings, onChange }: SlidersProps) {
       />
       {isDither(settings.background) && DITHERS[settings.background].angle && (
         <Slider
-          label="Angle"
+          label={m.inspector.background.angle}
           value={settings.ditherAngle}
           display={`${settings.ditherAngle}°`}
           min={0}
@@ -167,10 +164,10 @@ function DitherSliders({ settings, onChange }: SlidersProps) {
 function ShapesSection({ settings, onChange }: SlidersProps) {
   const blobs = settings.background !== 'gradient'
   return (
-    <Section title="Shapes" collapsible>
+    <Section title={m.inspector.shapes.title} collapsible>
       {blobs && (
         <Slider
-          label="Count"
+          label={m.inspector.shapes.count}
           value={settings.shapes}
           display={String(settings.shapes)}
           min={0}
@@ -182,11 +179,11 @@ function ShapesSection({ settings, onChange }: SlidersProps) {
       {/* Sous une trame, les taches sont peintes pleines : c'est le seuil qui
           décide du ton, une opacité n'y changerait rien. */}
       {seriesOf(settings.background) !== 'dither' && (
-        <Percent label="Opacity" value={settings.shapeOpacity} max={1} onInput={(shapeOpacity) => onChange({ shapeOpacity })} />
+        <Percent label={m.inspector.common.opacity} value={settings.shapeOpacity} max={1} onInput={(shapeOpacity) => onChange({ shapeOpacity })} />
       )}
       {blobs && (
         <Slider
-          label="Blur"
+          label={m.inspector.shapes.blur}
           value={settings.blur}
           display={`×${settings.blur}`}
           min={1}

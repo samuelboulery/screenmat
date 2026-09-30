@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { m } from '../lib/i18n/index.ts'
 import { loadWallpaper, loadedWallpaper } from '../lib/image.ts'
 import { isWallpaper } from '../lib/wallpapers.ts'
 import type { BackgroundKind } from '../types.ts'
@@ -29,7 +30,7 @@ export function useWallpaper(
         if (!stale) setArrived((count) => count + 1)
       },
       (cause: unknown) => {
-        if (!stale) onError(cause instanceof Error ? cause.message : 'Could not load this wallpaper')
+        if (!stale) onError(cause instanceof Error ? cause.message : m.messages.image.wallpaperFallback)
       },
     )
     return () => {

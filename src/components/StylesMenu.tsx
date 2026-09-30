@@ -3,6 +3,7 @@ import Menu from './Menu.tsx'
 import { AddIcon, ExpandedIcon, JsonIcon, PickFileIcon, StylesIcon, UpdateStyleIcon } from './icons.tsx'
 import { Button, MonoLabel, Row, buttonClass } from './ui.tsx'
 import { useWallpaper } from '../hooks/useWallpaper.ts'
+import { m } from '../lib/i18n/index.ts'
 import { BASE_WIDTH, renderScene } from '../lib/render.ts'
 import { isWallpaper } from '../lib/wallpapers.ts'
 import type { Scene, Style } from '../types.ts'
@@ -86,11 +87,11 @@ export default function StylesMenu({
 }: StylesMenuProps) {
   return (
     <Menu
-      label="Styles"
+      label={m.workspace.styles.title}
       trigger={
         <>
           <StylesIcon />
-          <span className="max-w-32 truncate">{active ? active.name : 'Styles'}</span>
+          <span className="max-w-32 truncate">{active ? active.name : m.workspace.styles.title}</span>
           <ExpandedIcon className="size-3.5" />
         </>
       }
@@ -99,11 +100,9 @@ export default function StylesMenu({
     >
       {(close) => (
         <>
-          <MonoLabel>Saved — {styles.length}</MonoLabel>
+          <MonoLabel>{m.workspace.styles.saved(styles.length)}</MonoLabel>
           {styles.length === 0 ? (
-            <p className="t-ui-small text-dim">
-              A style keeps every setting of the frame and background, to reuse on the next shot.
-            </p>
+            <p className="t-ui-small text-dim">{m.workspace.styles.empty}</p>
           ) : (
             <div className="max-h-64 space-y-1 overflow-y-auto">
               {styles.map((style) => (
@@ -126,27 +125,27 @@ export default function StylesMenu({
             {active && (
               <Button onClick={onUpdate} className="justify-start">
                 <UpdateStyleIcon />
-                <span className="truncate">Update “{active.name}”</span>
+                <span className="truncate">{m.workspace.styles.update(active.name)}</span>
               </Button>
             )}
             <Button onClick={onSave} className="justify-start">
               <AddIcon />
-              Save as a new style
+              {m.workspace.styles.saveNew}
             </Button>
             <div className="flex gap-1.5">
               <Button variant="ghost" onClick={onImport} className="flex-1 justify-center">
                 <PickFileIcon />
-                Import
+                {m.workspace.styles.import}
               </Button>
               <Button
                 variant="ghost"
                 onClick={() => active && onExport(active)}
                 disabled={!active}
                 className="flex-1 justify-center"
-                title={active ? `Export “${active.name}” as .json` : 'Apply a style to export it'}
+                title={active ? m.workspace.styles.exportAs(active.name) : m.workspace.styles.exportNone}
               >
                 <JsonIcon />
-                Export
+                {m.core.shortcuts.export}
               </Button>
             </div>
           </div>

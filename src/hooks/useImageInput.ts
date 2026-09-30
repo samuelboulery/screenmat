@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type DragEvent, type RefObject } from 'react'
 import { loadImage, pickImages } from '../lib/image.ts'
+import { m } from '../lib/i18n/index.ts'
 import { takeHandoff, type Handoff } from '../lib/store.ts'
 
 /** Lue une seule fois par chargement de page : le double montage de
@@ -42,7 +43,7 @@ export function useImageInput(onImages: (images: HTMLImageElement[], files: File
 
   const accept = useCallback(async (files: File[]) => {
     if (files.length === 0) {
-      setError('No image in there. Paste a screenshot, or drop a PNG, JPEG or WebP.')
+      setError(m.messages.input.noImage)
       return
     }
     try {
@@ -51,7 +52,7 @@ export function useImageInput(onImages: (images: HTMLImageElement[], files: File
       handler.current(images, files)
     } catch (cause: unknown) {
       setError(
-        cause instanceof Error ? cause.message : 'Couldn’t open that image. Try another file.',
+        cause instanceof Error ? cause.message : m.messages.input.openFailed,
       )
     }
   }, [])
@@ -81,7 +82,7 @@ export function useImageInput(onImages: (images: HTMLImageElement[], files: File
         if (alive && found) void accept([new File([found.blob], found.name, { type: found.blob.type })])
       })
       .catch((cause: unknown) => {
-        if (alive) setError(cause instanceof Error ? cause.message : 'Couldn’t pick up the screenshot from the home page.')
+        if (alive) setError(cause instanceof Error ? cause.message : m.messages.input.handoffFailed)
       })
     return () => {
       alive = false

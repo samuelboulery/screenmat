@@ -1,5 +1,6 @@
 import { useCallback, useRef } from 'react'
 import { loadImage, pickImage, toDataUrl } from '../lib/image.ts'
+import { m } from '../lib/i18n/index.ts'
 import { parseStyle } from '../lib/styles.ts'
 import type { Style, Watermark } from '../types.ts'
 
@@ -67,7 +68,7 @@ async function apply(
     if (target === 'watermark') {
       const style = options.activeStyle
       if (!style) {
-        options.onError('Select a style first to attach a logo to it')
+        options.onError(m.messages.style.selectFirst)
         return
       }
       const dataUrl = await toDataUrl(file)
@@ -80,6 +81,6 @@ async function apply(
 
     await options.onStyle(parseStyle(await file.text()))
   } catch (cause: unknown) {
-    options.onError(cause instanceof Error ? cause.message : 'Unreadable file')
+    options.onError(cause instanceof Error ? cause.message : m.messages.style.unreadable)
   }
 }

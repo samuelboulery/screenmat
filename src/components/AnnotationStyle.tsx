@@ -4,21 +4,18 @@ import ShapeStyle from './ShapeStyle.tsx'
 import TextStyle from './TextStyle.tsx'
 import { Section, Slider, Tile, Toggle } from './ui.tsx'
 import { ANNOTATION_LIMITS, isSegment, percent } from '../lib/annotate.ts'
+import { m } from '../lib/i18n/index.ts'
 import type { Annotation, Palette, RedactionMode, RedactionShape } from '../types.ts'
 
 /* Éditeurs de propriétés d'un calque. Séparés de la liste des calques pour
    qu'aucun des deux fichiers ne devienne un fourre-tout. */
 
-const REDACTIONS: Array<{ value: RedactionMode; label: string }> = [
-  { value: 'blur', label: 'blur' },
-  { value: 'pixel', label: 'pixel' },
-  { value: 'solid', label: 'solid' },
-]
+const REDACTIONS: readonly RedactionMode[] = ['blur', 'pixel', 'solid']
 
 /** La forme d'une zone floutée porte l'icône de l'outil qui trace la même. */
-const SHAPES: Array<{ value: RedactionShape; label: string; icon: 'box' | 'ellipse' }> = [
-  { value: 'rect', label: 'rectangle', icon: 'box' },
-  { value: 'ellipse', label: 'ellipse', icon: 'ellipse' },
+const SHAPES: Array<{ value: RedactionShape; icon: 'box' | 'ellipse' }> = [
+  { value: 'rect', icon: 'box' },
+  { value: 'ellipse', icon: 'ellipse' },
 ]
 
 /** Couleurs de la DA, toujours proposées. Les accents du screenshot viennent
@@ -41,7 +38,7 @@ export default function AnnotationStyle({
 
   if (kind === 'redaction') {
     return (
-      <Section title="Redaction">
+      <Section title={m.inspector.redaction.title}>
         <div className="grid grid-cols-2 gap-1">
           {SHAPES.map((shape) => {
             const Icon = KIND_ICON[shape.icon]
@@ -54,30 +51,30 @@ export default function AnnotationStyle({
                 className="h-11 font-mono text-[10px]"
               >
                 <Icon />
-                {shape.label}
+                {m.inspector.redaction.shapes[shape.value]}
               </Tile>
             )
           })}
         </div>
         <div className="grid grid-cols-3 gap-1">
           {REDACTIONS.map((mode) => {
-            const Icon = REDACTION_ICON[mode.value]
+            const Icon = REDACTION_ICON[mode]
             return (
               <Tile
-                key={mode.value}
+                key={mode}
                 tone="danger"
-                active={annotation.redaction === mode.value}
-                onClick={() => onPatch({ redaction: mode.value })}
+                active={annotation.redaction === mode}
+                onClick={() => onPatch({ redaction: mode })}
                 className="h-11 font-mono text-[10px]"
               >
                 <Icon />
-                {mode.label}
+                {m.inspector.redaction.modes[mode]}
               </Tile>
             )
           })}
         </div>
         <p className="t-ui-small text-dim">
-          Baked into the pixels at export — the original is never recoverable from the file.
+          {m.inspector.redaction.note}
         </p>
       </Section>
     )
@@ -95,39 +92,39 @@ export default function AnnotationStyle({
         <TextStyle annotation={annotation} accents={palette.accents.slice(0, 4)} onPatch={onPatch} />
       )}
 
-      <Section title={kind === 'text' ? 'Text color' : 'Color'}>
+      <Section title={kind === 'text' ? m.inspector.color.text : m.inspector.color.title}>
         <ColorPicker
           colors={colors}
           value={annotation.color}
-          label={kind === 'text' ? 'Text color' : 'Custom color'}
+          label={kind === 'text' ? m.inspector.color.text : m.inspector.color.custom}
           onPick={(color) => onPatch({ color })}
         />
         <Slider
-          label="Opacity"
+          label={m.inspector.common.opacity}
           value={annotation.opacity}
           display={`${Math.round(annotation.opacity * 100)} %`}
           {...ANNOTATION_LIMITS.opacity}
           onInput={(opacity) => onPatch({ opacity })}
         />
         <Slider
-          label="Shadow"
+          label={m.inspector.common.shadow}
           value={annotation.shadow}
-          display={annotation.shadow === 0 ? 'none' : `${Math.round(annotation.shadow * 100)} %`}
+          display={annotation.shadow === 0 ? m.inspector.common.noShadow : `${Math.round(annotation.shadow * 100)} %`}
           {...ANNOTATION_LIMITS.shadow}
           onInput={(shadow) => onPatch({ shadow })}
         />
       </Section>
 
       {kind === 'badge' && (
-        <Section title="Badge">
+        <Section title={m.inspector.badge.title}>
           {/* Le contraste du numéro se déduit du disque : pas de réglage à
               rater côté accessibilité. */}
           <div className="flex items-center justify-between">
-            <span className="t-ui text-ink-soft">Invert</span>
-            <Toggle checked={annotation.invert} label="Invert" onChange={(invert) => onPatch({ invert })} />
+            <span className="t-ui text-ink-soft">{m.inspector.badge.invert}</span>
+            <Toggle checked={annotation.invert} label={m.inspector.badge.invert} onChange={(invert) => onPatch({ invert })} />
           </div>
           <Slider
-            label="Size"
+            label={m.inspector.common.size}
             value={annotation.size}
             display={percent(annotation.size)}
             {...ANNOTATION_LIMITS.size}
@@ -137,9 +134,9 @@ export default function AnnotationStyle({
       )}
 
       {stroked && (
-        <Section title="Stroke">
+        <Section title={m.inspector.common.stroke}>
           <Slider
-            label="Width"
+            label={m.inspector.common.width}
             value={annotation.strokeWidth}
             display={percent(annotation.strokeWidth)}
             {...ANNOTATION_LIMITS.strokeWidth}
@@ -147,7 +144,7 @@ export default function AnnotationStyle({
           />
           {kind === 'arrow' && (
             <Slider
-              label="Head"
+              label={m.inspector.segment.head}
               value={annotation.arrowHead}
               display={percent(annotation.arrowHead)}
               {...ANNOTATION_LIMITS.arrowHead}

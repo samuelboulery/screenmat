@@ -2,6 +2,8 @@ import DocumentSections, { type DocumentSectionsProps } from './DocumentSections
 import LayerInspector, { type LayerInspectorProps } from './LayerInspector.tsx'
 import { BackIcon } from './icons.tsx'
 import { Button, Panel } from './ui.tsx'
+import { m } from '../lib/i18n/index.ts'
+import { MAC, keyLabel } from '../lib/keys.ts'
 import type { ReactNode } from 'react'
 
 type InspectorProps = {
@@ -30,9 +32,9 @@ export default function Inspector({ layer, document, style, onDeselect, offset =
     >
       {layer ? (
         <>
-          <Button variant="ghost" onClick={onDeselect} className="-mx-2 -mt-1 px-2" title="Back to the document (Escape)">
+          <Button variant="ghost" onClick={onDeselect} className="-mx-2 -mt-1 px-2" title={keyLabel(m.inspector.panel.backTitle, MAC)}>
             <BackIcon />
-            Document
+            {m.inspector.panel.back}
           </Button>
           <LayerInspector {...layer} />
         </>

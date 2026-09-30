@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { nextId } from '../lib/annotate.ts'
 import { copyScene, exportScene, humanSize, sceneFilename } from '../lib/export.ts'
+import { m } from '../lib/i18n/index.ts'
 import { makeThumbnail } from '../lib/image.ts'
 import type { HistoryEntry, Scene } from '../types.ts'
 
@@ -48,7 +49,7 @@ export function useExport(
         setError(
           cause instanceof Error
             ? cause.message
-            : 'Export failed. Try a smaller scale or the PNG format.',
+            : m.messages.export.failed,
         )
       }
     },
@@ -66,7 +67,7 @@ export function useExport(
       setError(
         cause instanceof Error
           ? cause.message
-          : 'Copy failed. Export the file instead, or allow clipboard access.',
+          : m.messages.export.copyFailed,
       )
     }
   }, [])

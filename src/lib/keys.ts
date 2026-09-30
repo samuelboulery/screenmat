@@ -3,6 +3,8 @@
    on la réécrit pour un clavier qui n'a ni ⌘ ni ⌥. Le clavier, lui, accepte déjà
    Ctrl partout (`useShortcuts`) : seul l'affichage dépend de la plateforme. */
 
+import { m } from './i18n/index.ts'
+
 /** Modificateurs, dans l'ordre où Windows et Linux les écrivent. */
 const MODIFIERS = [
   ['⌘', 'Ctrl'],
@@ -18,6 +20,10 @@ const GLYPHS = new Set(['⌘', '⌥', '⇧', '⌫', '←', '↑', '→', '↓'])
 
 /** Touches qui portent un nom plutôt qu'un caractère. */
 const NAMED = new Set(['Esc', 'Space'])
+
+/** Une touche nommée ou un geste, dans la langue de l'interface. La table,
+ *  elle, reste écrite en anglais : ses chaînes sont des identités. */
+const named = (token: string): string => m.core.keyNames[token] ?? token
 
 export type Cap = { text: string; glyph: boolean }
 
@@ -40,10 +46,10 @@ function chord(token: string, mac: boolean): Cap[] {
   const chars = [...token]
   if (mac) return chars.map((text) => ({ text, glyph: GLYPHS.has(text) }))
 
-  const held = MODIFIERS.filter(([glyph]) => chars.includes(glyph)).map(([, name]) => ({ text: name, glyph: false }))
+  const held = MODIFIERS.filter(([glyph]) => chars.includes(glyph)).map(([, name]) => ({ text: named(name), glyph: false }))
   const rest = chars
     .filter((char) => !MODIFIERS.some(([glyph]) => glyph === char))
-    .map((char) => ({ text: OTHER[char] ?? char, glyph: GLYPHS.has(char) && !(char in OTHER) }))
+    .map((char) => ({ text: char in OTHER ? named(OTHER[char]) : char, glyph: GLYPHS.has(char) && !(char in OTHER) }))
   return [...held, ...rest]
 }
 
@@ -57,8 +63,8 @@ export function keycaps(shortcut: string, mac: boolean): KeyPart[] {
     .split(' ')
     .filter(Boolean)
     .map((token) => {
-      if (NAMED.has(token)) return { kind: 'chord', caps: [{ text: token, glyph: false }] }
-      if (token.length > 1 && /^[A-Za-z-]+$/.test(token)) return { kind: 'word', text: token }
+      if (NAMED.has(token)) return { kind: 'chord', caps: [{ text: named(token), glyph: false }] }
+      if (token.length > 1 && /^[A-Za-z-]+$/.test(token)) return { kind: 'word', text: named(token) }
       return { kind: 'chord', caps: chord(token, mac) }
     })
 }
@@ -71,10 +77,10 @@ export function keyLabel(text: string, mac: boolean): string {
   if (mac) return text
   return text
     .replace(/[⌘⌥⇧]+(.?)/gu, (run, next: string) => {
-      const names = MODIFIERS.filter(([glyph]) => run.includes(glyph)).map(([, name]) => name)
+      const names = MODIFIERS.filter(([glyph]) => run.includes(glyph)).map(([, name]) => named(name))
       // Suivi d'une touche, l'accord se lie par `+` ; seul (« ⇧ for ×5 »), il se nomme.
-      const key = next && !/[\s\-)]/.test(next) ? `+${OTHER[next] ?? next}` : next
+      const key = next && !/[\s\-)]/.test(next) ? `+${next in OTHER ? named(OTHER[next]) : next}` : next
       return names.join('+') + key
     })
-    .replace(/⌫/g, OTHER['⌫'])
+    .replace(/⌫/g, named(OTHER['⌫']))
 }

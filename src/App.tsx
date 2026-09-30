@@ -17,6 +17,7 @@ import { useExport } from './hooks/useExport.ts'
 import { useImageInput } from './hooks/useImageInput.ts'
 import { useDocumentHistory } from './hooks/useHistory.ts'
 import { useLayerActions } from './hooks/useLayerActions.ts'
+import { useLang } from './hooks/useLang.ts'
 import { useLibrary } from './hooks/useLibrary.ts'
 import { useOutputMode } from './hooks/useOutputMode.ts'
 import { useScene } from './hooks/useScene.ts'
@@ -27,6 +28,7 @@ import { useAnchoredSettings } from './hooks/useAnchoredSettings.ts'
 import { useShots } from './hooks/useShots.ts'
 import { useSideFile, type SideTarget } from './hooks/useSideFile.ts'
 import { useNarrow, useShortcuts } from './hooks/useShortcuts.ts'
+import { m } from './lib/i18n/index.ts'
 import { loadImage } from './lib/image.ts'
 import { getHistoryBlobs } from './lib/store.ts'
 import { exportStyle, parseSettings } from './lib/styles.ts'
@@ -49,6 +51,12 @@ export default function App() {
     const timer = setTimeout(() => setNote(null), 2400)
     return () => clearTimeout(timer)
   }, [note])
+
+  // Abonne tout l'arbre à la langue : ce rendu redescend, chacun relit `m`.
+  const { lang } = useLang()
+  useEffect(() => {
+    document.title = m.core.title
+  }, [lang])
 
   const doc = useDocument()
   const { settings, setSettings, composition, setComposition, scale, setScale, patch, compose } = doc
@@ -167,22 +175,14 @@ export default function App() {
       const entry = library.history.find((item) => item.id === id)
       // Rouvrir remplace la session : même garde que « New session ».
       const replacing = shots.shots.length > 0
-      if (
-        replacing &&
-        !(await confirm({
-          title: 'Replace the current images?',
-          body: 'Reopening this export closes the images and layers you are working on.',
-          action: 'Reopen',
-        }))
-      )
-        return
+      if (replacing && !(await confirm(m.workspace.confirm.reopen))) return
       try {
         const blobs = await getHistoryBlobs(id)
-        if (!entry || !blobs) throw new Error('This export is no longer in the history')
+        if (!entry || !blobs) throw new Error(m.workspace.history.gone)
         shots.replaceAll([await loadImage(blobs.source)], [entry.name])
         batch.reset()
       } catch (cause: unknown) {
-        setFailure(cause instanceof Error ? cause.message : 'Could not reopen this export')
+        setFailure(cause instanceof Error ? cause.message : m.workspace.history.reopenFailed)
         return
       }
       // Une entrée d'historique a pu être écrite par une version antérieure de
@@ -195,12 +195,7 @@ export default function App() {
 
   const purge = () =>
     // Une purge ne se rattrape pas : l'historique est le seul exemplaire.
-    void confirm({
-      title: 'Delete the oldest exports?',
-      body: 'They cannot be recovered — there is no copy anywhere else.',
-      action: 'Delete',
-      tone: 'danger',
-    }).then((ok) => {
+    void confirm({ ...m.workspace.confirm.purge, tone: 'danger' }).then((ok) => {
       if (ok) void library.purge()
     })
 
@@ -214,16 +209,7 @@ export default function App() {
   const newSession = useCallback(async () => {
     // L'image de fond importée n'est pas dans le snapshot d'annulation : un ⌘Z
     // ne la rendrait pas. D'où la confirmation.
-    if (
-      shots.shots.length > 0 &&
-      !(await confirm({
-        title: 'Start a new session?',
-        body: 'The current shots and settings are cleared. Saved styles and history are kept.',
-        action: 'Start over',
-      }))
-    ) {
-      return
-    }
+    if (shots.shots.length > 0 && !(await confirm(m.workspace.confirm.newSession))) return
 
     shots.reset()
     batch.reset()
@@ -247,20 +233,25 @@ export default function App() {
           scene={scene}
           onApply={styles.apply}
           onSave={() =>
-            void styles
-              .save()
-              .then(() => setNote('Style saved — name it under Style in the inspector'), fail('Could not save the style'))
+            void styles.save().then(() => setNote(m.workspace.styles.savedNote), fail(m.workspace.styles.saveFailed))
           }
           onUpdate={() =>
-            void styles.update().then(() => setNote(`“${activeStyle?.name}” updated`), fail('Could not update the style'))
+            void styles
+              .update()
+              .then(() => setNote(m.workspace.styles.updatedNote(activeStyle?.name)), fail(m.workspace.styles.updateFailed))
           }
           onImport={() => pick('style')}
           onExport={exportStyle}
         />
       )}
-      <Button variant="ghost" onClick={() => setHistoryOpen(true)} title="History" aria-label="History">
+      <Button
+        variant="ghost"
+        onClick={() => setHistoryOpen(true)}
+        title={m.workspace.history.title}
+        aria-label={m.workspace.history.title}
+      >
         <HistoryIcon />
-        <span className="max-[1180px]:hidden">History</span>
+        <span className="max-[1180px]:hidden">{m.workspace.history.title}</span>
       </Button>
       {!empty && (
         <ExportMenu
@@ -368,7 +359,7 @@ export default function App() {
         role="status"
         className="absolute bottom-[128px] left-1/2 z-30 -translate-x-1/2 font-mono text-[10px] whitespace-nowrap text-dim"
       >
-        {!problem && (note ?? (exporter.copied ? 'Copied to clipboard' : (exporter.status ?? '')))}
+        {!problem && (note ?? (exporter.copied ? m.workspace.app.copied : (exporter.status ?? '')))}
       </p>
 
       {/* Un seul dialogue de confirmation pour toute l'app. */}
@@ -385,7 +376,7 @@ export default function App() {
         tabIndex={-1}
         onChange={input.onInputChange}
         className="sr-only"
-        aria-label="Choose one or more screenshots"
+        aria-label={m.workspace.app.pickShots}
       />
       <input
         ref={side.inputRef}
@@ -394,7 +385,7 @@ export default function App() {
         tabIndex={-1}
         onChange={side.onChange}
         className="sr-only"
-        aria-label="Choose a file"
+        aria-label={m.workspace.app.pickFile}
       />
     </div>
   )

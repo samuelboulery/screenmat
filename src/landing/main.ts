@@ -1,9 +1,11 @@
 import '../index.css'
 import './landing.css'
+import { m, setLang } from '../lib/i18n/index.ts'
 import { MAC, keyLabel } from '../lib/keys.ts'
 import { THEME_KEY, resolveTheme, type Theme } from '../lib/theme.ts'
+import { PAGE_LANG, wireLang } from './lang.ts'
 
-/* La landing est du HTML statique : ce module ne fait que le thème, puis charge
+/* La landing est du HTML statique : ce module ne fait que le thème et la langue, puis charge
    la vitrine — et avec elle le moteur de rendu — une fois la page peinte. Le
    titre est le LCP, pas le canvas. Pas de React ici. */
 
@@ -24,7 +26,7 @@ function apply(theme: Theme, button: HTMLButtonElement) {
   document.documentElement.dataset.theme = theme
   document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')?.setAttribute('content', theme === 'dark' ? '#121110' : '#f3f2ee')
   button.innerHTML = theme === 'dark' ? SUN : MOON
-  button.setAttribute('aria-label', theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme')
+  button.setAttribute('aria-label', theme === 'dark' ? m.landing.toLight : m.landing.toDark)
 }
 
 function themeToggle() {
@@ -44,6 +46,9 @@ function themeToggle() {
   })
 }
 
+// La langue est celle du HTML servi ; ce que la page dit ensuite la suit.
+setLang(PAGE_LANG)
+wireLang()
 themeToggle()
 
 // Le HTML est écrit pour un Mac. Ailleurs, ⌘ n'existe pas : les touches citées

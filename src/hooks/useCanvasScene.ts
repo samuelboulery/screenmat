@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { m } from '../lib/i18n/index.ts'
 import { BASE_WIDTH, computeGeometry, renderScene, type Geometry } from '../lib/render.ts'
 import { loadTextFonts } from '../lib/text.ts'
 import { DEFAULT_PLACEMENT, type Scene } from '../types.ts'
@@ -139,7 +140,7 @@ export function useCanvasScene(
         setError(null)
       } catch (cause: unknown) {
         console.error('renderScene', cause)
-        setError(cause instanceof Error ? cause.message : 'Rendu impossible')
+        setError(cause instanceof Error ? cause.message : m.messages.image.renderFailed)
         return
       }
 

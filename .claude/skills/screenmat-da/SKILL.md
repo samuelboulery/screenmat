@@ -67,7 +67,7 @@ ouverte. Plus de navigation : Edit, Batch, Styles et History ont fusionné.
 
 | Zone | Rôle |
 |---|---|
-| Barre haute (58 px) | identité à gauche ; à droite `Styles ▾` (menu), `History` (tiroir), `Export 2× ▾` (bouton primaire + menu), Dev docs, thème |
+| Barre haute (58 px) | identité à gauche ; à droite `Styles ▾` (menu), `History` (tiroir), `Export 2× ▾` (bouton primaire + menu), Dev docs, raccourcis, langue, thème |
 | Panneau gauche (240 px) | les images de la session — clic = ouvrir, jamais vider le lot —, `Separate / Combined`, puis les calques de l'image active, et la nouvelle session au pied |
 | Canvas | la barre d'outils flotte au-dessus, centrée sur la zone de dessin ; undo/redo et dimensions dessous |
 | Inspecteur droit (288 px) | **contextuel** : un calque sélectionné ⇒ ses réglages seuls, avec `← Document` ; rien de sélectionné ⇒ Frame, Canvas, Background, Composition (en combiné), Shot, puis la section Style si un style est appliqué |
@@ -123,6 +123,14 @@ une bascule `Device ratio` pour `mac` et `phone`, une grille `Screen ratio` pour
 sur le canvas choisit la part visible, image par image, et les calques suivent.
 Un screenshot paysage couche le `phone` ; `Island · Left / Right` choisit alors
 le bord qui porte l'îlot, et n'apparaît pas pour un screenshot portrait.
+
+**Deux langues, une bascule écrite.** Le bouton de langue porte la langue
+courante en mono (`EN`, `FR`) — une langue se lit, elle ne se dessine pas, donc
+pas d'icône. Son nom accessible est dans la langue d'arrivée. Les libellés cités
+dans ce document sont les anglais ; leur français vit dans `src/lib/i18n/`, un
+mot par chose : capture, image, calque, fond, cadre, floutage, contour, pastille,
+filigrane, graine. Un libellé français ne s'allonge pas au point de casser un
+panneau de 240 ou 288 px : on prend le mot court.
 
 Sous 1100 px, l'inspecteur devient une feuille rétractable. Pas de version
 mobile — l'outil vit à côté d'un screenshot pris sur desktop.
@@ -187,7 +195,10 @@ en clair, papier sur encre en sombre), qui se développe de haut en bas, puis
 glisse à sa place dans le **vrai** rendu de `renderScene` — réglages par
 défaut de l'éditeur, rien d'autre. `T A R B` y posent de vrais calques (focus
 dans la vitrine), `⌫` annule, `↻` rejoue. Une capture collée ou déposée passe
-par la même séquence, puis « Continue in editor » l'emporte dans `/app/`. Mouvement
+par la même séquence, puis « Continue in editor » l'emporte dans `/app/`. La
+version française vit sur `/fr/`, générée depuis ce même balisage ; dans
+l'en-tête, à gauche du thème, un lien carré de même gabarit (`FR` / `EN`) mène à
+l'autre langue, et l'éditeur ouvert depuis `/fr/` s'ouvre en français. Mouvement
 réduit : l'état final directement. La capture de démo est un fichier,
 `public/landing/demo.webp`, généré par `docs/assets/landing-demo.ts`.
 

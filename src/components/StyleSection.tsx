@@ -1,6 +1,7 @@
 import StyleWatermark from './StyleWatermark.tsx'
 import { DeleteIcon } from './icons.tsx'
 import { Button, Section } from './ui.tsx'
+import { m } from '../lib/i18n/index.ts'
 import type { useStyleEditing } from '../hooks/useStyleEditing.ts'
 import type { Style } from '../types.ts'
 
@@ -17,20 +18,20 @@ type StyleSectionProps = {
 export default function StyleSection({ style, editing }: StyleSectionProps) {
   return (
     <>
-      <Section title="Style">
+      <Section title={m.inspector.style.title}>
         <input
           type="text"
           value={style.name}
           onChange={(event) => editing.onRename(style.id, event.target.value)}
-          aria-label="Style name"
+          aria-label={m.inspector.style.name}
           className="w-full rounded-md border border-hairline bg-sunken px-3 py-2 text-[12px] text-ink"
         />
         <p className="t-ui-small text-dim">
-          Settings you change here stay in the image until you choose Update in the Styles menu.
+          {m.inspector.style.note}
         </p>
         <Button variant="danger" onClick={() => editing.onDelete(style.id)} className="w-full justify-center">
           <DeleteIcon />
-          Delete style
+          {m.inspector.style.remove}
         </Button>
       </Section>
 

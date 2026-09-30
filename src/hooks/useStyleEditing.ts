@@ -1,6 +1,7 @@
 import { useConfirm } from '../components/ConfirmDialog.tsx'
 import type { useLibrary } from './useLibrary.ts'
 import type { useStyleActions } from './useStyleActions.ts'
+import { m } from '../lib/i18n/index.ts'
 import type { WatermarkPosition } from '../types.ts'
 
 type StyleEditingInput = {
@@ -45,9 +46,9 @@ export function useStyleEditing(input: StyleEditingInput) {
       // Un style supprimé n'est pas dans la pile d'annulation : on confirme,
       // comme pour la purge de l'historique.
       void confirm({
-        title: 'Delete this style?',
-        body: 'This cannot be undone.',
-        action: 'Delete',
+        title: m.messages.style.deleteTitle,
+        body: m.messages.style.deleteBody,
+        action: m.messages.style.deleteAction,
         tone: 'danger',
       }).then((ok) => {
         if (ok) void library.removeStyle(id)

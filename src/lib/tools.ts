@@ -1,3 +1,5 @@
+import { m } from './i18n/index.ts'
+
 /** Les clés restent les abréviations mono d'origine — c'est l'identité d'un
  *  outil dans le code, pas ce qui s'affiche. Le rail fait 56 px : à l'écran,
  *  l'icône va seule, et le nom complet vit dans l'infobulle.
@@ -28,13 +30,7 @@ export function toolForKey(key: string): Tool | null {
   return TOOLS.find((tool) => TOOL_KEYS[tool] === upper) ?? null
 }
 
-export const TOOL_TITLES: Record<Tool, string> = {
-  SEL: 'Select',
-  TXT: 'Text label',
-  ARR: 'Arrow',
-  LIN: 'Line',
-  BOX: 'Box',
-  ELL: 'Ellipse',
-  NUM: 'Numbered badge',
-  RDC: 'Redact',
+/** Le nom d'un outil, dans la langue de l'interface. */
+export function toolTitle(tool: Tool): string {
+  return m.core.tools[tool]
 }

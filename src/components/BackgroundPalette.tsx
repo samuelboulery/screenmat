@@ -1,4 +1,5 @@
 import { AddIcon } from './icons.tsx'
+import { m } from '../lib/i18n/index.ts'
 import { MAX_PALETTE_ACCENTS, withAccent, withColor, withoutAccent } from '../lib/styles.ts'
 import type { Palette } from '../types.ts'
 
@@ -24,12 +25,12 @@ export default function BackgroundPalette({ palette, frozen, onChange }: Backgro
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap gap-1.5">
-        <ColorTile color={palette.base} label="Base color" onColor={(color) => onChange(withColor(palette, BASE, color))} />
+        <ColorTile color={palette.base} label={m.inspector.palette.base} onColor={(color) => onChange(withColor(palette, BASE, color))} />
         {palette.accents.map((color, index) => (
           <ColorTile
             key={`${color}-${index}`}
             color={color}
-            label={`Accent ${index + 1}`}
+            label={m.inspector.palette.accent(index + 1)}
             onColor={(next) => onChange(withColor(palette, index, next))}
             onRemove={() => onChange(withoutAccent(palette, index))}
           />
@@ -37,7 +38,7 @@ export default function BackgroundPalette({ palette, frozen, onChange }: Backgro
         {/* Ajouter reprend le sélecteur natif : aucune dépendance, focalisable
             au clavier. */}
         <label
-          title={full ? `${MAX_PALETTE_ACCENTS} colors maximum` : 'Add a color'}
+          title={full ? m.inspector.palette.max(MAX_PALETTE_ACCENTS) : m.inspector.palette.add}
           className={`relative flex size-5 items-center justify-center rounded-xs border border-dashed border-ink/15 text-dim ${
             full ? 'pointer-events-none opacity-40' : 'hover:border-ink/25 hover:text-ink-soft'
           }`}
@@ -45,7 +46,7 @@ export default function BackgroundPalette({ palette, frozen, onChange }: Backgro
           <AddIcon />
           <input
             type="color"
-            aria-label="Add a color"
+            aria-label={m.inspector.palette.add}
             disabled={full}
             // Repartir du blanc : une couleur qui n'existe pas encore n'a pas de valeur.
             value="#ffffff"
@@ -57,10 +58,10 @@ export default function BackgroundPalette({ palette, frozen, onChange }: Backgro
       <p className="t-ui-small text-dim">
         {frozen ? (
           <button type="button" onClick={() => onChange(undefined)} className="underline underline-offset-2 hover:text-ink">
-            Reset to screenshot colours
+            {m.inspector.palette.reset}
           </button>
         ) : (
-          'From the screenshot — pick a colour to change it'
+          m.inspector.palette.hint
         )}
       </p>
     </div>
@@ -99,8 +100,8 @@ function ColorTile({
         // souris n'existe pas au clavier.
         <button
           type="button"
-          title={`Remove ${label.toLowerCase()}`}
-          aria-label={`Remove ${label.toLowerCase()}`}
+          title={m.inspector.palette.remove(label)}
+          aria-label={m.inspector.palette.remove(label)}
           onClick={onRemove}
           className="absolute -top-1.5 -right-1.5 flex size-4 items-center justify-center rounded-full border border-hairline bg-stage text-[10px] text-ink-soft opacity-0 transition-opacity duration-140 group-hover:opacity-100 hover:text-danger focus-visible:opacity-100"
         >

@@ -2,6 +2,7 @@ import Menu from './Menu.tsx'
 import { CancelIcon, CopiedIcon, CopyIcon, ExpandedIcon, ExportAllIcon, ExportIcon } from './icons.tsx'
 import { Button, CheckBox, Row, Section, Segmented, buttonClass } from './ui.tsx'
 import type { Format, Ratio } from '../types.ts'
+import { m } from '../lib/i18n/index.ts'
 import { MAC, keyLabel } from '../lib/keys.ts'
 
 /** Les échelles d'export, en toutes lettres : `useShortcuts` pose les mêmes
@@ -61,22 +62,22 @@ export default function ExportMenu(props: ExportMenuProps) {
       <Button
         variant="primary"
         onClick={props.onExport}
-        title={keyLabel('Export this image (⌘E)', MAC)}
-        aria-label={keyLabel(`Export this image at ${scale}× (⌘E)`, MAC)}
+        title={keyLabel(m.workspace.exportMenu.title, MAC)}
+        aria-label={keyLabel(m.workspace.exportMenu.titleAt(scale), MAC)}
         className="rounded-r-none"
       >
         <ExportIcon />
-        {batch?.running ? `${batch.rendered} / ${batch.total}` : `Export ${scale}×`}
+        {batch?.running ? `${batch.rendered} / ${batch.total}` : m.workspace.exportMenu.exportAt(scale)}
       </Button>
       <Menu
-        label="Export options"
+        label={m.workspace.exportMenu.options}
         trigger={<ExpandedIcon />}
         triggerClassName={buttonClass('primary', 'rounded-l-none border-l border-stage/25 px-2')}
         className="w-72 space-y-4"
       >
         {(close) => (
           <>
-            <Section title="Output">
+            <Section title={m.workspace.exportMenu.output}>
               <Segmented className="w-full" options={FORMATS} value={format} onPick={props.onFormat} />
               <Segmented
                 className="w-full"
@@ -95,10 +96,10 @@ export default function ExportMenu(props: ExportMenuProps) {
                   close()
                 }}
                 className="w-full justify-center"
-                title={keyLabel('Copy (⌘C)', MAC)}
+                title={keyLabel(m.workspace.exportMenu.copyTitle, MAC)}
               >
                 {copied ? <CopiedIcon /> : <CopyIcon />}
-                {copied ? 'Copied' : 'Copy to clipboard'}
+                {copied ? m.workspace.exportMenu.copied : m.workspace.exportMenu.copy}
               </Button>
             </Section>
 
@@ -115,7 +116,7 @@ function BatchSection(batch: BatchControls & { count: number }) {
   const files = batch.count * batch.ratios.length
 
   return (
-    <Section title={`All ${batch.count} images`}>
+    <Section title={m.workspace.exportMenu.all(batch.count)}>
       <div className="grid grid-cols-4 gap-1">
         {RATIOS.map((ratio) => (
           <Row
@@ -130,19 +131,17 @@ function BatchSection(batch: BatchControls & { count: number }) {
       </div>
       <Row active={batch.harmonize} onClick={() => batch.onHarmonize(!batch.harmonize)} className="py-2">
         <CheckBox checked={batch.harmonize} />
-        <span className="t-ui">Harmonize backgrounds</span>
+        <span className="t-ui">{m.workspace.exportMenu.harmonize}</span>
       </Row>
-      <p className="t-mono-micro text-dim">
-        Same saturation and contrast across the batch. Each image keeps its own hue.
-      </p>
+      <p className="t-mono-micro text-dim">{m.workspace.exportMenu.harmonizeHint}</p>
       {batch.running ? (
         <div className="flex items-center gap-2">
           <span className="t-mono-micro flex-1 text-dim" role="status">
-            {batch.rendered} / {batch.total} rendered
+            {m.workspace.exportMenu.rendered(batch.rendered, batch.total)}
           </span>
           <Button onClick={batch.onCancel}>
             <CancelIcon />
-            Cancel
+            {m.workspace.confirm.cancel}
           </Button>
         </div>
       ) : (
@@ -153,7 +152,7 @@ function BatchSection(batch: BatchControls & { count: number }) {
           className="w-full justify-center"
         >
           <ExportAllIcon />
-          Export {files} {files === 1 ? 'file' : 'files'} · zip
+          {m.workspace.exportMenu.files(files)}
         </Button>
       )}
     </Section>

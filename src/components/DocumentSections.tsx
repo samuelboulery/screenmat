@@ -13,25 +13,20 @@ import type {
   Settings,
   Shot,
 } from '../types.ts'
+import { m } from '../lib/i18n/index.ts'
 import { MAC, keyLabel } from '../lib/keys.ts'
 
-const FRAMES: Array<{ value: FrameStyle; label: string }> = [
-  { value: 'none', label: 'none' },
-  { value: 'browser', label: 'browser' },
-  { value: 'macbook', label: 'mac' },
-  { value: 'iphone', label: 'phone' },
-]
+/* Des valeurs seulement : les libellés se lisent au rendu, dans la langue courante. */
+const FRAMES: FrameStyle[] = ['none', 'browser', 'macbook', 'iphone']
 
 /** Les ratios restent en mono : c'est une donnée, pas une action. */
 const RATIOS: Ratio[] = ['4:3', '1:1', '16:9', '9:16', 'auto']
 
 /** `side` s'appelle Grid : au-delà de deux shots il dispose une grille, et
  *  « Side » ne décrirait plus ce qu'on voit. La valeur, elle, ne bouge pas. */
-const LAYOUTS: Array<{ value: LayoutKind; label: string }> = [
-  { value: 'stack', label: 'Stack' },
-  { value: 'side', label: 'Grid' },
-  { value: 'tilt3d', label: 'Tilt 3D' },
-]
+const LAYOUTS = ['stack', 'side', 'tilt3d'] as const satisfies readonly LayoutKind[]
+
+const THEMES = ['auto', 'light', 'dark'] as const
 
 /** Auto, puis les quatre largeurs de grille qui tiennent dans un canvas. */
 const COLUMNS = ['0', '1', '2', '3', '4'] as const
@@ -78,19 +73,19 @@ export default function DocumentSections({
 
   return (
     <>
-      <Section title="Frame" collapsible open>
+      <Section title={m.inspector.frame.title} collapsible open>
         <div className="grid grid-cols-4 gap-1">
           {FRAMES.map((frame) => {
-            const Icon = FRAME_ICON[frame.value]
+            const Icon = FRAME_ICON[frame]
             return (
               <Tile
-                key={frame.value}
-                active={settings.frame === frame.value}
-                onClick={() => onChange({ frame: frame.value })}
+                key={frame}
+                active={settings.frame === frame}
+                onClick={() => onChange({ frame })}
                 className="h-12 font-mono text-[10px]"
               >
                 <Icon />
-                {frame.label}
+                {m.inspector.frame.frames[frame]}
               </Tile>
             )
           })}
@@ -100,7 +95,7 @@ export default function DocumentSections({
             régler ici ne produirait rien. */}
         {settings.frame !== 'macbook' && settings.frame !== 'iphone' && (
           <Slider
-            label="Corners"
+            label={m.inspector.common.corners}
             value={settings.radius}
             display={`${(settings.radius * 100).toFixed(1)} %`}
             min={0}
@@ -110,7 +105,7 @@ export default function DocumentSections({
           />
         )}
         <Slider
-          label="Rotate Y"
+          label={m.inspector.frame.rotateY}
           value={settings.rotateY}
           display={`${settings.rotateY}°`}
           min={-16}
@@ -119,9 +114,9 @@ export default function DocumentSections({
           onInput={(rotateY) => onChange({ rotateY })}
         />
         <Slider
-          label="Shadow"
+          label={m.inspector.common.shadow}
           value={settings.shadow}
-          display={settings.shadow < 0.6 ? 'soft' : settings.shadow > 1.3 ? 'hard' : 'medium'}
+          display={m.inspector.frame.shadows[settings.shadow < 0.6 ? 'soft' : settings.shadow > 1.3 ? 'hard' : 'medium']}
           min={0}
           max={2}
           step={0.1}
@@ -133,13 +128,13 @@ export default function DocumentSections({
           navigateur (`render.ts` et `chromeColors`) : ailleurs, la section
           entière ne décrit rien. */}
       {settings.frame === 'browser' && (
-        <Section title="Title bar" collapsible>
+        <Section title={m.inspector.titleBar.title} collapsible>
           <div className="flex items-center justify-between">
-            <span className="t-ui text-ink-soft">Show title bar</span>
+            <span className="t-ui text-ink-soft">{m.inspector.titleBar.show}</span>
             <Toggle
               checked={settings.titleBar}
               onChange={(titleBar) => onChange({ titleBar })}
-              label="Show title bar"
+              label={m.inspector.titleBar.show}
             />
           </div>
           <input
@@ -148,23 +143,19 @@ export default function DocumentSections({
             onChange={(event) => onChange({ url: event.target.value })}
             placeholder="example.com"
             spellCheck={false}
-            aria-label="URL shown in the title bar"
+            aria-label={m.inspector.titleBar.url}
             className="w-full rounded-md border border-hairline bg-sunken px-3 py-2 font-mono text-[11px] text-ink placeholder:text-dim"
           />
           <Segmented
             className="w-full"
-            options={[
-              { value: 'auto', label: 'auto' },
-              { value: 'light', label: 'light' },
-              { value: 'dark', label: 'dark' },
-            ]}
+            options={THEMES.map((value) => ({ value, label: m.inspector.titleBar.themes[value] }))}
             value={settings.theme}
             onPick={(theme) => onChange({ theme })}
           />
         </Section>
       )}
 
-      <Section title="Canvas" collapsible>
+      <Section title={m.inspector.canvas.title} collapsible>
         {/* Cinq ratios ne tiennent pas dans un groupe segmenté de 288 px :
             une grille garde des libellés lisibles sans repli sur deux lignes. */}
         <div className="grid grid-cols-5 gap-1">
@@ -181,7 +172,7 @@ export default function DocumentSections({
           ))}
         </div>
         <Slider
-          label="Padding"
+          label={m.inspector.common.padding}
           value={settings.padding}
           display={`${Math.round(settings.padding * 100)} %`}
           min={0}
@@ -202,19 +193,19 @@ export default function DocumentSections({
           qu'à partir de deux shots — à un seul, `layoutOffsets` retombe sur la
           fenêtre unique quoi qu'on choisisse. */}
       {combined && (
-        <Section title="Composition" collapsible open>
+        <Section title={m.inspector.composition.title} collapsible open>
           <div className="grid grid-cols-2 gap-1.5">
             {LAYOUTS.map((item) => {
-              const Icon = LAYOUT_ICON[item.value]
+              const Icon = LAYOUT_ICON[item]
               return (
                 <Tile
-                  key={item.value}
-                  active={layout === item.value}
-                  onClick={() => onCompose({ layout: item.value })}
+                  key={item}
+                  active={layout === item}
+                  onClick={() => onCompose({ layout: item })}
                   className="h-16 gap-1.5"
                 >
                   <Icon className="size-5" />
-                  <span className="text-[10px]">{item.label}</span>
+                  <span className="text-[10px]">{m.inspector.composition.layouts[item]}</span>
                 </Tile>
               )
             })}
@@ -222,7 +213,7 @@ export default function DocumentSections({
 
           <Slider
             // Même champ, mot juste : en grille il écarte les colonnes.
-            label={layout === 'side' ? 'Gap' : 'Spread'}
+            label={layout === 'side' ? m.inspector.composition.gap : m.inspector.composition.spread}
             value={composition.spread}
             display={`${Math.round(composition.spread * 100)} %`}
             min={0}
@@ -233,12 +224,12 @@ export default function DocumentSections({
 
           {layout === 'side' && (
             <div className="space-y-1.5">
-              <MonoLabel>Columns</MonoLabel>
+              <MonoLabel>{m.inspector.composition.columns}</MonoLabel>
               <Segmented
                 className="w-full"
                 options={COLUMNS.map((value) => ({
                   value,
-                  label: value === '0' ? 'auto' : value,
+                  label: value === '0' ? m.inspector.common.auto : value,
                 }))}
                 value={String(Math.min(4, composition.columns))}
                 onPick={(value) => onCompose({ columns: Number(value) })}
@@ -248,7 +239,7 @@ export default function DocumentSections({
 
           {layout === 'tilt3d' && (
             <Slider
-              label="Converge"
+              label={m.inspector.composition.converge}
               value={composition.converge}
               display={`${composition.converge}°`}
               min={0}
@@ -260,7 +251,7 @@ export default function DocumentSections({
 
           {(layout === 'stack' || layout === 'tilt3d') && (
             <Slider
-              label="Elevation"
+              label={m.inspector.composition.elevation}
               value={composition.elevation}
               display={`${Math.round(composition.elevation * windowWidth)} px`}
               min={0}
@@ -275,7 +266,7 @@ export default function DocumentSections({
               contenu, donc il ne déplacerait rien. */}
           {settings.ratio !== 'auto' && (
             <Slider
-              label="Offset Y"
+              label={m.inspector.common.offsetY}
               value={composition.offsetY}
               display={`${Math.round(composition.offsetY * windowWidth)} px`}
               min={-0.5}
@@ -292,12 +283,12 @@ export default function DocumentSections({
           exactement la même image. */}
       {placeable && activeShot && (
         <Section
-          title="Shot"
+          title={m.inspector.shot.title}
           collapsible
-          aside={<MonoLabel>{combined ? activeShot.name : keyLabel('⌥-drag to move', MAC)}</MonoLabel>}
+          aside={<MonoLabel>{combined ? activeShot.name : keyLabel(m.inspector.shot.dragHint, MAC)}</MonoLabel>}
         >
           <Slider
-            label="Size"
+            label={m.inspector.common.size}
             value={placement.scale}
             display={`${Math.round(placement.scale * 100)} %`}
             min={0.2}
@@ -306,7 +297,7 @@ export default function DocumentSections({
             onInput={(scale) => onPlace(activeShot.id, { scale })}
           />
           <Slider
-            label="Offset X"
+            label={m.inspector.shot.offsetX}
             value={placement.dx}
             display={`${Math.round(placement.dx * windowWidth)} px`}
             min={-1.5}
@@ -315,7 +306,7 @@ export default function DocumentSections({
             onInput={(dx) => onPlace(activeShot.id, { dx })}
           />
           <Slider
-            label="Offset Y"
+            label={m.inspector.common.offsetY}
             value={placement.dy}
             display={`${Math.round(placement.dy * windowWidth)} px`}
             min={-1.5}

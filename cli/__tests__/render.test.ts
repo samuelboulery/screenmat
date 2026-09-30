@@ -334,6 +334,8 @@ describe('render — fonds d’écran', () => {
       const full = await loadImage(await readFile(new URL(`../../public/${wallpaperPath(kind, 'full')}`, import.meta.url)))
       const thumb = await loadImage(await readFile(new URL(`../../public/${wallpaperPath(kind, 'thumb')}`, import.meta.url)))
       expect(full.width / full.height, kind).toBeCloseTo(1.6, 2)
+      // Sous 1920 px, un fond est flou dès l'export 1× (canvas de 1600 px, 3200 en 2×).
+      expect(full.width, kind).toBeGreaterThanOrEqual(1920)
       expect([thumb.width, thumb.height], kind).toEqual([192, 120])
     }
   })

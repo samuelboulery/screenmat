@@ -114,8 +114,8 @@ s'affichent. Les séries macOS et Windows montrent les vrais fonds d'écran d'Ap
 (Big Sur à Golden Gate) et de Microsoft (XP à Windows 11), embarqués dans
 `public/wallpapers/` (© Apple, © Microsoft, hors licence MIT, voir `NOTICE.md`) :
 ni palette, ni graine, ni grain — le fond tel qu'il est sur un bureau. Leurs
-tuiles chargent une vignette de 192 px, jamais l'image entière. Seul Windows 11
-existe en 3840 px ; 10, 8 et 7 sont en 1920 px, XP en 800 — flous à l'export 3×.
+tuiles chargent une vignette de 192 px, jamais l'image entière. Windows 11
+et XP sont en 3840 px ; 10, 8 et 7 en 1920 px — flous à l'export 3×.
 
 **Le ratio de l'écran se règle dans la section Frame** (`ScreenRatioControl`) :
 une bascule `Device ratio` pour `mac` et `phone`, une grille `Screen ratio` pour

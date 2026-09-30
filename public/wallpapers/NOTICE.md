@@ -22,10 +22,13 @@ Originals: <https://512pixels.net/projects/default-mac-wallpapers-in-5k/>
 
 The default desktop pictures of Windows 11 (Bloom, light and dark), Windows 10
 (Hero), Windows 8, Windows 7 (Harmony) and Windows XP (Bliss, photographed by
-Charles O'Rear), files named `windows-*`. Only Bloom exists at 3840 × 2400; the
-others are kept at the size they were published in — 1920 × 1200, and 800 × 500
-for Bliss — and are not upscaled.
+Charles O'Rear), files named `windows-*`. Bloom and Bliss are 3840 × 2400; the
+others are kept at the size they were published in, 1920 × 1200, and are not
+upscaled. Bliss is cut from a 600 dpi scan of the original photograph, not from
+the 800 × 600 file shipped with Windows XP: its colours predate Microsoft's
+retouching and differ slightly from the XP desktop.
 
 **They are © Microsoft Corporation.** screenmat is not affiliated with Microsoft.
 
-Originals: <https://windowswallpaper.miraheze.org/>
+Originals: <https://windowswallpaper.miraheze.org/> and, for Bliss,
+<https://archive.org/details/theoriginalfilesofsomewindowswallpapers>

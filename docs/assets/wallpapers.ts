@@ -12,8 +12,8 @@
  *
  *   node docs/assets/wallpapers.ts /tmp/screenmat-wallpapers windows
  *
- * Sources : l'archive de 512 Pixels (images © Apple Inc.) et le Windows
- * Wallpaper Wiki (images © Microsoft Corporation).
+ * Sources : l'archive de 512 Pixels (images © Apple Inc.), le Windows Wallpaper
+ * Wiki et, pour Bliss, archive.org (images © Microsoft Corporation).
  */
 import { createCanvas, loadImage, type Canvas, type Image } from '@napi-rs/canvas'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
@@ -23,6 +23,10 @@ import { WALLPAPERS, wallpaperPath, type Wallpaper } from '../../src/lib/wallpap
 
 const APPLE = 'https://media.512pixels.net/downloads/macos-wallpapers-6k/'
 const MICROSOFT = 'https://static.wikitide.net/windowswallpaperwiki/'
+// Bliss n'existe qu'en 800 × 600 sur le wiki. Ici, le scan 600 dpi de la photo
+// d'origine (4510 × 3627) : celle de Charles O'Rear, avant la retouche de
+// Microsoft — les couleurs ne sont pas au ton près celles du bureau de XP.
+const ARCHIVE = 'https://archive.org/download/theoriginalfilesofsomewindowswallpapers/'
 
 /** L'original de chaque fond. Le dernier segment de l'URL nomme sa copie en cache. */
 const FILES: Record<Wallpaper, string> = {
@@ -46,14 +50,14 @@ const FILES: Record<Wallpaper, string> = {
   'windows-10': `${MICROSOFT}4/44/Img0_%28Windows_10%29.jpg`,
   'windows-8': `${MICROSOFT}7/7b/Img0_%28Windows_8%29.jpg`,
   'windows-7': `${MICROSOFT}5/50/Img0_%28Windows_7%29.jpg`,
-  'windows-xp': `${MICROSOFT}c/cf/Bliss.jpg`,
+  'windows-xp': `${ARCHIVE}bliss%20600dpi.jpg`,
 }
 
 // ponytail: 3840 px pour un canvas de 4800 px à l'échelle 3 — agrandi ×1,25,
 // invisible sur ces images sans détail fin. Un ratio portrait agrandit
 // davantage : monter FULL si un export 9:16 en 3× montre du flou.
-// Un plafond, pas une cible : Windows 10, 8 et 7 n'existent qu'en 1920 px, XP en
-// 800. Les agrandir ici ne leur rendrait aucun détail et pèserait quatre fois
+// Un plafond, pas une cible : Windows 10, 8 et 7 n'existent qu'en 1920 px. Les
+// agrandir ici ne leur rendrait aucun détail et pèserait quatre fois
 // plus — le moteur agrandit au dessin (`drawCover`).
 const FULL = { width: 3840, height: 2400 }
 const THUMB = { width: 192, height: 120 }
@@ -103,7 +107,7 @@ function fullSize(image: Image): { width: number; height: number } {
 
 /** La meilleure qualité qui tient dans le budget. */
 function encode(canvas: Canvas): Buffer {
-  for (const quality of [86, 80, 74, 68, 60, 50]) {
+  for (const quality of [92, 86, 80, 74, 68, 60, 50]) {
     const data = canvas.toBuffer('image/webp', quality)
     if (data.length <= BUDGET) return data
   }

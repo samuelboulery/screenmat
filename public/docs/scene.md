@@ -141,9 +141,9 @@ shipped with screenmat: it ignores the palette and the seed.
 The generated ones read `saturation` and `contrast`. `grain` applies to every
 background except the dithered ones, where it would blur the pattern, and the
 wallpapers, which are shown as they look on a desktop. They are © Apple Inc. and
-© Microsoft Corporation, and are not covered by screenmat's MIT licence. Only
-`windows-11-*` is 3840 px wide: `windows-10`, `-8` and `-7` are 1920 px and
-`windows-xp` 800 px, so they soften at scale 3. A dithered
+© Microsoft Corporation, and are not covered by screenmat's MIT licence. 
+`windows-11-*` and `windows-xp` are 3840 px wide; `windows-10`, `-8` and `-7`
+are 1920 px, so they soften at scale 3. A dithered
 background is two tones — the lightest and the darkest colour of the palette —
 laid over the mesh: `ditherCell` is the cell size as a fraction of the width.
 

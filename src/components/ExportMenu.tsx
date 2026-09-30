@@ -56,7 +56,7 @@ export default function ExportMenu(props: ExportMenuProps) {
   const { scale, format, output, copied, batch } = props
 
   return (
-    <div className="flex items-center">
+    <div className="flex items-stretch">
       <Button
         variant="primary"
         onClick={props.onExport}

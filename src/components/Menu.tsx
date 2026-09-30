@@ -57,7 +57,8 @@ export default function Menu({
   return (
     <div
       ref={root}
-      className="relative"
+      // `flex` : le déclencheur s'étire à la hauteur de son voisin dans un bouton scindé.
+      className="relative flex"
       // Tab qui sort du menu le referme : ouvert sans focus, il couvrirait le canvas.
       onBlur={(event) => {
         if (!root.current?.contains(event.relatedTarget as Node | null)) setOpen(false)

@@ -1,0 +1,56 @@
+/* Barre haute, outils, raccourcis, touches : ce que tout l'éditeur partage. */
+
+export const coreEn = {
+  title: 'screenmat — editor',
+  topBar: {
+    local: 'LOCAL',
+    docs: 'Dev docs',
+    docsTitle: 'Dev docs — drive screenmat from a script, a CLI or an agent (Node API, CLI, MCP)',
+    shortcuts: 'Keyboard shortcuts',
+    toLight: 'Switch to light theme',
+    toDark: 'Switch to dark theme',
+    /** Toujours écrit dans la langue d'arrivée : c'est elle que lit celui qui cherche. */
+    switchLang: 'Passer en français',
+    close: 'Close',
+  },
+  tools: {
+    SEL: 'Select',
+    TXT: 'Text label',
+    ARR: 'Arrow',
+    LIN: 'Line',
+    BOX: 'Box',
+    ELL: 'Ellipse',
+    NUM: 'Numbered badge',
+    RDC: 'Redact',
+  },
+  /** Touches nommées et gestes de la table, écrits pour celui qui regarde. Une
+   *  entrée absente s'affiche telle que la table l'écrit. */
+  keyNames: {} as Record<string, string>,
+  shortcuts: {
+    tools: { title: 'Tools', hint: 'Single keys, when the canvas has focus' },
+    everywhere: { title: 'Everywhere', hint: 'With a modifier key' },
+    canvas: { title: 'On the canvas', hint: 'Single keys, when the canvas has focus' },
+    mouse: { title: 'With the mouse', hint: 'Gestures on the canvas' },
+    paste: 'Paste a screenshot',
+    export: 'Export',
+    copy: 'Copy the image',
+    undo: 'Undo',
+    redo: 'Redo',
+    duplicate: 'Duplicate layer',
+    selectAll: 'Select all layers',
+    group: 'Group',
+    ungroup: 'Ungroup',
+    stack: 'Move in the layer stack',
+    shuffle: 'New background',
+    scale: 'Export scale',
+    remove: 'Delete layer',
+    nudge: 'Nudge — ⇧ for ×5',
+    escape: 'Deselect, then back to Select',
+    help: 'This panel',
+    snap: 'Snap to 45°, keep proportions',
+    addToSelection: 'Add to the selection',
+    altDrag: 'Duplicate a layer · move a whole image',
+    pan: 'Reposition the image in its frame',
+    editText: 'Edit a text',
+  },
+}

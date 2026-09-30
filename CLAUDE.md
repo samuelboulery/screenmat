@@ -39,15 +39,34 @@ calques, `spec.ts` valide une donnée externe.
 Elle vit en Markdown dans **`public/docs/`** — source unique, en anglais, servie
 telle quelle (un modèle, `curl` ou GitHub la lisent) et mise en forme par la page
 `/docs` : entrée Vite `docs/index.html` + `src/docs/` (rendu Markdown
-maison, sans dépendance, sans `innerHTML`). Trois entrées en tout : la landing
+maison, sans dépendance, sans `innerHTML`). Quatre entrées en tout : la landing
 statique sur `/` (`index.html` + `src/landing/`, sans React, la vitrine charge
-`renderScene` après la première peinture), l'éditeur sur `/app/`
-(`app/index.html`), la doc. Une capture collée sur la landing passe à l'éditeur
+`renderScene` après la première peinture), sa traduction sur `/fr/`, l'éditeur
+sur `/app/` (`app/index.html`), la doc. Une capture collée sur la landing passe à l'éditeur
 par IndexedDB (`putHandoff` / `takeHandoff`, `lib/store.ts`), jamais par le
 réseau ni l'URL. Le lien vit en haut à droite de la
 barre. `cli/README.md` n'est plus qu'un panneau indicateur : ne pas y remettre de
 référence, elle divergerait au premier flag ajouté. Un défaut ou une borne cité
 dans la doc se relit à la source avant d'être écrit.
+
+## Deux langues, anglais et français
+
+- **Éditeur.** Tout texte visible ou lu par un lecteur d'écran passe par `m`
+  (`src/lib/i18n/`) : un dictionnaire par zone, `<zone>.en.ts` et `<zone>.fr.ts`,
+  le français typé sur l'anglais — une clé oubliée casse `tsc -b`. `m` se lit
+  **au rendu**, jamais à l'import d'un module ni dans un `useMemo` : une
+  constante de module figerait l'anglais. Le choix vit dans `sm-lang`
+  (`localStorage`), sinon la langue du navigateur ; `App` s'y abonne par
+  `useLang`, et comme aucun composant n'est mémoïsé, son rendu redescend partout.
+- **On traduit un libellé, jamais une valeur** : identifiants de fond, de cadre,
+  de position, formats, `keys` de la table des raccourcis restent tels quels.
+- **Landing.** `/fr/` n'a pas de balisage à elle : `vite-landing-fr.ts` rend
+  `index.html` traduit par `src/landing/html.fr.ts`, en dev comme au build. Un
+  texte ajouté à `index.html` porte `data-i18n="clé"` (ou
+  `data-i18n-attr="attribut:clé"`) ; une clé sans traduction, ou une traduction
+  que rien ne lit, fait échouer le test et le build.
+- **La porte machine reste en anglais** : `cli/` n'appelle jamais `setLang`,
+  `/docs` n'est pas traduite.
 
 ## Key Commands
 
@@ -82,7 +101,8 @@ pnpm mcp                # serveur MCP sur stdio
   Tests dans `src/lib/__tests__/` et `cli/__tests__/`.
 - TypeScript strict, pas de `any`. Immutabilité : aucune mutation d'état.
 - Erreurs gérées explicitement — pas de `catch` silencieux.
-- Commentaires en français, code et identifiants en anglais.
+- Commentaires en français, code et identifiants en anglais. Aucun texte
+  d'interface en dur dans un composant : il passe par `m`.
 - Fonctions < 50 lignes, fichiers < 400 lignes.
 - Les raccourcis assumés portent un commentaire `ponytail:` qui nomme leur
   plafond et le chemin de mise à niveau.

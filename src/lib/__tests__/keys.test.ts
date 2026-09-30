@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { SHORTCUTS } from '../../hooks/useShortcuts.ts'
+import { shortcuts } from '../../hooks/useShortcuts.ts'
 import { isMac, keyLabel, keycaps, type KeyPart } from '../keys.ts'
 import { TOOLS, TOOL_KEYS } from '../tools.ts'
 
-const ALL = [...TOOLS.map((tool) => TOOL_KEYS[tool]), ...SHORTCUTS.flatMap((group) => group.items.map((item) => item.keys))]
+const ALL = [...TOOLS.map((tool) => TOOL_KEYS[tool]), ...shortcuts().flatMap((group) => group.items.map((item) => item.keys))]
 
 const caps = (parts: KeyPart[]) => parts.map((part) => (part.kind === 'word' ? `(${part.text})` : part.caps.map((cap) => cap.text).join('+')))
 

@@ -1,6 +1,7 @@
 import ColorPicker from './ColorPicker.tsx'
 import { Section, Segmented, Slider, Toggle, type Option } from './ui.tsx'
 import { ANNOTATION_LIMITS, percent } from '../lib/annotate.ts'
+import { m } from '../lib/i18n/index.ts'
 import type { Annotation, TextAlign, TextBackground, TextFont } from '../types.ts'
 
 const FONTS: ReadonlyArray<Option<TextFont>> = [
@@ -10,18 +11,9 @@ const FONTS: ReadonlyArray<Option<TextFont>> = [
 
 /** Une graisse est une donnée : en chiffres et en mono, le nom complet en
  *  infobulle. Quatre mots n'auraient pas tenu dans 288 px. */
-const WEIGHTS: ReadonlyArray<Option<string>> = [
-  { value: '400', label: <span className="font-mono">400</span>, title: 'Regular' },
-  { value: '500', label: <span className="font-mono">500</span>, title: 'Medium' },
-  { value: '600', label: <span className="font-mono">600</span>, title: 'Semibold' },
-  { value: '700', label: <span className="font-mono">700</span>, title: 'Bold' },
-]
+const WEIGHTS = ['400', '500', '600', '700'] as const
 
-const ALIGNS: ReadonlyArray<Option<TextAlign>> = [
-  { value: 'left', label: 'Left' },
-  { value: 'center', label: 'Center' },
-  { value: 'right', label: 'Right' },
-]
+const ALIGNS: readonly TextAlign[] = ['left', 'center', 'right']
 
 /** Plaques proposées d'office : noire, blanche, puis celles de la palette. */
 const PLATE_COLORS = ['#000000', '#FFFFFF', '#111111', '#FFD479']
@@ -39,24 +31,33 @@ export default function TextStyle({ annotation, accents, onPatch }: TextStylePro
 
   return (
     <>
-      <Section title="Text">
+      <Section title={m.inspector.text.title}>
         <textarea
           value={annotation.text}
           rows={Math.min(6, Math.max(2, annotation.text.split('\n').length))}
           onChange={(event) => onPatch({ text: event.target.value })}
-          aria-label="Text"
+          aria-label={m.inspector.text.title}
           className="w-full resize-none rounded-md border border-hairline bg-sunken px-3 py-2 text-[12px] text-ink placeholder:text-dim"
         />
         <Segmented className="w-full" options={FONTS} value={annotation.font} onPick={(font) => onPatch({ font })} />
         <Segmented
           className="w-full"
-          options={WEIGHTS}
+          options={WEIGHTS.map((value) => ({
+            value,
+            label: <span className="font-mono">{value}</span>,
+            title: m.inspector.text.weights[value],
+          }))}
           value={String(annotation.weight)}
           onPick={(weight) => onPatch({ weight: Number(weight) })}
         />
-        <Segmented className="w-full" options={ALIGNS} value={annotation.align} onPick={(align) => onPatch({ align })} />
+        <Segmented
+          className="w-full"
+          options={ALIGNS.map((value) => ({ value, label: m.inspector.text.aligns[value] }))}
+          value={annotation.align}
+          onPick={(align) => onPatch({ align })}
+        />
         <Slider
-          label="Size"
+          label={m.inspector.common.size}
           value={annotation.size}
           display={percent(annotation.size)}
           {...ANNOTATION_LIMITS.size}
@@ -65,19 +66,19 @@ export default function TextStyle({ annotation, accents, onPatch }: TextStylePro
       </Section>
 
       <Section
-        title="Background"
-        aside={<Toggle checked={plate.on} label="Background" onChange={(on) => patchPlate({ on })} />}
+        title={m.inspector.common.background}
+        aside={<Toggle checked={plate.on} label={m.inspector.common.background} onChange={(on) => patchPlate({ on })} />}
       >
         {plate.on && (
           <>
             <ColorPicker
               colors={[...PLATE_COLORS, ...accents]}
               value={plate.color}
-              label="Background color"
+              label={m.inspector.text.plateColor}
               onPick={(color) => patchPlate({ color })}
             />
             <Slider
-              label="Opacity"
+              label={m.inspector.common.opacity}
               value={plate.opacity}
               display={`${Math.round(plate.opacity * 100)} %`}
               min={0.1}
@@ -86,14 +87,14 @@ export default function TextStyle({ annotation, accents, onPatch }: TextStylePro
               onInput={(opacity) => patchPlate({ opacity })}
             />
             <Slider
-              label="Padding"
+              label={m.inspector.common.padding}
               value={plate.padding}
               display={`${plate.padding.toFixed(2)} em`}
               {...ANNOTATION_LIMITS.padding}
               onInput={(padding) => patchPlate({ padding })}
             />
             <Slider
-              label="Corners"
+              label={m.inspector.common.corners}
               value={plate.radius}
               display={`${plate.radius.toFixed(2)} em`}
               {...ANNOTATION_LIMITS.plateRadius}

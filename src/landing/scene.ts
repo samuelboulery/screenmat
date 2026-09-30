@@ -1,10 +1,11 @@
 import { createAnnotation } from '../lib/annotate.ts'
+import { m } from '../lib/i18n/index.ts'
 import { DEFAULT_COMPOSITION, DEFAULT_SETTINGS, type Annotation, type Palette, type Scene } from '../types.ts'
 
 /** Les quatre touches de la vitrine — celles de l'éditeur. */
 export type HeroKey = 't' | 'a' | 'r' | 'b'
 
-export const HERO_KEYS: Record<HeroKey, string> = { t: 'Text', a: 'Arrow', r: 'Box', b: 'Blur' }
+export const HERO_KEYS: readonly HeroKey[] = ['t', 'a', 'r', 'b']
 
 /* Trois places par touche, en fractions de la capture (largeur, hauteur) : la
    démo et une capture collée partagent les mêmes, qui tombent sur un tableau de
@@ -32,11 +33,6 @@ const SPOTS: Record<HeroKey, readonly { x: number; y: number; w: number; h: numb
   ],
 }
 
-const TEXTS = {
-  demo: ['Revenue up 18% this quarter', 'Weekly export is live', 'Best month yet'],
-  user: ['Look here', 'New', 'Ship it'],
-} as const
-
 /**
  * Le calque d'une touche, à sa `n`-ième place. Les calques se placent en
  * fractions de la LARGEUR de leur fenêtre, `y` compris : d'où `aspect`
@@ -47,7 +43,7 @@ export function heroLayer(key: HeroKey, n: number, aspect: number, demo: boolean
   const rect = { x: spot.x, y: spot.y * aspect, w: spot.w, h: spot.h * aspect }
   const kind = { t: 'text', a: 'arrow', r: 'box', b: 'redaction' } as const
   const layer = createAnnotation(kind[key], rect)
-  return key === 't' ? { ...layer, text: TEXTS[demo ? 'demo' : 'user'][n % 3]! } : layer
+  return key === 't' ? { ...layer, text: m.landing.texts[demo ? 'demo' : 'user'][n % 3]! } : layer
 }
 
 /** La scène de la vitrine : les réglages par défaut de l'éditeur, rien d'autre. */

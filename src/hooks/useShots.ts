@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react'
 import { moved, panShot, reanchorShots, toggled, type View } from '../lib/anchor.ts'
 import { createAnnotation, nextId, type Point } from '../lib/annotate.ts'
 import { DUPLICATE_OFFSET } from '../lib/handles.ts'
+import { m } from '../lib/i18n/index.ts'
 import { extractPalette } from '../lib/palette.ts'
 import { toolStyle } from '../lib/tool-style.ts'
 import {
@@ -294,7 +295,9 @@ export function useShots(): ShotsState {
       // L'identifiant est tiré ici, pas dans l'updater : celui-ci doit rester
       // pur, et on a besoin du groupe tout de suite pour le sélectionner.
       const groupId = nextId('group')
-      patchLayers(shotId, (layers) => groupNodes(layers, ids, 'Group', groupId))
+      // Lu ici, pas dans l'updater : le nom est celui de la langue au moment du geste.
+      const name = m.messages.layers.group
+      patchLayers(shotId, (layers) => groupNodes(layers, ids, name, groupId))
       setSelectedLayerIds([groupId])
     },
     [patchLayers],

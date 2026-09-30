@@ -1,6 +1,7 @@
 import { CopiedIcon, PickFileIcon, SaveStyleIcon } from './icons.tsx'
 import { Button, ErrorNote, MonoLabel } from './ui.tsx'
 import type { HistoryMeta } from '../lib/store.ts'
+import { m } from '../lib/i18n/index.ts'
 import { MAC } from '../lib/keys.ts'
 
 type ImportScreenProps = {
@@ -46,21 +47,19 @@ export default function ImportScreen({
         <span className="rounded-md border border-accent/30 bg-accent/[.08] px-4 py-3 font-mono text-[15px] text-accent-ink">
           {MAC ? '⌘ V' : 'Ctrl + V'}
         </span>
-        <h1 className="t-headline text-[34px]">Paste a screenshot</h1>
-        <p className="text-[14px] text-ink-soft">
-          or drop a file here — nothing leaves your browser
-        </p>
+        <h1 className="t-headline text-[34px]">{m.core.shortcuts.paste}</h1>
+        <p className="text-[14px] text-ink-soft">{m.workspace.importScreen.drop}</p>
         <div className="flex items-center gap-2.5">
           <Button variant="primary" onClick={onPick}>
             <PickFileIcon />
-            Choose file
+            {m.workspace.importScreen.pick}
           </Button>
           {/* Sans image, appliquer un style ne se voit pas : le bouton dit donc
               lui-même qu'il est pris, et pour quoi. */}
           <Button onClick={onUseLastStyle} disabled={!lastStyle}>
             {lastStyleArmed ? <CopiedIcon /> : <SaveStyleIcon />}
             <span className="max-w-56 truncate">
-              {lastStyleArmed ? `“${lastStyle}” ready for your image` : 'Start from last style'}
+              {lastStyleArmed ? m.workspace.importScreen.ready(lastStyle) : m.workspace.importScreen.lastStyle}
             </span>
           </Button>
         </div>
@@ -68,13 +67,11 @@ export default function ImportScreen({
       </div>
 
       <div className="w-[720px] max-w-full shrink-0 space-y-3">
-        <MonoLabel>Recent — this browser</MonoLabel>
+        <MonoLabel>{m.workspace.importScreen.recent}</MonoLabel>
         {/* Quatre cases vides se lisaient comme un chargement bloqué. Tant qu'il
             n'y a rien, une phrase ; les emplacements reviennent au premier export. */}
         {recents.length === 0 ? (
-          <p className="t-ui text-dim">
-            Your exports show up here, ready to reopen with the settings that made them.
-          </p>
+          <p className="t-ui text-dim">{m.workspace.importScreen.recentEmpty}</p>
         ) : (
         <div className="grid grid-cols-4 gap-4">
           {slots.map((entry, index) =>

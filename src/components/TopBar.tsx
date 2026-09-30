@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react'
 import { DevDocsIcon, LocalIcon, ShortcutsIcon, ThemeIcon } from './icons.tsx'
+import { useLang } from '../hooks/useLang.ts'
 import { useTheme } from '../hooks/useTheme.ts'
+import { m } from '../lib/i18n/index.ts'
 import { Badge, ExternalLink, IconButton } from './ui.tsx'
 
 /* Le mot tombe sous 1180 px, pour que la barre ne déborde jamais. L'infobulle
@@ -16,7 +18,7 @@ type TopBarProps = {
 
 /**
  * Barre haute unique, 58 px : l'identité à gauche ; à droite, la bibliothèque
- * (Styles, History), l'export, la porte machine et le thème. Il n'y a plus
+ * (Styles, History), l'export, la porte machine, la langue et le thème. Il n'y a plus
  * d'écrans entre lesquels naviguer : l'espace de travail est unique.
  */
 export default function TopBar({ actions, onHelp }: TopBarProps) {
@@ -25,7 +27,7 @@ export default function TopBar({ actions, onHelp }: TopBarProps) {
       <span className="text-[15px] font-bold tracking-tight">screenmat</span>
       <Badge>
         <span className="flex items-center gap-1">
-          <LocalIcon className="size-3" /> LOCAL
+          <LocalIcon className="size-3" /> {m.core.topBar.local}
         </span>
       </Badge>
 
@@ -36,13 +38,14 @@ export default function TopBar({ actions, onHelp }: TopBarProps) {
             donc hors ligne comme elle. */}
         <ExternalLink
           href="/docs/"
-          title="Dev docs — drive screenmat from a script, a CLI or an agent (Node API, CLI, MCP)"
-          aria-label="Dev docs"
+          title={m.core.topBar.docsTitle}
+          aria-label={m.core.topBar.docs}
         >
           <DevDocsIcon />
-          <span className={WORD}>Dev docs</span>
+          <span className={WORD}>{m.core.topBar.docs}</span>
         </ExternalLink>
-        <IconButton icon={ShortcutsIcon} label="Keyboard shortcuts" shortcut="?" onClick={onHelp} />
+        <IconButton icon={ShortcutsIcon} label={m.core.topBar.shortcuts} shortcut="?" onClick={onHelp} />
+        <LangToggle />
         <ThemeToggle />
       </div>
     </header>
@@ -53,6 +56,25 @@ export default function TopBar({ actions, onHelp }: TopBarProps) {
 function ThemeToggle() {
   const { theme, toggle } = useTheme()
   const Icon = ThemeIcon[theme]
-  const label = theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'
+  const label = theme === 'dark' ? m.core.topBar.toLight : m.core.topBar.toDark
   return <IconButton icon={Icon} label={label} onClick={toggle} />
+}
+
+/** La langue courante, écrite : une langue se lit, elle ne se dessine pas. Le
+ *  nom accessible est dans la langue d'arrivée, et le dit (`lang`). */
+function LangToggle() {
+  const { lang, toggle } = useLang()
+  const label = m.core.topBar.switchLang
+  return (
+    <button
+      type="button"
+      title={label}
+      aria-label={label}
+      lang={lang === 'fr' ? 'en' : 'fr'}
+      onClick={toggle}
+      className="flex size-8 shrink-0 items-center justify-center rounded-md font-mono text-[11px] font-medium text-ink-soft transition-colors duration-140 hover:bg-ink/[.04] hover:text-ink"
+    >
+      {lang.toUpperCase()}
+    </button>
+  )
 }

@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from 'react'
 import { runBatch, triggerDownload, type BatchJob } from '../lib/export.ts'
+import { m } from '../lib/i18n/index.ts'
 import type { QueueItem } from '../types.ts'
 
 export type Batch = {
@@ -82,7 +83,7 @@ export function useBatch(): Batch {
       setError(
         cause instanceof Error
           ? cause.message
-          : 'Batch export failed. Try fewer shots or a smaller scale.',
+          : m.messages.export.batchFailed,
       )
       setQueue((current) => current.map((item) => ({ ...item, status: 'error' })))
     } finally {

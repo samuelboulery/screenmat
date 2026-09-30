@@ -4,6 +4,7 @@ import type { useBatch } from './useBatch.ts'
 import type { useLibrary } from './useLibrary.ts'
 import type { BatchControls } from '../components/ExportMenu.tsx'
 import { buildBatchJobs } from '../lib/export.ts'
+import { m } from '../lib/i18n/index.ts'
 import type { Ratio, Scene, Shot } from '../types.ts'
 
 type BatchExportInput = {
@@ -42,7 +43,7 @@ export function useBatchExport({ scene, shots, scale, ratio, batch, library, onE
       (job, blob) =>
         job.scene.settings.ratio === ratios[0] &&
         void archive(job.scene, job.scale, blob, styleId, library.addHistory).catch((cause: unknown) =>
-          onError(cause instanceof Error ? cause.message : 'Could not save the export to history'),
+          onError(cause instanceof Error ? cause.message : m.messages.export.historyFailed),
         ),
     )
   }, [scene, shots, ratios, scale, harmonize, batch, library, onError])

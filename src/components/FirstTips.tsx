@@ -2,14 +2,16 @@ import { useState } from 'react'
 import { CancelIcon } from './icons.tsx'
 import Keys from './Keys.tsx'
 import { IconButton, Panel } from './ui.tsx'
+import { m } from '../lib/i18n/index.ts'
 
 const SEEN_KEY = 'sm-tips-seen'
 
-/** Les trois gestes qu'on ne devine pas en arrivant. Le reste est sous `?`. */
+/** Les trois gestes qu'on ne devine pas en arrivant. Le reste est sous `?`.
+ *  `label` est une clé de `m.workspace.tips`, lue au rendu. */
 const TIPS = [
-  { keys: 'T', label: 'to write' },
-  { keys: 'Drag', label: 'to select' },
-  { keys: '⌘E', label: 'to export' },
+  { keys: 'T', label: 'write' },
+  { keys: 'Drag', label: 'select' },
+  { keys: '⌘E', label: 'export' },
 ] as const
 
 function seen(): boolean {
@@ -43,13 +45,13 @@ export default function FirstTips() {
       {TIPS.map((tip) => (
         <span key={tip.keys} className="t-ui-small flex items-center gap-1.5 whitespace-nowrap text-ink-soft">
           <Keys shortcut={tip.keys} className="text-ink" />
-          {tip.label}
+          {m.workspace.tips[tip.label]}
         </span>
       ))}
       <span className="t-ui-small whitespace-nowrap text-dim">
-        · <Keys shortcut="?" /> for all
+        · <Keys shortcut="?" /> {m.workspace.tips.all}
       </span>
-      <IconButton icon={CancelIcon} label="Hide tips" onClick={dismiss} />
+      <IconButton icon={CancelIcon} label={m.workspace.tips.hide} onClick={dismiss} />
     </Panel>
   )
 }

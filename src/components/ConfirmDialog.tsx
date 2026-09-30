@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { Button } from './ui.tsx'
+import { m } from '../lib/i18n/index.ts'
 
 /* Confirmation aux couleurs de l'app, sur l'élément natif `<dialog>` : piège du
    focus, restitution du focus à la fermeture, `Esc`, inertie du reste de la
@@ -63,7 +64,7 @@ export function useConfirm(): {
     <dialog
       ref={ref}
       onClose={() => close(false)}
-      aria-label={request?.title ?? 'Confirm'}
+      aria-label={request?.title ?? m.workspace.confirm.fallback}
       className="panel m-auto w-[380px] max-w-[calc(100vw-40px)] rounded-lg p-5 text-ink backdrop:bg-stage/70"
     >
       {request && (
@@ -72,7 +73,7 @@ export function useConfirm(): {
           <div className="t-body mt-2 text-ink-soft">{request.body}</div>
           <div className="mt-5 flex justify-end gap-2">
             <Button ref={cancelRef} onClick={() => close(false)}>
-              Cancel
+              {m.workspace.confirm.cancel}
             </Button>
             <Button
               ref={actionRef}

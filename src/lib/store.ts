@@ -1,4 +1,5 @@
 import type { HistoryEntry, Style } from '../types.ts'
+import { m } from './i18n/index.ts'
 
 const DB_NAME = 'screenmat'
 const DB_VERSION = 2
@@ -26,7 +27,7 @@ function openDb(): Promise<IDBDatabase> {
 
   connection = new Promise((resolve, reject) => {
     if (typeof indexedDB === 'undefined') {
-      reject(new Error('IndexedDB is unavailable: styles and history are disabled'))
+      reject(new Error(m.messages.storage.noIndexedDb))
       return
     }
 
@@ -44,8 +45,7 @@ function openDb(): Promise<IDBDatabase> {
 
     // Un onglet encore ouvert sur l'ancienne version bloque la mise à niveau :
     // sans ce rejet, tout appel attendrait pour toujours.
-    request.onblocked = () =>
-      reject(new Error('Close the other screenmat tabs, then reload: local storage is being updated.'))
+    request.onblocked = () => reject(new Error(m.messages.storage.blocked))
     request.onsuccess = () => {
       const db = request.result
       // À la prochaine montée de version, céder la place plutôt que la bloquer.
@@ -55,11 +55,7 @@ function openDb(): Promise<IDBDatabase> {
       }
       resolve(db)
     }
-    request.onerror = () =>
-      reject(
-        request.error ??
-          new Error('Couldn’t open local storage. Private browsing blocks it on some browsers.'),
-      )
+    request.onerror = () => reject(request.error ?? new Error(m.messages.storage.openFailed))
   })
   // Un échec ne se met pas en cache : l'appel suivant retente.
   connection.catch(() => (connection = null))
@@ -81,8 +77,8 @@ function run<T>(
         // un `onsuccess` pourrait l'annuler (le passage vers `/app/`).
         if (mode === 'readwrite') transaction.oncomplete = () => resolve(request.result)
         else request.onsuccess = () => resolve(request.result)
-        request.onerror = () => reject(request.error ?? new Error(`Échec sur « ${store} »`))
-        transaction.onabort = () => reject(transaction.error ?? new Error(`Échec sur « ${store} »`))
+        request.onerror = () => reject(request.error ?? new Error(m.messages.storage.failed(store)))
+        transaction.onabort = () => reject(transaction.error ?? new Error(m.messages.storage.failed(store)))
       }),
   )
 }
@@ -122,8 +118,7 @@ export async function listHistory(count = 40, before?: number): Promise<HistoryM
       page.push(cursor.value as HistoryMeta)
       cursor.continue()
     }
-    request.onerror = () =>
-      reject(request.error ?? new Error('Couldn’t read the export history. Reload the page.'))
+    request.onerror = () => reject(request.error ?? new Error(m.messages.storage.historyFailed))
   })
 }
 
@@ -203,7 +198,7 @@ export async function takeHandoff(): Promise<Handoff | undefined> {
       if (request.result) store.delete(HANDOFF_ID)
     }
     transaction.oncomplete = () => resolve(request.result)
-    transaction.onabort = () => reject(transaction.error ?? new Error('Could not read the handoff'))
+    transaction.onabort = () => reject(transaction.error ?? new Error(m.messages.storage.handoffFailed))
   })
   if (!found || Date.now() - found.at > HANDOFF_TTL) return undefined
   return { blob: found.blob, name: found.name }

@@ -1,4 +1,5 @@
 import { rectFromPoints, type Point } from './annotate.ts'
+import { m } from './i18n/index.ts'
 import { flatten } from './tree.ts'
 import type { Scene } from '../types.ts'
 
@@ -13,13 +14,14 @@ import type { Scene } from '../types.ts'
  */
 export function describeScene(scene: Scene): string {
   const layers = scene.shots.reduce((total, shot) => total + flatten(shot.layers).length, 0)
+  const text = m.messages.describe
   const parts = [
-    scene.shots.length > 1 ? `${scene.shots.length} shots` : '1 shot',
-    scene.settings.frame === 'none' ? 'no frame' : `${scene.settings.frame} frame`,
-    `${scene.settings.background} background`,
+    text.shots(scene.shots.length),
+    scene.settings.frame === 'none' ? text.noFrame : text.frame(scene.settings.frame),
+    text.background(scene.settings.background),
+    ...(layers > 0 ? [text.layers(layers)] : []),
   ]
-  if (layers > 0) parts.push(layers > 1 ? `${layers} layers` : '1 layer')
-  return `Export preview — ${parts.join(', ')}`
+  return text.preview(parts.join(', '))
 }
 
 /** Le rectangle de sélection en px CSS. Il n'appartient pas au visuel : il est

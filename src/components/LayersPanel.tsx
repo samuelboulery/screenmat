@@ -10,23 +10,14 @@ import {
 } from './icons.tsx'
 import { IconButton, SELECTED, Section } from './ui.tsx'
 import { badgeNumbers } from '../lib/annotate.ts'
+import { m } from '../lib/i18n/index.ts'
 import { flatten, isGroup } from '../lib/tree.ts'
 import type { NodePatch } from '../hooks/useShots.ts'
-import type { Annotation, AnnotationKind, LayerNode, Shot } from '../types.ts'
+import type { Annotation, LayerNode, Shot } from '../types.ts'
 
 /* La pile de calques : arbre, glisser-déposer, œil et cadenas. Aucune
    dépendance — le glisser-déposer est celui du navigateur, comme dans
    la liste des images. */
-
-const KIND_NAME: Record<AnnotationKind, string> = {
-  text: 'Label',
-  badge: 'Badge',
-  arrow: 'Arrow',
-  line: 'Line',
-  box: 'Box',
-  ellipse: 'Ellipse',
-  redaction: 'Redacted area',
-}
 
 /** Où un nœud déposé doit atterrir. `inside` n'existe que sur un groupe. */
 type Drop = { id: string; where: 'before' | 'after' | 'inside' }
@@ -62,10 +53,10 @@ export default function LayersPanel({
   }
 
   return (
-    <Section title={shot ? `Layers — ${shot.name}` : 'Layers'}>
+    <Section title={shot ? m.workspace.layers.headingOf(shot.name) : m.workspace.layers.heading}>
       <div className="space-y-[3px]" onDragLeave={() => setDrop(null)}>
         {layers.length === 0 && (
-          <p className="t-ui-small text-dim">No layer yet — pick a tool and drag on the shot.</p>
+          <p className="t-ui-small text-dim">{m.workspace.layers.empty}</p>
         )}
         <Rows
           nodes={layers}
@@ -156,7 +147,7 @@ function LayerRow({
       {isGroup(node) ? (
         <IconButton
           icon={node.collapsed ? CollapsedIcon : ExpandedIcon}
-          label={node.collapsed ? 'Expand' : 'Collapse'}
+          label={node.collapsed ? m.workspace.layers.expand : m.workspace.layers.collapse}
           onClick={() => onPatch(node.id, { collapsed: !node.collapsed })}
           className="size-5"
         />
@@ -173,7 +164,7 @@ function LayerRow({
         <input
           autoFocus
           defaultValue={node.name}
-          aria-label="Layer name"
+          aria-label={m.workspace.layers.name}
           className="t-ui min-w-0 flex-1 bg-transparent outline-none"
           onBlur={(event) => {
             onPatch(node.id, { name: event.target.value.trim() })
@@ -200,14 +191,14 @@ function LayerRow({
 
       <IconButton
         icon={node.hidden ? HiddenIcon : VisibleIcon}
-        label={node.hidden ? 'Show' : 'Hide'}
+        label={node.hidden ? m.workspace.layers.show : m.workspace.layers.hide}
         active={node.hidden}
         onClick={() => onPatch(node.id, { hidden: !node.hidden })}
         className="size-6"
       />
       <IconButton
         icon={node.locked ? LockedIcon : UnlockedIcon}
-        label={node.locked ? 'Unlock' : 'Lock'}
+        label={node.locked ? m.workspace.layers.unlock : m.workspace.layers.lock}
         active={node.locked}
         onClick={() => onPatch(node.id, { locked: !node.locked })}
         className="size-6"
@@ -229,10 +220,10 @@ function KindIcon({ node, className }: { node: Annotation; className: string }) 
 
 function label(node: LayerNode, numbers: Map<string, number>): string {
   if (node.name.trim()) return node.name
-  if (isGroup(node)) return 'Group'
+  if (isGroup(node)) return m.workspace.layers.group
   const annotation = node as Annotation
-  if (annotation.kind === 'badge') return `Badge ${numbers.get(annotation.id) ?? 1}`
-  return annotation.text.trim() || KIND_NAME[annotation.kind]
+  if (annotation.kind === 'badge') return m.workspace.layers.badge(numbers.get(annotation.id) ?? 1)
+  return annotation.text.trim() || m.workspace.layers.kinds[annotation.kind]
 }
 
 /** Quart haut = avant, quart bas = après, milieu d'un groupe = dedans. */

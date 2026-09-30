@@ -20,23 +20,26 @@
     <!-- Le LCP est le titre, en Unbounded : sa police part la première. -->
     <link rel="preload" as="font" type="font/woff2" href="/fonts/unbounded-800-latin.woff2" crossorigin />
     <link rel="preload" as="font" type="font/woff2" href="/fonts/space-grotesk-latin.woff2" crossorigin />
-    <title>screenmat — turn a screenshot into a shareable visual</title>
-    <meta name="description" content="Paste a screenshot: screenmat frames it, paints a background from its own colours, annotates, redacts and exports it — entirely in your browser. Also a CLI, a Node API and an MCP server." />
+    <title data-i18n="meta.title">screenmat — turn a screenshot into a shareable visual</title>
+    <meta name="description" data-i18n-attr="content:meta.description" content="Paste a screenshot: screenmat frames it, paints a background from its own colours, annotates, redacts and exports it — entirely in your browser. Also a CLI, a Node API and an MCP server." />
     <!-- `%SITE_URL%` est substitué au build par `vite-docs-prerender.ts` : le
          domaine n'est écrit qu'une fois, dans `vite.config.ts`. -->
     <link rel="canonical" href="%SITE_URL%/" />
+    <link rel="alternate" hreflang="en" href="%SITE_URL%/" />
+    <link rel="alternate" hreflang="fr" href="%SITE_URL%/fr/" />
+    <link rel="alternate" hreflang="x-default" href="%SITE_URL%/" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="screenmat" />
-    <meta property="og:title" content="screenmat — turn a screenshot into a shareable visual" />
-    <meta property="og:description" content="macOS-style window, generative background derived from the screenshot's own colours, annotations, redaction. No backend, no account, no upload — your images never leave the browser." />
+    <meta property="og:title" data-i18n-attr="content:meta.title" content="screenmat — turn a screenshot into a shareable visual" />
+    <meta property="og:description" data-i18n-attr="content:meta.social" content="macOS-style window, generative background derived from the screenshot's own colours, annotations, redaction. No backend, no account, no upload — your images never leave the browser." />
     <meta property="og:url" content="%SITE_URL%/" />
     <meta property="og:image" content="%SITE_URL%/og.jpg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="675" />
-    <meta property="og:image:alt" content="A screenshot framed in a rounded macOS-style window over a generative background." />
+    <meta property="og:image:alt" data-i18n-attr="content:meta.imageAlt" content="A screenshot framed in a rounded macOS-style window over a generative background." />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="screenmat — turn a screenshot into a shareable visual" />
-    <meta name="twitter:description" content="macOS-style window, generative background derived from the screenshot's own colours, annotations, redaction. No backend, no account, no upload — your images never leave the browser." />
+    <meta name="twitter:title" data-i18n-attr="content:meta.title" content="screenmat — turn a screenshot into a shareable visual" />
+    <meta name="twitter:description" data-i18n-attr="content:meta.social" content="macOS-style window, generative background derived from the screenshot's own colours, annotations, redaction. No backend, no account, no upload — your images never leave the browser." />
     <meta name="twitter:image" content="%SITE_URL%/og.jpg" />
     <script type="application/ld+json">
       {
@@ -53,107 +56,110 @@
   </head>
   <body class="stage-grain landing-gutter">
     <header class="mx-auto flex h-20 max-w-[1330px] items-center gap-8">
-      <a href="/" class="flex items-center gap-2.5 text-[17px] font-semibold tracking-tight">
+      <a href="/" data-home class="flex items-center gap-2.5 text-[17px] font-semibold tracking-tight">
         <svg viewBox="0 0 32 32" class="size-7" aria-hidden="true"><path d="M7 13V7h6M19 7h6v6M25 19v6h-6M13 25H7v-6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="square" /></svg>
         screenmat
       </a>
-      <nav class="ml-auto flex items-center gap-6 text-[14px] text-ink-soft" aria-label="Sections">
-        <a href="#how" class="hover:text-ink max-md:hidden">How it works</a>
-        <a href="#dev" class="hover:text-ink max-md:hidden">Developers</a>
+      <nav class="ml-auto flex items-center gap-6 text-[14px] text-ink-soft" data-i18n-attr="aria-label:nav.label" aria-label="Sections">
+        <a href="#how" class="hover:text-ink max-md:hidden" data-i18n="nav.how">How it works</a>
+        <a href="#dev" class="hover:text-ink max-md:hidden" data-i18n="nav.dev">Developers</a>
         <a href="/docs/" class="hover:text-ink max-md:hidden">Docs</a>
-        <button type="button" data-theme-toggle class="theme-toggle grid size-9 place-items-center rounded-xs border border-hairline text-ink" aria-label="Switch theme"></button>
-        <a href="/app/" class="sheen bg-accent rounded-xs px-4 py-2.5 text-[14px] font-semibold whitespace-nowrap text-stage">Open the editor</a>
+        <!-- L'autre langue, écrite dans sa langue. `/fr/` est cette même page,
+             traduite au build par `vite-landing-fr.ts`. -->
+        <a href="/fr/" lang="fr" hreflang="fr" data-lang-switch="fr" class="grid size-9 place-items-center rounded-xs border border-hairline font-mono text-[12px] text-ink" aria-label="Passer en français">FR</a>
+        <button type="button" data-theme-toggle class="theme-toggle grid size-9 place-items-center rounded-xs border border-hairline text-ink" data-i18n-attr="aria-label:nav.theme" aria-label="Switch theme"></button>
+        <a href="/app/" class="sheen bg-accent rounded-xs px-4 py-2.5 text-[14px] font-semibold whitespace-nowrap text-stage" data-i18n="cta.open">Open the editor</a>
       </nav>
     </header>
 
     <main>
       <section class="mx-auto grid max-w-[1330px] items-center gap-12 py-10 md:min-h-[calc(100vh-80px)] md:grid-cols-[minmax(0,440px)_minmax(0,1fr)] lg:gap-18">
         <div class="flex flex-col gap-6">
-          <span class="t-mono-label">Screenshot → shareable visual</span>
-          <h1 class="t-headline text-[clamp(30px,3vw,42px)] text-balance">Raw screenshot in. Shareable visual out.</h1>
-          <p class="max-w-[44ch] text-[17px] leading-relaxed text-ink-soft">
+          <span class="t-mono-label" data-i18n="hero.label">Screenshot → shareable visual</span>
+          <h1 class="t-headline text-[clamp(30px,3vw,42px)] text-balance" data-i18n="hero.title">Raw screenshot in. Shareable visual out.</h1>
+          <p class="max-w-[44ch] text-[17px] leading-relaxed text-ink-soft" data-i18n="hero.lead">
             Paste a screenshot. screenmat frames it, paints a background from its own colours, lets you point at
             things and blur the rest — then exports it. All in your browser.
           </p>
           <div class="flex flex-wrap items-center gap-3">
-            <a href="/app/" class="sheen bg-accent rounded-xs px-5 py-3 text-[14px] font-semibold text-stage">Open the editor</a>
-            <a href="#dev" class="sheen rounded-xs border border-hairline-strong px-4 py-2.5 text-[14px] text-ink">For developers</a>
+            <a href="/app/" class="sheen bg-accent rounded-xs px-5 py-3 text-[14px] font-semibold text-stage" data-i18n="cta.open">Open the editor</a>
+            <a href="#dev" class="sheen rounded-xs border border-hairline-strong px-4 py-2.5 text-[14px] text-ink" data-i18n="cta.dev">For developers</a>
           </div>
-          <span class="font-mono text-[12px] text-dim">Runs in your browser · nothing is uploaded</span>
+          <span class="font-mono text-[12px] text-dim" data-i18n="hero.local">Runs in your browser · nothing is uploaded</span>
         </div>
 
-        <div data-hero class="flex min-w-0 flex-col gap-5" aria-label="Live demo">
-          <div data-hero-frame class="hero-frame" tabindex="0" role="application" aria-label="Demo frame — click, then press T, A, R or B">
-            <canvas role="img" aria-label="A screenshot being framed by screenmat"></canvas>
+        <div data-hero class="flex min-w-0 flex-col gap-5" data-i18n-attr="aria-label:demo.label" aria-label="Live demo">
+          <div data-hero-frame class="hero-frame" tabindex="0" role="application" data-i18n-attr="aria-label:demo.frame" aria-label="Demo frame — click, then press T, A, R or B">
+            <canvas role="img" data-i18n-attr="aria-label:demo.canvas" aria-label="A screenshot being framed by screenmat"></canvas>
             <div data-hero-marks></div>
           </div>
           <p data-hero-caption class="min-h-4 font-mono text-[12px] text-dim">raw.png</p>
           <div data-hero-keys data-ready="false" class="flex flex-wrap items-center gap-2.5">
-            <button type="button" class="keycap" data-key="t" disabled><b>T</b>Text</button>
-            <button type="button" class="keycap" data-key="a" disabled><b>A</b>Arrow</button>
-            <button type="button" class="keycap" data-key="r" disabled><b>R</b>Box</button>
-            <button type="button" class="keycap" data-key="b" disabled><b>B</b>Blur</button>
+            <button type="button" class="keycap" data-key="t" disabled><b>T</b><span data-i18n="demo.text">Text</span></button>
+            <button type="button" class="keycap" data-key="a" disabled><b>A</b><span data-i18n="demo.arrow">Arrow</span></button>
+            <button type="button" class="keycap" data-key="r" disabled><b>R</b><span data-i18n="demo.box">Box</span></button>
+            <button type="button" class="keycap" data-key="b" disabled><b>B</b><span data-i18n="demo.blur">Blur</span></button>
             <span class="w-2"></span>
-            <button type="button" class="keycap" data-paste><b data-keys>⌘V</b>Paste yours</button>
-            <button type="button" class="keycap" data-pick>Choose a file</button>
-            <button type="button" class="keycap" data-replay aria-label="Replay the intro"><b>↻</b></button>
-            <button type="button" data-hero-continue hidden class="sheen bg-accent rounded-xs px-4 py-2.5 text-[13px] font-semibold text-stage">Continue in editor →</button>
+            <button type="button" class="keycap" data-paste><b data-keys>⌘V</b><span data-i18n="demo.paste">Paste yours</span></button>
+            <button type="button" class="keycap" data-pick data-i18n="demo.pick">Choose a file</button>
+            <button type="button" class="keycap" data-replay data-i18n-attr="aria-label:demo.replay" aria-label="Replay the intro"><b>↻</b></button>
+            <button type="button" data-hero-continue hidden class="sheen bg-accent rounded-xs px-4 py-2.5 text-[13px] font-semibold text-stage" data-i18n="demo.continue">Continue in editor →</button>
           </div>
-          <p data-hero-hint class="min-h-5 font-mono text-[12px] text-dim" aria-live="polite">Click the frame and press a key — or paste your own screenshot.</p>
+          <p data-hero-hint class="min-h-5 font-mono text-[12px] text-dim" aria-live="polite" data-i18n="demo.hint">Click the frame and press a key — or paste your own screenshot.</p>
           <input type="file" accept="image/*" hidden />
         </div>
       </section>
 
       <section id="how" class="mx-auto max-w-[1330px] border-t border-hairline py-20">
-        <span class="t-mono-label">How it works</span>
-        <h2 class="t-headline mt-4 text-[28px]">Three moves, no settings to learn.</h2>
+        <span class="t-mono-label" data-i18n="nav.how">How it works</span>
+        <h2 class="t-headline mt-4 text-[28px]" data-i18n="how.title">Three moves, no settings to learn.</h2>
         <ol class="mt-10 grid gap-8 md:grid-cols-3">
           <li class="flex flex-col gap-2">
             <span data-keys class="font-mono text-[12px] text-dim">01 · ⌘V</span>
-            <h3 class="text-[18px] font-semibold">Paste</h3>
-            <p class="text-[15px] leading-relaxed text-ink-soft">A screenshot, or a folder of them. The background is drawn from its own dominant colours, so it looks right before you touch anything.</p>
+            <h3 class="text-[18px] font-semibold" data-i18n="how.paste.title">Paste</h3>
+            <p class="text-[15px] leading-relaxed text-ink-soft" data-i18n="how.paste.body">A screenshot, or a folder of them. The background is drawn from its own dominant colours, so it looks right before you touch anything.</p>
           </li>
           <li class="flex flex-col gap-2">
             <span class="font-mono text-[12px] text-dim">02 · T A R B</span>
-            <h3 class="text-[18px] font-semibold">Adjust</h3>
-            <p class="text-[15px] leading-relaxed text-ink-soft">Frame, corners, tilt. Text, arrows, boxes, numbered badges. Blur what should stay private — it is baked into the pixels, not laid on top.</p>
+            <h3 class="text-[18px] font-semibold" data-i18n="how.adjust.title">Adjust</h3>
+            <p class="text-[15px] leading-relaxed text-ink-soft" data-i18n="how.adjust.body">Frame, corners, tilt. Text, arrows, boxes, numbered badges. Blur what should stay private — it is baked into the pixels, not laid on top.</p>
           </li>
           <li class="flex flex-col gap-2">
             <span data-keys class="font-mono text-[12px] text-dim">03 · ⌘E</span>
-            <h3 class="text-[18px] font-semibold">Export</h3>
-            <p class="text-[15px] leading-relaxed text-ink-soft">WebP or PNG at 1×, 2× or 3× — up to 4800 px wide. A whole batch leaves as one zip, every image in the same style.</p>
+            <h3 class="text-[18px] font-semibold" data-i18n="how.export.title">Export</h3>
+            <p class="text-[15px] leading-relaxed text-ink-soft" data-i18n="how.export.body">WebP or PNG at 1×, 2× or 3× — up to 4800 px wide. A whole batch leaves as one zip, every image in the same style.</p>
           </li>
         </ol>
       </section>
 
       <section id="privacy" class="mx-auto grid max-w-[1330px] gap-8 border-t border-hairline py-20 md:grid-cols-[minmax(0,440px)_minmax(0,1fr)]">
         <div>
-          <span class="t-mono-label">Privacy</span>
-          <h2 class="t-headline mt-4 text-[28px]">Your screenshot never leaves this tab.</h2>
+          <span class="t-mono-label" data-i18n="privacy.label">Privacy</span>
+          <h2 class="t-headline mt-4 text-[28px]" data-i18n="privacy.title">Your screenshot never leaves this tab.</h2>
         </div>
         <ul class="grid gap-4 text-[15px] leading-relaxed text-ink-soft sm:grid-cols-2">
-          <li><b class="font-semibold text-ink">No upload.</b> Every pixel is drawn by Canvas 2D in your browser.</li>
-          <li><b class="font-semibold text-ink">No account.</b> Styles and history live in this browser's storage.</li>
-          <li><b class="font-semibold text-ink">Works offline.</b> Fonts are bundled; nothing is fetched to render.</li>
-          <li><b class="font-semibold text-ink">One counter.</b> A cookieless page count from Cloudflare — no identifier, no image data.</li>
+          <li><b class="font-semibold text-ink" data-i18n="privacy.upload.title">No upload.</b> <span data-i18n="privacy.upload.body">Every pixel is drawn by Canvas 2D in your browser.</span></li>
+          <li><b class="font-semibold text-ink" data-i18n="privacy.account.title">No account.</b> <span data-i18n="privacy.account.body">Styles and history live in this browser's storage.</span></li>
+          <li><b class="font-semibold text-ink" data-i18n="privacy.offline.title">Works offline.</b> <span data-i18n="privacy.offline.body">Fonts are bundled; nothing is fetched to render.</span></li>
+          <li><b class="font-semibold text-ink" data-i18n="privacy.counter.title">One counter.</b> <span data-i18n="privacy.counter.body">A cookieless page count from Cloudflare — no identifier, no image data.</span></li>
         </ul>
       </section>
 
       <section id="dev" class="mx-auto grid max-w-[1330px] gap-8 border-t border-hairline py-20 md:grid-cols-[minmax(0,440px)_minmax(0,1fr)]">
         <div class="flex flex-col gap-4">
-          <span class="t-mono-label">Developers</span>
-          <h2 class="t-headline text-[28px]">The same engine, from a script.</h2>
-          <p class="text-[15px] leading-relaxed text-ink-soft">
+          <span class="t-mono-label" data-i18n="nav.dev">Developers</span>
+          <h2 class="t-headline text-[28px]" data-i18n="dev.title">The same engine, from a script.</h2>
+          <p class="text-[15px] leading-relaxed text-ink-soft" data-i18n="dev.body">
             A CLI for build scripts, a Node API for docs generators, an MCP server for agents. One renderer behind all
             three — the exact one this page just used. Tune a style by eye here, export it as JSON, call it by name there.
           </p>
-          <a href="/docs/" class="w-fit text-[14px] text-ink underline underline-offset-3">Read the docs →</a>
+          <a href="/docs/" class="w-fit text-[14px] text-ink underline underline-offset-3" data-i18n="dev.docs">Read the docs →</a>
         </div>
         <div class="grid min-w-0 gap-3">
           <pre class="overflow-x-auto rounded-xs border border-hairline bg-panel-solid p-4 font-mono text-[12px] leading-relaxed"><span class="text-dim"># CLI</span>
 pnpm cli screenshot.png --frame macbook --ratio 16:9 --scale 3
 
-<span class="text-dim"># MCP — any client</span>
+<span class="text-dim" data-i18n="dev.mcp"># MCP — any client</span>
 claude mcp add screenmat -- node /path/to/screenmat/cli/mcp.ts
 
 <span class="text-dim"># Node</span>
@@ -163,8 +169,8 @@ await render({ input: 'shot.png', style: 'docs' })</pre>
       </section>
 
       <section class="mx-auto flex max-w-[1330px] flex-col items-start gap-6 border-t border-hairline py-20">
-        <h2 class="t-headline text-[clamp(28px,3vw,40px)] text-balance">Paste your first screenshot.</h2>
-        <a href="/app/" class="sheen bg-accent rounded-xs px-5 py-3 text-[14px] font-semibold text-stage">Open the editor</a>
+        <h2 class="t-headline text-[clamp(28px,3vw,40px)] text-balance" data-i18n="cta.title">Paste your first screenshot.</h2>
+        <a href="/app/" class="sheen bg-accent rounded-xs px-5 py-3 text-[14px] font-semibold text-stage" data-i18n="cta.open">Open the editor</a>
       </section>
     </main>
 

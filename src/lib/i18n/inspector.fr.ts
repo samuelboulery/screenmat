@@ -1,0 +1,158 @@
+import type { inspectorEn } from './inspector.en.ts'
+
+/* L'inspecteur fait 288 px : le mot court l'emporte sur le mot exact. */
+
+export const inspectorFr: typeof inspectorEn = {
+  panel: {
+    back: 'Document',
+    backTitle: 'Retour au document (Échap)',
+  },
+  common: {
+    size: 'Taille',
+    opacity: 'Opacité',
+    shadow: 'Ombre',
+    noShadow: 'aucune',
+    corners: 'Coins',
+    padding: 'Marge',
+    width: 'Épaisseur',
+    stroke: 'Contour',
+    background: 'Fond',
+    offsetY: 'Décalage Y',
+    auto: 'auto',
+  },
+  frame: {
+    title: 'Cadre',
+    // « navigateur » ne tient pas dans une tuile de 61 px en mono.
+    frames: { none: 'aucun', browser: 'web', macbook: 'mac', iphone: 'mobile' },
+    rotateY: 'Rotation Y',
+    shadows: { soft: 'douce', medium: 'moyenne', hard: 'dure' },
+  },
+  screen: {
+    deviceRatio: 'Ratio de l’appareil',
+    keepDeviceRatio: 'Garder le ratio de l’appareil',
+    screenRatio: 'Ratio de l’écran',
+    island: 'Îlot',
+    sides: {
+      left: { label: 'Gauche', title: 'Îlot à gauche' },
+      right: { label: 'Droite', title: 'Îlot à droite' },
+    },
+    panHint: 'Maintenir Espace et glisser pour recadrer l’image.',
+  },
+  titleBar: {
+    title: 'Barre de titre',
+    show: 'Afficher la barre de titre',
+    url: 'URL affichée dans la barre de titre',
+    themes: { auto: 'auto', light: 'clair', dark: 'sombre' },
+  },
+  canvas: {
+    title: 'Canvas',
+  },
+  composition: {
+    title: 'Composition',
+    layouts: { stack: 'Pile', side: 'Grille', tilt3d: 'Inclinaison 3D' },
+    gap: 'Écart',
+    spread: 'Étalement',
+    columns: 'Colonnes',
+    converge: 'Convergence',
+    elevation: 'Élévation',
+  },
+  shot: {
+    title: 'Image',
+    dragHint: '⌥-glisser pour déplacer',
+    offsetX: 'Décalage X',
+  },
+  background: {
+    series: {
+      screenshot: { label: 'Capture', title: 'Fonds tirés des couleurs de la capture' },
+      dither: { label: 'Trame', title: 'Fonds tramés à deux tons' },
+      macos: { label: 'macOS', title: 'Les fonds d’écran macOS, de Big Sur à Golden Gate' },
+      windows: { label: 'Windows', title: 'Les fonds d’écran Windows, de XP à 11' },
+    },
+    useImage: 'Utiliser une image comme fond',
+    seed: (seed) => `Graine ${seed}`,
+    shuffle: 'mélanger',
+    saturation: 'Saturation',
+    contrast: 'Contraste',
+    grain: 'Grain',
+    cellSize: 'Taille de cellule',
+    angle: 'Angle',
+  },
+  shapes: {
+    title: 'Formes',
+    count: 'Nombre',
+    blur: 'Flou',
+  },
+  palette: {
+    base: 'Couleur de base',
+    accent: (index) => `Accent ${index}`,
+    max: (count) => `${count} couleurs maximum`,
+    add: 'Ajouter une couleur',
+    remove: (label) => `Supprimer ${label.toLowerCase()}`,
+    reset: 'Revenir aux couleurs de la capture',
+    hint: 'Tirées de la capture — choisir une couleur pour la changer',
+  },
+  redaction: {
+    title: 'Floutage',
+    shapes: { rect: 'rectangle', ellipse: 'ellipse' },
+    modes: { blur: 'flou', pixel: 'pixels', solid: 'aplat' },
+    note: 'Cuit dans les pixels à l’export — l’original est irrécupérable depuis le fichier.',
+  },
+  color: {
+    title: 'Couleur',
+    text: 'Couleur du texte',
+    custom: 'Couleur personnalisée',
+    hex: (label) => `${label}, hex`,
+    opacity: (label) => `${label}, opacité`,
+  },
+  badge: {
+    title: 'Pastille',
+    invert: 'Inverser',
+  },
+  segment: {
+    head: 'Pointe',
+  },
+  text: {
+    title: 'Texte',
+    weights: { '400': 'Normal', '500': 'Moyen', '600': 'Demi-gras', '700': 'Gras' },
+    aligns: { left: 'Gauche', center: 'Centre', right: 'Droite' },
+    plateColor: 'Couleur du fond',
+    layerText: 'Texte du calque',
+  },
+  shape: {
+    appearance: 'Apparence',
+    fill: 'Fond',
+    fillColor: 'Couleur du fond',
+    strokeColor: 'Couleur du contour',
+    needsInk: 'Une forme a besoin d’un fond ou d’un contour',
+  },
+  style: {
+    title: 'Style',
+    name: 'Nom du style',
+    note: 'Les réglages modifiés ici restent dans l’image tant que « Mettre à jour » n’est pas choisi dans le menu Styles.',
+    remove: 'Supprimer le style',
+  },
+  watermark: {
+    title: 'Filigrane',
+    drop: 'déposer logo.svg',
+    remove: 'Supprimer le logo',
+  },
+  layer: {
+    title: (count) => (count > 1 ? `Calques — ${count}` : 'Calque'),
+    kinds: {
+      text: 'Texte',
+      badge: 'Pastille',
+      arrow: 'Flèche',
+      line: 'Trait',
+      box: 'Rectangle',
+      ellipse: 'Ellipse',
+      redaction: 'Floutage',
+    },
+    group: 'Groupe',
+    count: (count) => (count <= 1 ? `${count} calque` : `${count} calques`),
+    backward: 'Reculer (⌘↓)',
+    forward: 'Avancer (⌘↑)',
+    ungroup: 'Dissocier (⇧⌘G)',
+    groupAction: 'Grouper (⌘G)',
+    remove: 'Supprimer (⌫)',
+  },
+}

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { m } from '../lib/i18n/index.ts'
 import type { Annotation } from '../types.ts'
 
 /** Clignotement du caret, figé sous `prefers-reduced-motion`. */
@@ -47,7 +48,7 @@ export default function TextInput({ annotation, onText, onCaret, onCommit }: Tex
     <textarea
       ref={ref}
       value={annotation.text}
-      aria-label="Layer text"
+      aria-label={m.inspector.text.layerText}
       // Pas de 0 × 0 : un `textarea` sans surface laisse son caret en tête, et
       // chaque frappe s'écrivait à l'envers. Une vraie boîte, invisible et
       // hors d'atteinte du pointeur.

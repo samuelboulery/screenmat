@@ -2,6 +2,7 @@ import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { docsPrerender } from './vite-docs-prerender.ts'
+import { landingFr } from './vite-landing-fr.ts'
 
 /**
  * L'origine du site, sans barre finale. C'est la seule place où le domaine
@@ -16,12 +17,12 @@ const SITE_URL = (process.env.SCREENMAT_SITE_URL ?? 'https://screenmat.vercel.ap
 // ponytail: config vitest fusionnée ici — un seul fichier tant qu'aucun réglage
 // de test ne diverge de celui du build.
 export default defineConfig({
-  plugins: [react(), tailwindcss(), docsPrerender({ siteUrl: SITE_URL })],
+  plugins: [react(), tailwindcss(), landingFr(), docsPrerender({ siteUrl: SITE_URL })],
   build: {
-    // Trois pages : la landing sur `/`, l'éditeur sur `/app/`, le lecteur de
-    // documentation sur `/docs/`. La landing est du HTML statique : rien à
-    // prérendre, elle est déjà le texte qu'un moteur lit.
-    rollupOptions: { input: { main: 'index.html', app: 'app/index.html', docs: 'docs/index.html' } },
+    // Quatre pages : la landing sur `/` et sa traduction sur `/fr/`, l'éditeur
+    // sur `/app/`, le lecteur de documentation sur `/docs/`. La landing est du
+    // HTML statique : rien à prérendre, elle est déjà le texte qu'un moteur lit.
+    rollupOptions: { input: { main: 'index.html', fr: 'fr/index.html', app: 'app/index.html', docs: 'docs/index.html' } },
   },
   test: {
     environment: 'node',

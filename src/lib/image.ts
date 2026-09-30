@@ -1,3 +1,4 @@
+import { m } from './i18n/index.ts'
 import { wallpaperPath, type Wallpaper } from './wallpapers.ts'
 
 /** Types acceptés à l'import. Le presse-papier de macOS produit du PNG, les
@@ -22,7 +23,7 @@ export function isSupportedMark(blob: Blob): boolean {
  */
 export function loadImage(blob: Blob): Promise<HTMLImageElement> {
   if (!isSupportedImage(blob) && !isSupportedMark(blob)) {
-    return Promise.reject(new Error(`Unsupported format: ${blob.type || 'unknown'}`))
+    return Promise.reject(new Error(m.messages.image.unsupportedFormat(blob.type)))
   }
 
   return new Promise((resolve, reject) => {
@@ -32,7 +33,7 @@ export function loadImage(blob: Blob): Promise<HTMLImageElement> {
     image.onload = () => {
       if (image.naturalWidth === 0 || image.naturalHeight === 0) {
         URL.revokeObjectURL(url)
-        reject(new Error('Image vide ou illisible'))
+        reject(new Error(m.messages.image.empty))
         return
       }
       resolve(image)
@@ -40,7 +41,7 @@ export function loadImage(blob: Blob): Promise<HTMLImageElement> {
 
     image.onerror = () => {
       URL.revokeObjectURL(url)
-      reject(new Error('Could not decode this image'))
+      reject(new Error(m.messages.image.decodeFailed))
     }
 
     image.src = url
@@ -78,7 +79,7 @@ export function loadWallpaper(kind: Wallpaper, size: 'full' | 'thumb'): Promise<
       wallpapers.delete(url)
       // ponytail: pas de nouvel essai automatique — il faut changer de fond puis
       // y revenir. Écouter `online` si le cas hors ligne devient courant.
-      reject(new Error(`Could not load the ${kind} wallpaper. Check your connection, then pick another background and come back to it.`))
+      reject(new Error(m.messages.image.wallpaperFailed(kind)))
     }
     image.src = url
   })
@@ -91,7 +92,7 @@ export function loadDataUrl(dataUrl: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const image = new Image()
     image.onload = () => resolve(image)
-    image.onerror = () => reject(new Error('Watermark illisible'))
+    image.onerror = () => reject(new Error(m.messages.image.watermarkUnreadable))
     image.src = dataUrl
   })
 }
@@ -100,8 +101,7 @@ export function toDataUrl(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
     reader.onload = () => resolve(String(reader.result))
-    reader.onerror = () =>
-      reject(new Error('Couldn’t read that file. Try a PNG, JPEG or WebP.'))
+    reader.onerror = () => reject(new Error(m.messages.image.readFailed))
     reader.readAsDataURL(blob)
   })
 }

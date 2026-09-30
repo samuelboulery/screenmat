@@ -1,6 +1,6 @@
 import { TOOL_ICON, type LucideIcon } from './icons.tsx'
 import Tooltip from './Tooltip.tsx'
-import { TOOLS, TOOL_KEYS, TOOL_TITLES, type Tool } from '../lib/tools.ts'
+import { TOOLS, TOOL_KEYS, toolTitle, type Tool } from '../lib/tools.ts'
 import { Panel, SWITCH_ON } from './ui.tsx'
 
 type ToolRailProps = {
@@ -16,10 +16,10 @@ export default function ToolRail({ active, onPick }: ToolRailProps) {
       {TOOLS.map((tool) => {
         const Icon: LucideIcon = TOOL_ICON[tool]
         return (
-          <Tooltip key={tool} label={TOOL_TITLES[tool]} shortcut={TOOL_KEYS[tool]}>
+          <Tooltip key={tool} label={toolTitle(tool)} shortcut={TOOL_KEYS[tool]}>
             <button
               type="button"
-              aria-label={TOOL_TITLES[tool]}
+              aria-label={toolTitle(tool)}
               aria-pressed={active === tool}
               onClick={() => onPick(tool)}
               className={`flex size-11 items-center justify-center rounded-md transition-colors duration-140 ${

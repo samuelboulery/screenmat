@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { m } from '../lib/i18n/index.ts'
 import * as store from '../lib/store.ts'
 import { lastStyleId, normalizeStyle, rememberStyle } from '../lib/styles.ts'
 import type { HistoryEntry, Style } from '../types.ts'
@@ -52,7 +53,7 @@ export function useLibrary(): Library {
         const last = lastStyleId()
         if (last && saved.some((style) => style.id === last)) setRemembered(last)
       } catch (cause: unknown) {
-        if (alive) setError(cause instanceof Error ? cause.message : 'Local storage is unavailable')
+        if (alive) setError(cause instanceof Error ? cause.message : m.messages.storage.unavailable)
       }
     }
 

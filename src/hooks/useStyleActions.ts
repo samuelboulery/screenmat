@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { Library } from './useLibrary.ts'
+import { m } from '../lib/i18n/index.ts'
 import { loadDataUrl } from '../lib/image.ts'
 import { createStyle } from '../lib/styles.ts'
 import type { Settings, Style } from '../types.ts'
@@ -55,7 +56,7 @@ export function useStyleActions(
   )
 
   const save = useCallback(() => {
-    const style = createStyle(`Style ${library.styles.length + 1}`, settings)
+    const style = createStyle(m.messages.style.defaultName(library.styles.length + 1), settings)
     return library.saveStyle(style).then(() => library.setActiveStyleId(style.id))
   }, [library, settings])
 

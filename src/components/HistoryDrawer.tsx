@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { CancelIcon, SearchIcon, SortNewestIcon, SortOldestIcon } from './icons.tsx'
 import { IconButton } from './ui.tsx'
 import { humanSize } from '../lib/export.ts'
+import { m } from '../lib/i18n/index.ts'
 import { QUOTA_WARNING_BYTES, type HistoryMeta } from '../lib/store.ts'
 import type { Style } from '../types.ts'
 
@@ -61,15 +62,15 @@ export default function HistoryDrawer({
       // Clic sur le fond : la cible est le `<dialog>` lui-même, le contenu le
       // remplit entièrement.
       onClick={(event) => event.target === event.currentTarget && onClose()}
-      aria-label="History"
+      aria-label={m.workspace.history.title}
       className="panel fixed inset-y-0 right-0 left-auto m-0 bg-panel-solid h-full max-h-none w-[min(640px,100vw)] max-w-none rounded-none border-y-0 border-r-0 p-0 text-ink backdrop:bg-stage/60"
     >
       {/* Fermé, rien de monté : aucune miniature chargée pour rien. */}
       {open && (
       <div className="flex h-full flex-col gap-4 overflow-y-auto p-6">
         <div className="flex items-center gap-3">
-          <h2 className="t-mono-label">History — {entries.length}</h2>
-          <IconButton icon={CancelIcon} label="Close history" onClick={onClose} className="ml-auto" />
+          <h2 className="t-mono-label">{m.workspace.history.heading(entries.length)}</h2>
+          <IconButton icon={CancelIcon} label={m.workspace.history.close} onClick={onClose} className="ml-auto" />
         </div>
         <div className="flex flex-wrap items-center gap-3">
           {/* Tous les styles, pas les deux premiers : un filtre qui en cache
@@ -77,10 +78,10 @@ export default function HistoryDrawer({
           <select
             value={filter}
             onChange={(event) => setFilter(event.target.value)}
-            aria-label="Filter by style"
+            aria-label={m.workspace.history.filter}
             className="rounded-md border border-hairline bg-sunken px-3 py-2 text-[12px] text-ink"
           >
-            <option value="all">All styles</option>
+            <option value="all">{m.workspace.history.allStyles}</option>
             {styles.map((style) => (
               <option key={style.id} value={style.id}>
                 {style.name}
@@ -94,8 +95,8 @@ export default function HistoryDrawer({
                 type="search"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search exports"
-                aria-label="Search exports"
+                placeholder={m.workspace.history.search}
+                aria-label={m.workspace.history.search}
                 className="w-[200px] rounded-md border border-hairline bg-sunken py-2 pr-3 pl-9 text-[12px] text-ink placeholder:text-dim"
               />
             </div>
@@ -108,18 +109,15 @@ export default function HistoryDrawer({
               className="flex items-center gap-1.5 font-mono text-[10px] tracking-[0.18em] text-dim uppercase hover:text-ink"
             >
               {sort === 'newest' ? <SortNewestIcon /> : <SortOldestIcon />}
-              {sort === 'newest' ? 'Newest first' : 'Oldest first'}
+              {sort === 'newest' ? m.workspace.history.newest : m.workspace.history.oldest}
             </button>
           </div>
         </div>
 
         {entries.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
-            <p className="t-card-title">No exports yet</p>
-            <p className="t-body max-w-[46ch] text-ink-soft">
-              Every image you export lands here with the settings that made it. Reopen one to
-              pick up where you left off.
-            </p>
+            <p className="t-card-title">{m.workspace.history.emptyTitle}</p>
+            <p className="t-body max-w-[46ch] text-ink-soft">{m.workspace.history.emptyBody}</p>
           </div>
         ) : (
         <div className="grid auto-rows-[180px] grid-cols-2 gap-4">
@@ -151,7 +149,7 @@ export default function HistoryDrawer({
 
         {entries.length > 0 && visible.length === 0 && (
           <p className="t-body text-ink-soft">
-            No exports match “{query}”.{' '}
+            {m.workspace.history.noMatch(query)}{' '}
             <button
               type="button"
               onClick={() => {
@@ -160,24 +158,23 @@ export default function HistoryDrawer({
               }}
               className="text-accent hover:underline"
             >
-              Clear the search
+              {m.workspace.history.clearSearch}
             </button>
           </p>
         )}
 
         {entries.length > 0 && (
           <p className="t-ui text-dim">
-            {visible.length} of {entries.length} exports · {humanSize(bytes)} stored in this browser.
-            Clearing site data deletes them — there is no copy anywhere else.
+            {m.workspace.history.stored(visible.length, entries.length, humanSize(bytes))}
             {bytes > QUOTA_WARNING_BYTES && (
               <>
                 {' '}
                 {/* La confirmation est posée par `App` : un seul dialogue monté
                     pour toute l'app. */}
                 <button type="button" onClick={onPurge} className="text-danger hover:underline">
-                  Delete the oldest exports
+                  {m.workspace.history.purge}
                 </button>{' '}
-                to get back under {humanSize(QUOTA_WARNING_BYTES)}.
+                {m.workspace.history.purgeAfter(humanSize(QUOTA_WARNING_BYTES))}
               </>
             )}
           </p>

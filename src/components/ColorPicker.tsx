@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Swatch } from './ui.tsx'
+import { m } from '../lib/i18n/index.ts'
 import { HEX } from '../lib/parse.ts'
 
 type ColorPickerProps = {
@@ -39,8 +40,8 @@ export default function ColorPicker({ colors, value, onPick, label, alpha, onAlp
             className="absolute inset-0 size-full opacity-0"
           />
         </label>
-        <HexField value={value} label={`${label}, hex`} onPick={onPick} />
-        {alpha !== undefined && onAlpha && <PercentField value={alpha} label={`${label}, opacity`} onInput={onAlpha} />}
+        <HexField value={value} label={m.inspector.color.hex(label)} onPick={onPick} />
+        {alpha !== undefined && onAlpha && <PercentField value={alpha} label={m.inspector.color.opacity(label)} onInput={onAlpha} />}
       </div>
       <div className="flex flex-wrap gap-1.5">
         {colors.map((color) => (

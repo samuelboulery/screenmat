@@ -48,6 +48,7 @@ English · [Français](README.fr.md)
 | **Styles** | Save a full set of settings under a name, recall it from the app, the CLI, MCP or Node. Share it as a `.json` file. |
 | **Batch** | Drop a folder of screenshots, keep them as separate images, export them all as one `.zip` — from the Export menu. |
 | **History** | Past exports live in IndexedDB with their thumbnails, reopenable with every setting intact. |
+| **Languages** | The interface in English and French — an `EN` / `FR` switch in the top bar, the browser's language until you choose. The landing page lives at `/` and `/fr/`. The machine door and its docs stay in English. |
 | **Export** | WebP by default (7–10× lighter than PNG at equal grain), PNG on demand, at 1× / 2× / 3× — 1600, 3200 or 4800 px wide. |
 
 ### Before · after
@@ -56,7 +57,7 @@ English · [Français](README.fr.md)
 | --- | --- |
 | <img src="docs/assets/before.webp" alt="A raw, unedited screenshot" width="420"> | <img src="docs/assets/annotated.webp" alt="The same screenshot with a generated background, badges, a callout and a baked blur" width="420"> |
 
-Badges, a callout arrow and a blur over the address bar — the blur is in the
+Badges, a callout arrow and a blur over the customer emails — the blur is in the
 pixels, not on top of them.
 
 ## Quickstart
@@ -142,12 +143,14 @@ has focus, so no single-key shortcut ever steals a keystroke from a panel.
 | `⌘G` / `⇧⌘G` | Group · ungroup |
 | `⌘↑` / `⌘↓` | Move the layer up or down the stack |
 | `⌘V` | Paste a screenshot |
+| `V` `T` `N` `A` `L` `R` `O` `B` | Tools: select, text, badge, arrow, line, box, ellipse, redact |
 | `⇧R` | Shuffle — a new seed, a new background |
 | `1` `2` `3` | Export scale |
 | Arrows (`⇧` for a large step) | Nudge the selection |
 | `⌫` · `Esc` | Delete · deselect |
 | `⌥` drag | Duplicate a layer · move a whole image |
 | `Space` drag | Reposition a cropped screenshot inside its frame |
+| `?` | Every shortcut, in one panel |
 
 ## Privacy by construction
 
@@ -168,6 +171,8 @@ MCP server make no network call at all.
 src/lib/          the engine: pure logic and Canvas 2D, no React import
 src/components/   the interface, one PascalCase component per file
 src/hooks/        use* hooks
+src/lib/i18n/     the interface text, one English and one French dictionary per area
+src/landing/      the static landing page, translated to /fr/ at build time
 cli/              the machine door: api.ts, main.ts (CLI), mcp.ts (MCP server)
 public/docs/      the documentation source, in Markdown
 ```

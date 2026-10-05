@@ -71,7 +71,7 @@ Then paste a screenshot (`⌘V`) or drop a file. That is the whole setup — the
 nothing to configure and nowhere to sign in.
 
 Requirements: **Node 24 or newer** and **pnpm**. Node 24 runs the TypeScript in
-`cli/` directly, so the machine door has no build step.
+`cli/` directly, so from a clone the machine door has no build step.
 
 ## The machine door
 
@@ -118,7 +118,7 @@ await writeFile('docs/hero.webp', buffer)
 
 ```bash
 # AI agent — register the MCP server once.
-claude mcp add screenmat -- pnpm dlx -p screenmat screenmat-mcp
+claude mcp add screenmat -- pnpm dlx --package=screenmat screenmat-mcp
 # From a clone: claude mcp add screenmat -- node /absolute/path/to/screenmat/cli/mcp.ts
 ```
 

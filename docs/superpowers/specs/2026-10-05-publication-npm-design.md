@@ -93,7 +93,7 @@ Sur `push` d'un tag `v*` :
 1. checkout, pnpm, Node 24 avec `registry-url: https://registry.npmjs.org`.
 2. Garde : le tag sans `v` égale `version` de `package.json`, sinon échec.
 3. `pnpm install --frozen-lockfile`, `pnpm typecheck`, Chromium (comme `ci.yml`),
-   `pnpm test`, `pnpm build:cli`.
+   `pnpm test` ; `dist-npm/` est construit par `prepack`, que `pnpm publish` lance.
 4. `pnpm publish --provenance --access public --no-git-checks`, avec
    `NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}`.
 
@@ -122,7 +122,7 @@ une install `--frozen-lockfile` ne les garantit pas.
 
 - `README.md` / `README.fr.md`, `public/docs/overview.md` (Requirements,
   Quickstart) : `pnpm dlx screenmat …`, `pnpm add -D screenmat`, et le serveur
-  MCP par `claude mcp add screenmat -- pnpm dlx -p screenmat screenmat-mcp`.
+  MCP par `claude mcp add screenmat -- pnpm dlx --package=screenmat screenmat-mcp`.
 - `public/docs/mcp.md` (Connecting) : la même ligne.
 - `CLAUDE.md` et skill `screenmat-machine` : « `cli/` n'a pas d'étape de
   build » devient « tourne tel quel dans le dépôt ; `pnpm build:cli` ne sert

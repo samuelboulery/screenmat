@@ -72,7 +72,7 @@ Puis coller une capture (`⌘V`) ou déposer un fichier. C'est toute
 l'installation : rien à configurer, nulle part où se connecter.
 
 Prérequis : **Node 24 ou plus récent** et **pnpm**. Node 24 exécute le TypeScript
-de `cli/` tel quel, la porte machine n'a donc aucune étape de build.
+de `cli/` tel quel : depuis un clone, la porte machine n'a aucune étape de build.
 
 ## La porte machine
 
@@ -119,7 +119,7 @@ await writeFile('docs/hero.webp', buffer)
 
 ```bash
 # Agent IA — le serveur MCP se déclare une fois.
-claude mcp add screenmat -- pnpm dlx -p screenmat screenmat-mcp
+claude mcp add screenmat -- pnpm dlx --package=screenmat screenmat-mcp
 # Depuis un clone : claude mcp add screenmat -- node /chemin/absolu/vers/screenmat/cli/mcp.ts
 ```
 

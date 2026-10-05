@@ -8,9 +8,13 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      # Créer la release GitHub et y joindre le paquet.
+      contents: write
       # Provenance npm : la signature prouve que le paquet sort de ce dépôt.
       id-token: write
+    env:
+      # Lu par la condition de l'étape npm : un secret ne se teste pas dans `if:`.
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -49,7 +53,22 @@ jobs:
 
       - run: pnpm test
 
-      # `prepack` reconstruit `dist-npm/` avant d'empaqueter.
-      - run: pnpm publish --provenance --access public --no-git-checks
+      # `prepack` reconstruit `dist-npm/` avant d'empaqueter. Le paquet est
+      # joint à la release du tag sous un nom fixe : l'URL
+      # `releases/latest/download/screenmat.tgz` des docs reste juste à chaque version.
+      - name: Paquet
+        run: |
+          pnpm pack --pack-destination release
+          mv release/screenmat-*.tgz release/screenmat.tgz
+
+      - name: Release GitHub
+        run: gh release create "$GITHUB_REF_NAME" release/*.tgz --verify-tag --generate-notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      # ponytail: sauté tant que le secret NPM_TOKEN n'existe pas ; le créer
+      # suffit à publier aussi sur npm, sans toucher au workflow.
+      - if: env.NPM_TOKEN != ''
+        run: pnpm publish --provenance --access public --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

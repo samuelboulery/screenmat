@@ -97,7 +97,14 @@ Sur `push` d'un tag `v*` :
 4. `pnpm publish --provenance --access public --no-git-checks`, avec
    `NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}`.
 
-Permissions du job : `contents: read`, `id-token: write` (provenance).
+Permissions du job : `contents: write` (release), `id-token: write` (provenance).
+
+**Sans compte npm (2026-10-05).** L'inscription npm est bloquée pour l'instant :
+le workflow joint le paquet à une release GitHub du tag, sous le nom fixe
+`screenmat.tgz`, et l'étape `pnpm publish` est sautée tant que le secret
+`NPM_TOKEN` n'existe pas. Les docs installent depuis
+`releases/latest/download/screenmat.tgz` (`pnpm dlx`) ou l'URL versionnée
+(`pnpm add -D`, que le lockfile fige par empreinte).
 
 ## Vérification avant publication
 

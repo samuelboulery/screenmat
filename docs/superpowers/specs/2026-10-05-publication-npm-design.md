@@ -106,6 +106,10 @@ le workflow joint le paquet à une release GitHub du tag, sous le nom fixe
 `releases/latest/download/screenmat.tgz` (`pnpm dlx`) ou l'URL versionnée
 (`pnpm add -D`, que le lockfile fige par empreinte).
 
+**Compte npm obtenu (2026-10-05).** À partir de `0.1.1`, le secret `NPM_TOKEN` est
+obligatoire : le job `release` échoue avant de créer quoi que ce soit s'il manque.
+Les docs reviennent aux formes npm ; `screenmat.tgz` reste joint à chaque release.
+
 ## Vérification avant publication
 
 `cli/__tests__/package.test.ts`, lent, exécuté par `pnpm test` :

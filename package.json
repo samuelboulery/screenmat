@@ -1,6 +1,6 @@
 {
   "name": "screenmat",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Turn a raw screenshot into a shareable visual — macOS-style window, generative background, annotations, redaction. Runs entirely in the browser.",
   "license": "MIT",
   "author": "Samuel Boulery",

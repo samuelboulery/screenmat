@@ -7,16 +7,6 @@ settings:
 importers:
 
   .:
-    dependencies:
-      lucide-react:
-        specifier: ^1.31.0
-        version: 1.31.0(react@19.2.8)
-      react:
-        specifier: ^19.2.4
-        version: 19.2.8
-      react-dom:
-        specifier: ^19.2.4
-        version: 19.2.8(react@19.2.8)
     devDependencies:
       '@tailwindcss/vite':
         specifier: ^4.2.2
@@ -33,6 +23,15 @@ importers:
       '@vitejs/plugin-react':
         specifier: ^6.0.1
         version: 6.0.5(vite@8.2.1(@types/node@26.2.0)(jiti@2.7.0))
+      lucide-react:
+        specifier: ^1.31.0
+        version: 1.31.0(react@19.2.8)
+      react:
+        specifier: ^19.2.4
+        version: 19.2.8
+      react-dom:
+        specifier: ^19.2.4
+        version: 19.2.8(react@19.2.8)
       tailwindcss:
         specifier: ^4.2.2
         version: 4.3.3

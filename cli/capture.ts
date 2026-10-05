@@ -11,6 +11,7 @@
  * moteur, et se charge donc sans aucune dépendance optionnelle.
  */
 import { execFile, type ExecFileException } from 'node:child_process'
+import { extname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 export type ColorScheme = 'light' | 'dark'
@@ -176,7 +177,9 @@ export function fullPageHeight(scrollHeight: number, { width, density }: Pick<Re
   return Math.min(scrollHeight, Math.floor(MAX_PIXELS / (width * density * density)))
 }
 
-const CHILD = fileURLToPath(new URL('./capture-child.ts', import.meta.url))
+/** `capture-child.ts` dans le dépôt, `.js` dans le paquet npm : `tsc` réécrit
+ *  les imports, pas une chaîne passée à `new URL()`. */
+const CHILD = fileURLToPath(new URL(`./capture-child${extname(fileURLToPath(import.meta.url))}`, import.meta.url))
 
 /** Le lancement, la navigation, l'attente et la capture ont chacun leur
  *  délai de 30 s dans le processus enfant : le sien les couvre tous, pour que

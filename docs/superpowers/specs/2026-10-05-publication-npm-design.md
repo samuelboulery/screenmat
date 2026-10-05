@@ -59,8 +59,13 @@ sort.
      `import.meta.url` reste juste.
    - `rewriteRelativeImportExtensions`, `declaration`, mêmes options strictes
      que `tsconfig.cli.json`.
-2. `scripts/copy-fonts.ts` (Node, sans dépendance) : `public/fonts/` →
-   `dist/public/fonts/`, que `dom-shim.ts` lit par `../public/fonts/`.
+2. `scripts/build-cli.ts` (Node, sans dépendance) porte tout le build : vide
+   `dist/` (un fichier d'un build précédent partirait sinon dans le tarball),
+   lance l'étape 1, puis copie `public/fonts/` → `dist/public/fonts/`, que
+   `dom-shim.ts` lit par `../public/fonts/`.
+
+`prepack` lance `pnpm build:cli` : `pnpm pack` et `pnpm publish` construisent
+toujours ce qu'ils empaquettent.
 
 Le shebang `#!/usr/bin/env node` de `main.ts` et `mcp.ts` passe tel quel.
 `dist/` est ignoré par git.
@@ -106,9 +111,10 @@ Permissions du job : `contents: read`, `id-token: write` (provenance).
    - `node -e "import('screenmat/node')"` trouve `render`, `inspect`, `capture` ;
    - `--background tahoe-dark` échoue avec le message des fonds absents.
 
-Le test s'installe hors ligne depuis le store pnpm déjà peuplé
-(`--offline`) : la CI n'a pas besoin du réseau npm au-delà de l'install
-normale.
+Le test s'installe depuis le store pnpm déjà peuplé (`--prefer-offline`) :
+la CI n'a pas besoin du réseau npm au-delà de l'install normale. Pas
+`--offline` : une résolution hors ligne échoue sans métadonnées en cache, et
+une install `--frozen-lockfile` ne les garantit pas.
 
 ## Documentation
 

@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.cli.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "allowImportingTsExtensions": false,
+    "rewriteRelativeImportExtensions": true,
+    "declaration": true,
+    "outDir": "dist",
+    "rootDir": "."
+  },
+  "include": [],
+  "files": ["cli/main.ts", "cli/mcp.ts", "cli/api.ts", "cli/capture-child.ts"]
+}

@@ -76,6 +76,7 @@ export type EditorScreenProps = {
   onToggleMember: (id: string) => void
   onReorderShots: (from: number, to: number) => void
   onAddShot: () => void
+  onCaptureTab?: () => void
   onPickBackgroundImage: () => void
   onCreateAnnotation: (shotId: string, kind: AnnotationKind, rect: FractionRect) => string
   onPatchAnnotation: (shotId: string, id: string, patch: Partial<Annotation>) => void
@@ -260,6 +261,7 @@ export default function EditorScreen(props: EditorScreenProps) {
         onToggleMember={props.onToggleMember}
         onReorder={props.onReorderShots}
         onAdd={props.onAddShot}
+        onCaptureTab={props.onCaptureTab}
         onNewSession={props.onNewSession}
         layers={{
           shot: activeShot,

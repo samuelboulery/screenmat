@@ -35,6 +35,7 @@ export const workspaceEn = {
   images: {
     heading: (n: number) => `Images — ${n}`,
     add: 'Add images (⌘V)',
+    captureTab: 'Capture a browser tab',
     separate: 'Separate',
     combined: 'Combined',
     onePerImage: 'One file per image',
@@ -99,6 +100,7 @@ export const workspaceEn = {
   importScreen: {
     drop: 'or drop a file here — nothing leaves your browser',
     pick: 'Choose file',
+    captureTab: 'Capture a tab',
     ready: (name: string | null) => `“${name}” ready for your image`,
     lastStyle: 'Start from last style',
     recent: 'Recent — this browser',

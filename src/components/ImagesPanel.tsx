@@ -1,6 +1,6 @@
 import { useRef } from 'react'
 import LayersPanel, { type LayersPanelProps } from './LayersPanel.tsx'
-import { AddIcon, NewSessionIcon } from './icons.tsx'
+import { AddIcon, CaptureTabIcon, NewSessionIcon } from './icons.tsx'
 import { CheckBox, IconButton, Panel, SELECTED, Section, Segmented } from './ui.tsx'
 import type { OutputMode, QueueItem, Shot } from '../types.ts'
 import { m } from '../lib/i18n/index.ts'
@@ -19,6 +19,8 @@ type ImagesPanelProps = {
   onToggleMember: (id: string) => void
   onReorder: (from: number, to: number) => void
   onAdd: () => void
+  /** Absent là où le navigateur ne sait pas partager un onglet. */
+  onCaptureTab?: () => void
   onNewSession: () => void
   layers: LayersPanelProps
 }
@@ -42,7 +44,14 @@ export default function ImagesPanel(props: ImagesPanelProps) {
     <Panel className="absolute top-4 bottom-4 left-5 z-10 flex w-60 flex-col gap-4 overflow-hidden p-4">
       <Section
         title={m.workspace.images.heading(shots.length)}
-        aside={<IconButton icon={AddIcon} label={keyLabel(m.workspace.images.add, MAC)} onClick={props.onAdd} />}
+        aside={
+          <div className="flex items-center gap-1">
+            {props.onCaptureTab && (
+              <IconButton icon={CaptureTabIcon} label={m.workspace.images.captureTab} onClick={props.onCaptureTab} />
+            )}
+            <IconButton icon={AddIcon} label={keyLabel(m.workspace.images.add, MAC)} onClick={props.onAdd} />
+          </div>
+        }
       >
         {shots.length > 1 && (
           <Segmented className="w-full" options={modes} value={mode} onPick={props.onMode} />

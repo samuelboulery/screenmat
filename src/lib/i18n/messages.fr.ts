@@ -8,6 +8,7 @@ export const messagesFr: typeof messagesEn = {
     noImage: 'Aucune image ici. Collez une capture, ou déposez un PNG, un JPEG ou un WebP.',
     openFailed: 'Impossible d’ouvrir cette image. Essayez un autre fichier.',
     handoffFailed: 'Impossible de récupérer la capture depuis la page d’accueil.',
+    captureFailed: 'Impossible de capturer cet onglet. Réessayez, ou collez une capture.',
   },
   image: {
     unsupportedFormat: (type: string) => `Format non pris en charge : ${type || 'inconnu'}`,

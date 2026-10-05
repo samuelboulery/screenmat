@@ -6,6 +6,7 @@ export const messagesEn = {
     noImage: 'No image in there. Paste a screenshot, or drop a PNG, JPEG or WebP.',
     openFailed: 'Couldn’t open that image. Try another file.',
     handoffFailed: 'Couldn’t pick up the screenshot from the home page.',
+    captureFailed: 'Couldn’t capture that tab. Try again, or paste a screenshot.',
   },
   image: {
     /** `type` est le type MIME annoncé par le fichier, vide s'il n'en dit rien. */

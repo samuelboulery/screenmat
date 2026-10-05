@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type DragEvent, type RefObject } from 'react'
 import { loadImage, pickImages } from '../lib/image.ts'
 import { m } from '../lib/i18n/index.ts'
+import { captureTab, isCancel } from '../lib/tab-capture.ts'
 import { takeHandoff, type Handoff } from '../lib/store.ts'
 
 /** Lue une seule fois par chargement de page : le double montage de
@@ -18,6 +19,8 @@ type ImageInput = {
   }
   /** Ouvre le sélecteur de fichiers natif. */
   openPicker: () => void
+  /** Ouvre la fenêtre de partage du navigateur et importe l'onglet choisi. */
+  captureTab: () => Promise<void>
   /** À monter une fois dans l'arbre : l'input réel derrière `openPicker`. */
   inputRef: RefObject<HTMLInputElement | null>
   onInputChange: () => void
@@ -25,7 +28,7 @@ type ImageInput = {
 }
 
 /**
- * Import d'images par les trois chemins : clic, glisser-déposer, ⌘V. Le paste
+ * Import d'images par quatre chemins : clic, glisser-déposer, ⌘V, onglet capturé. Le paste
  * est écouté sur `window` — c'est le seul endroit où l'événement arrive quand
  * aucun champ n'a le focus, et le handoff exige qu'il marche sans focus
  * préalable sur la dropzone.
@@ -89,6 +92,24 @@ export function useImageInput(onImages: (images: HTMLImageElement[], files: File
     }
   }, [accept])
 
+  // Une capture à la fois : un second clic pendant la première ouvrirait une
+  // seconde fenêtre de partage, qu'un navigateur refuse en erreur.
+  const capturing = useRef(false)
+
+  const onCaptureTab = useCallback(async () => {
+    if (capturing.current) return
+    capturing.current = true
+    setError(null)
+    try {
+      await accept([await captureTab()])
+    } catch (cause: unknown) {
+      // Refermer la fenêtre de partage est un choix, pas une panne : rien à dire.
+      if (!isCancel(cause)) setError(m.messages.input.captureFailed)
+    } finally {
+      capturing.current = false
+    }
+  }, [accept])
+
   const onInputChange = useCallback(() => {
     const input = inputRef.current
     void accept(Array.from(input?.files ?? []))
@@ -103,6 +124,7 @@ export function useImageInput(onImages: (images: HTMLImageElement[], files: File
     onInputChange,
     clearError: () => setError(null),
     openPicker: () => inputRef.current?.click(),
+    captureTab: onCaptureTab,
     dropHandlers: {
       onDragOver: (event) => {
         event.preventDefault()

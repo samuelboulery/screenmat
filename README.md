@@ -46,7 +46,7 @@ English · [Français](README.fr.md)
 | **Compositions** | Up to 24 shots in one visual: `single`, `stack`, `side` or `tilt3d`, with spread, convergence and elevation. |
 | **Layers** | A real tree — groups, reordering, hide, lock, multi-selection, undo/redo. |
 | **Styles** | Save a full set of settings under a name, recall it from the app, the CLI, MCP or Node. Share it as a `.json` file. |
-| **Batch** | Drop a folder of screenshots, keep them as separate images, export them all as one `.zip` — from the Export menu. |
+| **Batch** | Drop or pick several screenshots at once, keep them as separate images, export them all as one `.zip` — from the Export menu. |
 | **History** | Past exports live in IndexedDB with their thumbnails, reopenable with every setting intact. |
 | **Languages** | The interface in English and French — an `EN` / `FR` switch in the top bar, the browser's language until you choose. The landing page lives at `/` and `/fr/`. The machine door and its docs stay in English. |
 | **Export** | WebP by default (7–10× lighter than PNG at equal grain), PNG on demand, at 1× / 2× / 3× — 1600, 3200 or 4800 px wide. |
@@ -179,8 +179,8 @@ public/docs/      the documentation source, in Markdown
 
 `src/lib/render.ts` holds the one and only rendering engine, `src/lib/tree.ts`
 the one and only path for manipulating the layer tree, and `src/lib/spec.ts`
-validates every piece of external data — an imported style or a scene written by
-a model is untrusted input, checked field by field and clamped to its bounds.
+(scenes) with `src/lib/styles.ts` (styles) validate every piece of external
+data — an imported style or a scene written by a model is untrusted input, checked field by field and clamped to its bounds.
 
 ## Development
 

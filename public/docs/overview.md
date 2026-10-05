@@ -39,7 +39,11 @@ project, so a file produced here is identical to what the app would export.
 
 ## Requirements
 
-- **Node 24 or newer.** It runs TypeScript directly, so `cli/` has no build step.
+- **Node 24 or newer.** From npm, `pnpm dlx screenmat` or `pnpm add -D screenmat`;
+  the package is compiled JavaScript. From a clone, Node runs the TypeScript in
+  `cli/` directly — there is no build step.
+- **Wallpapers.** The macOS and Windows backgrounds are © Apple and © Microsoft
+  and are not in the npm package; they work from a clone only.
 - **`@napi-rs/canvas`**, which provides Canvas 2D outside the browser. It ships
   as an `optionalDependency`, together with `@modelcontextprotocol/sdk` and
   `zod` for the MCP server. The web bundle contains none of them.
@@ -60,7 +64,7 @@ Three ways in, same engine, same output.
 
 ```bash
 # Command line — defaults are already good.
-pnpm cli screenshot.png
+pnpm dlx screenmat screenshot.png   # from a clone: pnpm cli screenshot.png
 # → screenshot-screenmat.webp  3200×2400  188464 octets
 ```
 

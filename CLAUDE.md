@@ -78,6 +78,7 @@ pnpm test               # Vitest (logique pure + rendu headless du CLI)
 pnpm typecheck          # tsc -b (app + node + cli)
 pnpm cli <image>        # rendu en ligne de commande
 pnpm mcp                # serveur MCP sur stdio
+pnpm build:cli          # paquet npm : dist/ (inutile pour pnpm cli / pnpm mcp)
 ```
 
 `tsc --noEmit` ne vérifie **rien** ici : `tsconfig.json` est un fichier solution

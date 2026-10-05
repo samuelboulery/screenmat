@@ -79,6 +79,15 @@ The same engine, called by something other than a human. `render(spec)` is the
 core; the CLI, the MCP server and a direct import are thin wrappers around it.
 
 ```bash
+# From any project — no clone needed.
+pnpm dlx screenmat screenshot.png --frame macbook
+pnpm add -D screenmat            # for a build script: import { render } from 'screenmat/node'
+```
+
+The npm package ships everything but the macOS and Windows wallpapers, which
+are © Apple and © Microsoft: use those from a clone of this repository.
+
+```bash
 # Command line — the defaults are already good.
 pnpm cli screenshot.png
 # → screenshot-screenmat.webp  3200×2400  188464 bytes
@@ -109,7 +118,8 @@ await writeFile('docs/hero.webp', buffer)
 
 ```bash
 # AI agent — register the MCP server once.
-claude mcp add screenmat -- node /absolute/path/to/screenmat/cli/mcp.ts
+claude mcp add screenmat -- pnpm dlx -p screenmat screenmat-mcp
+# From a clone: claude mcp add screenmat -- node /absolute/path/to/screenmat/cli/mcp.ts
 ```
 
 Four MCP tools: `screenmat_render` (writes a file, returns its path — never the

@@ -31,7 +31,11 @@ qui dessine en preview, à l'export web et ici.
 Il jette sur toute propriété DOM qu'il ne connaît pas : si un crash le nomme, la
 réponse est de l'ajouter là, jamais de contourner dans `src/lib/`.
 
-Node ≥ 24 exécute le TypeScript tel quel : `cli/` n'a pas d'étape de build.
+Node ≥ 24 exécute le TypeScript tel quel : dans le dépôt, `cli/` n'a pas
+d'étape de build. Le paquet npm, lui, est compilé (`pnpm build:cli`,
+`tsconfig.publish.json`) — un chemin passé à `new URL()` n'est pas réécrit par
+`tsc` : le construire depuis l'extension du module courant (voir `CHILD` dans
+`capture.ts`). Les fonds macOS et Windows n'y sont pas.
 
 **La capture d'URL (`capture.ts`) pilote Chrome dans un processus enfant
 (`capture-child.ts`)** : `playwright-core` lit `document.currentScript` à son

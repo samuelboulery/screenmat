@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { mkdtemp, readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
-import { resolveUnder, writeNew, writeRoot } from '../write-guard.ts'
+import { checkedOutput, resolveUnder, writeNew, writeRoot } from '../write-guard.ts'
 
 /* La garde qui sépare le serveur MCP du reste du disque. C'est un modèle
    distant qui fournit `output` : ce qui se teste ici, c'est ce qui arrive
@@ -66,6 +66,22 @@ describe('resolveUnder', () => {
     // `<dir>/x` ne doit pas laisser passer `<dir>/xy` : un `startsWith` sans
     // séparateur l'aurait accepté.
     expect(() => resolveUnder(join(dir, 'x'), join(dir, 'xy', 'a.png'))).toThrow(/doit rester sous/)
+  })
+})
+
+describe('checkedOutput', () => {
+  it('force l’extension du format produit', () => {
+    expect(checkedOutput('a.png', 'webp')).toBe('a.webp')
+    expect(checkedOutput('a.sh', 'png')).toBe('a.png')
+    expect(checkedOutput('sous/a', 'png')).toBe('sous/a.png')
+    expect(checkedOutput('docs/images/hero.webp', 'webp')).toBe('docs/images/hero.webp')
+    expect(checkedOutput('./out.png', 'png')).toBe('./out.png')
+  })
+
+  it('refuse tout segment commençant par un point', () => {
+    expect(() => checkedOutput('.git/hooks/pre-commit', 'png')).toThrow(/point/)
+    expect(() => checkedOutput('a\\.hidden.png', 'png')).toThrow(/point/)
+    expect(() => checkedOutput('sous/../a.png', 'png')).toThrow(/point/)
   })
 })
 

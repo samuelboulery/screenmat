@@ -76,3 +76,14 @@ export async function resolveStyle(nameOrPath: string): Promise<Style> {
   const available = styles.map((entry) => entry.name).join(', ') || 'aucun'
   throw new Error(`Style « ${nameOrPath} » introuvable dans ${STYLES_DIR} — disponibles : ${available}`)
 }
+
+/**
+ * Porte MCP : un style ne s'y désigne que par un nom listé. Un chemin donné
+ * par un modèle ferait lire n'importe quel `.json` du disque ; le CLI, lui,
+ * garde les chemins (`resolveStyle`).
+ */
+export async function assertStyleName(name: string): Promise<void> {
+  const names = (await listStyles()).map((entry) => entry.name)
+  if (names.includes(name)) return
+  throw new Error(`Style « ${name} » inconnu — passer un nom listé par screenmat_list_styles : ${names.join(', ') || 'aucun'}`)
+}

@@ -9,7 +9,7 @@
  */
 import { supportsWebp } from './dom-shim.ts'
 import { createCanvas, loadImage, type Image } from '@napi-rs/canvas'
-import { readFile } from 'node:fs/promises'
+import { access, readFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import { resolveStyle } from './styles-dir.ts'
 import { BASE_WIDTH, computeGeometry, renderScene, type Geometry } from '../src/lib/render.ts'
@@ -83,11 +83,25 @@ function wallpaper(kind: Wallpaper): Promise<Image> {
   const known = wallpapers.get(kind)
   if (known) return known
   const file = fileURLToPath(new URL(`../public/${wallpaperPath(kind, 'full')}`, import.meta.url))
-  const loading = decode(file)
+  const loading = decodeWallpaper(file)
   wallpapers.set(kind, loading)
   // Un échec ne reste pas en cache : le fichier peut revenir.
   loading.catch(() => wallpapers.delete(kind))
   return loading
+}
+
+/** Les fonds macOS et Windows ne sont pas dans le paquet npm : ils ne sont pas
+ *  sous licence MIT (`public/wallpapers/NOTICE.md`). */
+const WALLPAPERS_MISSING =
+  'Les fonds macOS et Windows ne sont pas inclus dans le paquet npm (© Apple, © Microsoft) : les utiliser depuis un clone du dépôt screenmat.'
+
+async function decodeWallpaper(file: string): Promise<Image> {
+  try {
+    await access(file)
+  } catch {
+    throw new Error(WALLPAPERS_MISSING)
+  }
+  return decode(file)
 }
 
 async function decode(source: ImageSource): Promise<Image> {

@@ -34,7 +34,10 @@ async function playwright(): Promise<typeof import('playwright-core')> {
  */
 async function launch(): Promise<Browser> {
   const { chromium } = await playwright()
-  const options = { chromiumSandbox: true, timeout: NAVIGATION_TIMEOUT }
+  // Les métadonnées cloud sont coupées au niveau du résolveur : le filtre de
+  // schéma ne voit que la première URL d'une redirection, ni les WebSockets.
+  const args = ['--host-resolver-rules=MAP 169.254.169.254 ~NOTFOUND, MAP metadata.google.internal ~NOTFOUND, MAP [fd00:ec2::254] ~NOTFOUND']
+  const options = { chromiumSandbox: true, timeout: NAVIGATION_TIMEOUT, args }
   try {
     return await chromium.launch({ ...options, channel: 'chrome' })
   } catch {
@@ -50,8 +53,9 @@ async function launch(): Promise<Browser> {
 }
 
 /** Un contexte vierge, sans téléchargement ni service worker, qui refuse toute
- *  requête hors http(s) — y compris celle d'une redirection, que `captureTarget`
- *  ne voit pas. */
+ *  requête hors http(s). Limite : le gestionnaire de route de Playwright ne voit
+ *  que la première URL d'une chaîne de redirections, et `context.route` ne voit
+ *  pas les WebSockets — ce filtre n'est pas une frontière réseau. */
 async function openPage(browser: Browser, options: ResolvedCapture): Promise<Page> {
   const context = await browser.newContext({
     viewport: { width: options.width, height: options.height },

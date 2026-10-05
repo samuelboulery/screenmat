@@ -40,6 +40,19 @@ export function resolveUnder(root: string, wanted: string): string {
   return target
 }
 
+/**
+ * Valide le `output` d'un modèle et en force l'extension sur le format produit.
+ * Aucun segment ne commence par un point (`.git/hooks/x`, `a\\.cache.png`,
+ * `..`), `\` valant séparateur comme `/` : un chemin caché ou un hook ne
+ * s'écrit pas, quelle que soit l'extension demandée.
+ */
+export function checkedOutput(wanted: string, extension: string): string {
+  if (wanted.split(/[/\\]/).some((segment) => segment !== '.' && segment.startsWith('.'))) {
+    throw new Error(`\`output\` ne doit contenir aucun segment commençant par un point — reçu ${wanted}.`)
+  }
+  return `${wanted.replace(/\.[^./\\]*$/, '')}.${extension}`
+}
+
 /** Nombre de suffixes tentés avant d'abandonner.
  *  ponytail: plafond fixe et boucle qui retente. Un compteur persisté irait
  *  plus vite au 100ᵉ rendu du même screenshot — cas qui n'arrive pas. */

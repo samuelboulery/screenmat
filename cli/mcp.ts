@@ -13,9 +13,9 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { z } from 'zod'
 import { basename } from 'node:path'
 import { inspect, render } from './api.ts'
-import { addressText, capture, captureName, captureTarget } from './capture.ts'
-import { resolveUnder, writeNew, writeRoot } from './write-guard.ts'
-import { STYLES_DIR, listStyles } from './styles-dir.ts'
+import { addressText, capture, captureName, captureTarget, privateHostWarning } from './capture.ts'
+import { checkedOutput, resolveUnder, writeNew, writeRoot } from './write-guard.ts'
+import { STYLES_DIR, assertStyleName, listStyles } from './styles-dir.ts'
 import { ANNOTATION_LIMITS } from '../src/lib/annotate.ts'
 import { SCREEN_RATIOS } from '../src/lib/screen.ts'
 import { SERIES } from '../src/lib/series.ts'
@@ -153,7 +153,7 @@ repère de coordonnées, et sa réponse dit où le screenshot atterrit.`,
         .min(1)
         .max(24),
       output: z.string().optional().describe('Chemin du fichier à écrire. Défaut : <input>-screenmat.<format>.'),
-      style: z.string().optional().describe(`Nom d'un style enregistré (voir screenmat_list_styles).`),
+      style: z.string().optional().describe(`Nom d'un style enregistré, jamais un chemin (voir screenmat_list_styles).`),
       settings,
       composition: z
         .object({
@@ -168,11 +168,13 @@ repère de coordonnées, et sa réponse dit où le screenshot atterrit.`,
     },
   },
   async (args) => {
+    // Un nom listé, jamais un chemin : voir `assertStyleName`.
+    if (args.style !== undefined) await assertStyleName(args.style)
     const result = await render(args)
     const root = writeRoot(args.shots[0]!.input)
     // Sans `output`, le défaut se replie sur son seul nom de fichier : la
     // racine décide déjà du dossier, y compris quand SCREENMAT_OUT la déplace.
-    const wanted = args.output ?? basename(defaultOutput(args.shots[0]!.input, result.format))
+    const wanted = checkedOutput(args.output ?? basename(defaultOutput(args.shots[0]!.input, result.format)), result.format)
     const output = await writeNew(resolveUnder(root, wanted), result.buffer)
 
     // On renvoie un chemin, jamais l'image : une PNG en base64 coûterait des
@@ -210,7 +212,8 @@ server.registerTool(
 chemin et \`address\`, le texte à passer en settings.url à screenmat_render pour
 que la barre du navigateur affiche la page capturée. Ce PNG est ensuite l'input
 de screenmat_inspect et screenmat_render : capturer une fois, puis annoter et
-rendre les mêmes pixels.`,
+rendre les mêmes pixels.
+Private, loopback and link-local hosts can be reached; only capture URLs the user asked for.`,
     inputSchema: {
       url: z.string().max(2048).describe('URL http(s) à capturer. localhost accepté.'),
       width: z.number().int().optional().describe('Viewport en px CSS, 320–3840. Défaut : 1440.'),
@@ -224,7 +227,7 @@ rendre les mêmes pixels.`,
         .describe('Sélecteur CSS à attendre, ou délai en ms (≤ 30000).'),
       output: z
         .string()
-        .regex(/(^|\/)[^./][^/]*\.png$/i, 'un nom en .png, sans point initial')
+        .regex(/^([^./\\][^/\\]*[/\\])*[^./\\][^/\\]*\.png$/i, 'un nom en .png, sans point initial')
         .optional()
         .describe('Chemin du PNG, en .png. Défaut : <hôte-chemin>.png.'),
     },
@@ -232,11 +235,12 @@ rendre les mêmes pixels.`,
   async ({ url, output, ...options }) => {
     // URL et chemin validés avant de lancer un navigateur pour rien.
     const target = captureTarget(url)
-    const wanted = resolveUnder(writeRoot(), output ?? `${captureName(target)}.png`)
+    const wanted = resolveUnder(writeRoot(), checkedOutput(output ?? captureName(target), 'png'))
+    const warning = privateHostWarning(target)
     const png = await capture(url, options)
     const path = await writeNew(wanted, png)
     // Largeur et hauteur lues dans l'en-tête IHDR du PNG, sans le décoder.
-    return json({ output: path, width: png.readUInt32BE(16), height: png.readUInt32BE(20), address: addressText(target) })
+    return json({ output: path, width: png.readUInt32BE(16), height: png.readUInt32BE(20), address: addressText(target), ...(warning ? { warning } : {}) })
   },
 )
 

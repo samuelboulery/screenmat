@@ -1,5 +1,6 @@
 node_modules
 dist
+dist-npm
 ovrsee/
 .claude/local
 .DS_Store

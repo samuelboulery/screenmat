@@ -1,0 +1,106 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  # Tout ce qui exécute du code du dépôt (install, tests) tourne ici avec des
+  # droits en lecture seule : aucun jeton d'écriture ni de provenance.
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          # Historique complet : le garde « sur main » en a besoin.
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+          cache: pnpm
+
+      # Un tag qui ne dit pas la version du paquet publierait autre chose que
+      # ce qu'il annonce.
+      - name: Tag et version concordent
+        run: |
+          version=$(node -p "require('./package.json').version")
+          test "${GITHUB_REF_NAME}" = "v${version}" || { echo "tag ${GITHUB_REF_NAME} ≠ version ${version}"; exit 1; }
+
+      # Sans ce garde, quiconque peut pousser un tag publie le code de
+      # n'importe quelle branche, non relu, avec une provenance valide.
+      - name: Le tag est sur main
+        run: |
+          git fetch origin main
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main || { echo "le commit ${GITHUB_SHA} n'est pas sur main"; exit 1; }
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm typecheck
+
+      - run: pnpm exec playwright-core install --with-deps --only-shell chromium
+
+      - run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+
+      - run: pnpm test
+
+      # `prepack` reconstruit `dist-npm/` avant d'empaqueter. Le paquet est
+      # joint à la release du tag sous un nom fixe : l'URL
+      # `releases/latest/download/screenmat.tgz` des docs reste juste à chaque version.
+      - name: Paquet
+        run: |
+          pnpm pack --pack-destination release
+          mv release/screenmat-*.tgz release/screenmat.tgz
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: screenmat-package
+          path: release/screenmat.tgz
+          if-no-files-found: error
+
+  # Seul job à détenir des droits d'écriture : il ne récupère ni n'exécute
+  # aucun code du dépôt, il ne publie que le paquet construit plus haut.
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      # Créer la release GitHub et y joindre le paquet.
+      contents: write
+      # Provenance npm : la signature prouve que le paquet sort de ce dépôt.
+      id-token: write
+    env:
+      # Lu par la condition de l'étape npm : un secret ne se teste pas dans `if:`.
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: screenmat-package
+
+      - name: Release GitHub
+        run: gh release create "$GITHUB_REF_NAME" screenmat.tgz --verify-tag --generate-notes --repo "$GITHUB_REPOSITORY"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      # ponytail: sauté tant que le secret NPM_TOKEN n'existe pas ; le créer
+      # suffit à publier aussi sur npm, sans toucher au workflow.
+      - if: env.NPM_TOKEN != ''
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
+        with:
+          # Pas de checkout ici, donc pas de `packageManager` à lire.
+          version: 10.12.1
+
+      - if: env.NPM_TOKEN != ''
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+
+      - if: env.NPM_TOKEN != ''
+        run: pnpm publish ./screenmat.tgz --provenance --access public --no-git-checks
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

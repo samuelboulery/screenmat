@@ -11,6 +11,7 @@
  * moteur, et se charge donc sans aucune dépendance optionnelle.
  */
 import { execFile, type ExecFileException } from 'node:child_process'
+import { extname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 export type ColorScheme = 'light' | 'dark'
@@ -117,6 +118,38 @@ export function captureTarget(url: string): URL {
   return parsed
 }
 
+/** Avertissement quand l'hôte est une machine locale ou privée (loopback,
+ *  RFC1918, lien-local, `fc00::/7`, `localhost`), `undefined` sinon. Pur : le
+ *  serveur MCP l'ajoute à sa réponse, pour qu'un client voie ce qui a été
+ *  atteint. ponytail: littéral IP seulement, pas de résolution DNS — un nom
+ *  public qui pointe en privé passe ; résoudre l'hôte si la menace compte. */
+export function privateHostWarning(url: URL): string | undefined {
+  // `localhost.` : URL garde le point final d'un nom, pas celui d'une IP.
+  let host = url.hostname.toLowerCase().replace(/\.$/, '')
+  if (host.startsWith('[')) host = host.slice(1, -1)
+  // `::ffff:7f00:1` : l'IPv4 enveloppée dans de l'IPv6, forme normalisée par URL.
+  const mapped = /^::ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/.exec(host)
+  if (mapped) {
+    const [hi, lo] = [parseInt(mapped[1]!, 16), parseInt(mapped[2]!, 16)]
+    host = `${hi >> 8}.${hi & 255}.${lo >> 8}.${lo & 255}`
+  }
+  const v4 = /^(\d+)\.(\d+)\.\d+\.\d+$/.exec(host)
+  const [a, b] = v4 ? [Number(v4[1]), Number(v4[2])] : [-1, -1]
+  const isPrivate =
+    host === 'localhost' ||
+    host.endsWith('.localhost') ||
+    a === 127 || a === 10 || a === 0 ||
+    (a === 172 && b >= 16 && b <= 31) ||
+    (a === 192 && b === 168) ||
+    (a === 169 && b === 254) ||
+    host === '::1' || host === '::' ||
+    /^f[cd][0-9a-f]{2}:/.test(host) ||
+    /^fe[89ab][0-9a-f]:/.test(host)
+  return isPrivate
+    ? `${url.host} is a local or private address: the capture reads an internal page. Only capture URLs the user asked for.`
+    : undefined
+}
+
 /** Le texte de la barre d'adresse : l'hôte et le chemin, comme un navigateur
  *  l'affiche — sans schéma, requête ni ancre. Même plafond que `settings.url`. */
 export function addressText(url: URL): string {
@@ -176,7 +209,9 @@ export function fullPageHeight(scrollHeight: number, { width, density }: Pick<Re
   return Math.min(scrollHeight, Math.floor(MAX_PIXELS / (width * density * density)))
 }
 
-const CHILD = fileURLToPath(new URL('./capture-child.ts', import.meta.url))
+/** `capture-child.ts` dans le dépôt, `.js` dans le paquet npm : `tsc` réécrit
+ *  les imports, pas une chaîne passée à `new URL()`. */
+const CHILD = fileURLToPath(new URL(`./capture-child${extname(fileURLToPath(import.meta.url))}`, import.meta.url))
 
 /** Le lancement, la navigation, l'attente et la capture ont chacun leur
  *  délai de 30 s dans le processus enfant : le sien les couvre tous, pour que

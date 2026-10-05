@@ -72,12 +72,22 @@ Puis coller une capture (`⌘V`) ou déposer un fichier. C'est toute
 l'installation : rien à configurer, nulle part où se connecter.
 
 Prérequis : **Node 24 ou plus récent** et **pnpm**. Node 24 exécute le TypeScript
-de `cli/` tel quel, la porte machine n'a donc aucune étape de build.
+de `cli/` tel quel : depuis un clone, la porte machine n'a aucune étape de build.
 
 ## La porte machine
 
 Le même moteur, appelé par autre chose qu'un humain. `render(spec)` est le cœur ;
 le CLI, le serveur MCP et l'import direct n'en sont que des enveloppes.
+
+```bash
+# Depuis n'importe quel projet — sans cloner.
+pnpm dlx https://github.com/samuelboulery/screenmat/releases/latest/download/screenmat.tgz capture.png --frame macbook
+pnpm add -D https://github.com/samuelboulery/screenmat/releases/download/v0.1.0/screenmat.tgz   # pour un script de build (version figée) : import { render } from 'screenmat/node'
+```
+
+Le paquet est joint à chaque [release GitHub](https://github.com/samuelboulery/screenmat/releases) ;
+il n'est pas encore sur npm. Il contient tout sauf les fonds d'écran macOS et Windows, © Apple et
+© Microsoft : ceux-là s'utilisent depuis un clone du dépôt.
 
 ```bash
 # Ligne de commande — les défauts sont déjà bons.
@@ -110,7 +120,8 @@ await writeFile('docs/hero.webp', buffer)
 
 ```bash
 # Agent IA — le serveur MCP se déclare une fois.
-claude mcp add screenmat -- node /chemin/absolu/vers/screenmat/cli/mcp.ts
+claude mcp add screenmat -- pnpm dlx --package=https://github.com/samuelboulery/screenmat/releases/latest/download/screenmat.tgz screenmat-mcp
+# Depuis un clone : claude mcp add screenmat -- node /chemin/absolu/vers/screenmat/cli/mcp.ts
 ```
 
 Quatre outils MCP : `screenmat_render` (écrit un fichier et renvoie son chemin —

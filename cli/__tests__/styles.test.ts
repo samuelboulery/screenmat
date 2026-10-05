@@ -39,6 +39,15 @@ describe('listStyles', () => {
   })
 })
 
+describe('assertStyleName', () => {
+  it('accepte un nom listé, refuse un chemin ou un nom inconnu', async () => {
+    const { assertStyleName } = await import('../styles-dir.ts')
+    await expect(assertStyleName('docs')).resolves.toBeUndefined()
+    await expect(assertStyleName(join(dir, 'docs.json'))).rejects.toThrow(/screenmat_list_styles/)
+    await expect(assertStyleName('../docs')).rejects.toThrow(/inconnu/)
+  })
+})
+
 describe('resolveStyle', () => {
   it('liste les noms disponibles quand le style demandé n’existe pas', async () => {
     await expect(resolveStyle('absent')).rejects.toThrow(/docs/)

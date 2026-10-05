@@ -11,6 +11,7 @@ import { parseArgs } from 'node:util'
 import { basename, extname, join } from 'node:path'
 import { readFile, writeFile } from 'node:fs/promises'
 import { STYLES_DIR, listStyles } from './styles-dir.ts'
+import { isCanvasMissing } from './canvas-missing.ts'
 import {
   addressText,
   capture,
@@ -28,8 +29,14 @@ import type { Pan, Settings } from '../src/types.ts'
 
 /** `api.ts` tire `@napi-rs/canvas`, dont le chargement de l'addon natif coûte
  *  une centaine de millisecondes. `--help` et `styles` n'en ont pas besoin :
- *  l'import attend d'avoir une image à rendre. */
-const engine = () => import('./api.ts')
+ *  l'import attend d'avoir une image à rendre. `@napi-rs/canvas` est optionnel :
+ *  une plateforme sans binaire installe le paquet quand même — le dire plutôt
+ *  que laisser passer une trace de module. */
+const engine = () =>
+  import('./api.ts').catch((error: unknown) => {
+    if (!isCanvasMissing(error)) throw error
+    throw new Error('`@napi-rs/canvas` n’est pas installé, ou sans binaire pour cette plateforme : `pnpm add @napi-rs/canvas`')
+  })
 
 const OPTIONS = {
   out: { type: 'string', short: 'o' },
@@ -91,6 +98,7 @@ ${wrap(SERIES.dither, 4, '                     ')}
 ${wrap(SERIES.macos, 3, '                     ')}
                    vrais fonds d'écran Windows :
 ${wrap(SERIES.windows, 3, '                     ')}
+                   (macOS et Windows : depuis un clone du dépôt, pas le paquet npm)
       --ratio auto|4:3|1:1|16:9|9:16
       --theme auto|light|dark
       --url <texte>      texte de la barre d'adresse

@@ -11,6 +11,7 @@ import { parseArgs } from 'node:util'
 import { basename, extname, join } from 'node:path'
 import { readFile, writeFile } from 'node:fs/promises'
 import { STYLES_DIR, listStyles } from './styles-dir.ts'
+import { isCanvasMissing } from './canvas-missing.ts'
 import {
   addressText,
   capture,
@@ -33,8 +34,7 @@ import type { Pan, Settings } from '../src/types.ts'
  *  que laisser passer une trace de module. */
 const engine = () =>
   import('./api.ts').catch((error: unknown) => {
-    const missing = (error as NodeJS.ErrnoException).code === 'ERR_MODULE_NOT_FOUND' && String(error).includes('@napi-rs/canvas')
-    if (!missing) throw error
+    if (!isCanvasMissing(error)) throw error
     throw new Error('`@napi-rs/canvas` n’est pas installé, ou sans binaire pour cette plateforme : `pnpm add @napi-rs/canvas`')
   })
 

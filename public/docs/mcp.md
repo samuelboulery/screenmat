@@ -160,8 +160,12 @@ the capture as a PNG. That PNG is then the `input` of `screenmat_inspect` and
 
 Out-of-range values fail the call rather than being clamped. The URL and
 `output` are checked before any browser is launched. Captures run one at a time,
-in a sandboxed browser with no downloads, no service workers and no request
-outside `http:`/`https:` — redirects included.
+in a sandboxed browser with no downloads and no service workers. Requests
+outside `http:`/`https:` are refused, but only the first URL of a redirect chain
+is checked, and WebSockets are not seen. The cloud metadata hosts
+(`169.254.169.254`, `metadata.google.internal`, `[fd00:ec2::254]`) are blocked by
+literal host name — not a hostname that resolves to them. The private-host
+warning looks at the requested URL only, not where it redirects.
 
 > **Warning** — `localhost` and private addresses are reachable, because
 > capturing your own dev server is the point. A model steered by a malicious

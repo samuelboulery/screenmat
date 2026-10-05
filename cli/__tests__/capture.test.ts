@@ -17,6 +17,7 @@ import {
   fullPageHeight,
   MAX_PIXELS,
   parseCaptureOptions,
+  privateHostWarning,
 } from '../capture.ts'
 
 it('est exportée par l’API Node', () => {
@@ -239,3 +240,31 @@ describe.skipIf(unavailable !== undefined)('capture — navigateur', () => {
     expect(result.buffer.length).toBeGreaterThan(0)
   })
 }, 60_000)
+
+describe('privateHostWarning', () => {
+  it.each([
+    'http://localhost:3000',
+    'http://app.localhost/',
+    'http://localhost./',
+    'http://127.0.0.1/',
+    'http://10.1.2.3/',
+    'http://172.16.0.1/',
+    'http://172.31.255.255/',
+    'http://192.168.1.1/',
+    'http://169.254.169.254/latest',
+    'http://[::1]/',
+    'http://[fd00::1]/',
+    'http://[fe80::1]/',
+    'http://[::ffff:127.0.0.1]/',
+    'http://2130706433/',
+  ])('avertit pour %s', (url) => {
+    expect(privateHostWarning(new URL(url))).toMatch(/private address/)
+  })
+
+  it.each(['https://example.com', 'http://172.32.0.1/', 'http://192.169.0.1/', 'http://8.8.8.8/', 'http://[2001:db8::1]/'])(
+    'se tait pour %s',
+    (url) => {
+      expect(privateHostWarning(new URL(url))).toBeUndefined()
+    },
+  )
+})

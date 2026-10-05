@@ -44,7 +44,7 @@ export const HTML_FR: Record<string, string> = {
   'how.title': 'Trois gestes, aucun réglage à apprendre.',
   'how.paste.title': 'Coller',
   'how.paste.body':
-    'Une capture, ou tout un dossier. Le fond est tiré de ses couleurs dominantes : le résultat est juste avant que vous n’ayez touché à quoi que ce soit.',
+    'Une capture, ou plusieurs d’un coup. Le fond est tiré de ses couleurs dominantes : le résultat est juste avant que vous n’ayez touché à quoi que ce soit.',
   'how.adjust.title': 'Ajuster',
   'how.adjust.body':
     'Cadre, coins, inclinaison. Texte, flèches, rectangles, pastilles numérotées. Floutez ce qui doit rester privé — le flou est cuit dans les pixels, pas posé par-dessus.',

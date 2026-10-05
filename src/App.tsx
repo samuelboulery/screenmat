@@ -30,6 +30,7 @@ import { useSideFile, type SideTarget } from './hooks/useSideFile.ts'
 import { useNarrow, useShortcuts } from './hooks/useShortcuts.ts'
 import { m } from './lib/i18n/index.ts'
 import { loadImage } from './lib/image.ts'
+import { canCaptureTab } from './lib/tab-capture.ts'
 import { getHistoryBlobs } from './lib/store.ts'
 import { exportStyle, parseSettings } from './lib/styles.ts'
 import { isWallpaper } from './lib/wallpapers.ts'
@@ -221,7 +222,11 @@ export default function App() {
   /* --- Rendu ------------------------------------------------------------ */
 
   const empty = shots.shots.length === 0
-  const problem = failure ?? exporter.error ?? library.error ?? batch.error
+  // Hors écran d'import — qui l'affiche lui-même —, `input.error` rejoint la
+  // ligne d'alerte : une capture d'onglet ratée depuis l'éditeur ne doit pas
+  // rester muette.
+  const problem = failure ?? (empty ? null : input.error) ?? exporter.error ?? library.error ?? batch.error
+  const captureTab = canCaptureTab(navigator.mediaDevices) ? () => void input.captureTab() : undefined
   const separateBatch = output.mode === 'separate' && shots.shots.length > 1
 
   const actions = (
@@ -282,6 +287,7 @@ export default function App() {
             lastStyleArmed={Boolean(activeStyle) && activeStyle?.id === library.lastStyleId}
             recents={library.history.slice(0, 4)}
             onPick={() => pick('shot')}
+            onCaptureTab={captureTab}
             onUseLastStyle={() => library.lastStyleId && styles.apply(library.lastStyleId)}
             onOpenRecent={(id) => void reopen(id)}
           />
@@ -320,6 +326,7 @@ export default function App() {
               onToggleMember={anchored.toggleMember}
               onReorderShots={anchored.reorder}
               onAddShot={() => pick('shot')}
+              onCaptureTab={captureTab}
               onPickBackgroundImage={() => pick('background')}
               onCreateAnnotation={shots.createAnnotation}
               onPatchAnnotation={shots.patchAnnotation}

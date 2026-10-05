@@ -34,6 +34,7 @@ export const workspaceFr: typeof workspaceEn = {
   images: {
     heading: (n: number) => `Images — ${n}`,
     add: 'Ajouter des images (⌘V)',
+    captureTab: 'Capturer un onglet du navigateur',
     separate: 'Séparées',
     combined: 'Combinées',
     onePerImage: 'Un fichier par image',
@@ -97,6 +98,7 @@ export const workspaceFr: typeof workspaceEn = {
   importScreen: {
     drop: 'ou déposez un fichier ici — rien ne quitte votre navigateur',
     pick: 'Choisir un fichier',
+    captureTab: 'Capturer un onglet',
     ready: (name: string | null) => `« ${name} » prêt pour votre image`,
     lastStyle: 'Partir du dernier style',
     recent: 'Récents — ce navigateur',

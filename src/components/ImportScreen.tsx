@@ -1,4 +1,4 @@
-import { CopiedIcon, PickFileIcon, SaveStyleIcon } from './icons.tsx'
+import { CaptureTabIcon, CopiedIcon, PickFileIcon, SaveStyleIcon } from './icons.tsx'
 import { Button, ErrorNote, MonoLabel } from './ui.tsx'
 import type { HistoryMeta } from '../lib/store.ts'
 import { m } from '../lib/i18n/index.ts'
@@ -13,6 +13,8 @@ type ImportScreenProps = {
   lastStyleArmed: boolean
   recents: readonly HistoryMeta[]
   onPick: () => void
+  /** Absent là où le navigateur ne sait pas partager un onglet. */
+  onCaptureTab?: () => void
   onUseLastStyle: () => void
   onOpenRecent: (id: string) => void
 }
@@ -28,6 +30,7 @@ export default function ImportScreen({
   lastStyleArmed,
   recents,
   onPick,
+  onCaptureTab,
   onUseLastStyle,
   onOpenRecent,
 }: ImportScreenProps) {
@@ -54,6 +57,12 @@ export default function ImportScreen({
             <PickFileIcon />
             {m.workspace.importScreen.pick}
           </Button>
+          {onCaptureTab && (
+            <Button onClick={onCaptureTab}>
+              <CaptureTabIcon />
+              {m.workspace.importScreen.captureTab}
+            </Button>
+          )}
           {/* Sans image, appliquer un style ne se voit pas : le bouton dit donc
               lui-même qu'il est pris, et pour quoi. */}
           <Button onClick={onUseLastStyle} disabled={!lastStyle}>

@@ -13,6 +13,9 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Historique complet : le garde « sur main » en a besoin.
+          fetch-depth: 0
 
       - uses: pnpm/action-setup@v4
 
@@ -28,6 +31,13 @@ jobs:
         run: |
           version=$(node -p "require('./package.json').version")
           test "${GITHUB_REF_NAME}" = "v${version}" || { echo "tag ${GITHUB_REF_NAME} ≠ version ${version}"; exit 1; }
+
+      # Sans ce garde, quiconque peut pousser un tag publie le code de
+      # n'importe quelle branche, non relu, avec une provenance valide.
+      - name: Le tag est sur main
+        run: |
+          git fetch origin main
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main || { echo "le commit ${GITHUB_SHA} n'est pas sur main"; exit 1; }
 
       - run: pnpm install --frozen-lockfile
 

@@ -93,6 +93,17 @@ describe('renderMarkdown', () => {
     expect(links[1]?.attrs).toEqual({ href: '#cli' })
   })
 
+  it('ne fait pas un lien d’un schéma hors liste', () => {
+    const { nodes } = renderMarkdown(
+      '[a](javascript:alert(1)) [b](JaVaScRiPt:x) [c](data:text/html,x) [d](mailto:a@b.c) [e](/docs) [f](page.md)\n',
+    )
+    const hrefs = (find(nodes, 'p')?.children ?? []).flatMap((node) =>
+      typeof node !== 'string' && node.tag === 'a' ? [node.attrs?.href] : [],
+    )
+    expect(hrefs).toEqual(['mailto:a@b.c', '/docs', 'page.md'])
+    expect(text(nodes)).toContain('b c d e f')
+  })
+
   it('ne produit aucune balise à partir du texte source', () => {
     const { nodes } = renderMarkdown('A <script>alert(1)</script> tag.\n')
 

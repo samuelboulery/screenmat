@@ -287,12 +287,23 @@ export function renderInline(text: string): El[] {
   return nodes
 }
 
+/** `http(s):`, `mailto:`, ancre, chemin absolu ou relatif — rien d'autre. */
+export function isSafeHref(href: string): boolean {
+  // Les espaces et contrôles initiaux sont ignorés par le navigateur : `\tjavascript:`.
+  const clean = href.replace(/[\u0000-\u0020]/g, '')
+  const scheme = /^([a-z][a-z0-9+.-]*):/i.exec(clean)
+  return !scheme || /^(https?|mailto)$/i.test(scheme[1]!)
+}
+
 function inlineNode(match: RegExpMatchArray): El {
   const [, code, linkText, href, strong, emphasis] = match
 
   if (code !== undefined) return { tag: 'code', children: [code] }
 
   if (linkText !== undefined && href !== undefined) {
+    // Un schéma hors liste (`javascript:`, `data:`…) ne devient pas un lien :
+    // le texte reste, la cible disparaît.
+    if (!isSafeHref(href)) return { tag: 'span', children: renderInline(linkText) }
     // Une cible hors du document part dans un onglet, et jamais avec un
     // `window.opener` ouvert sur elle.
     const external = /^https?:/.test(href)

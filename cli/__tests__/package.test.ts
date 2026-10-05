@@ -105,4 +105,21 @@ describe('paquet npm', () => {
       server.close()
     }
   })
+
+  it('dit pourquoi un fond macOS ou Windows manque', async () => {
+    await expect(run('screenmat', ['shot.png', '--background', 'tahoe-dark', '-o', 'bg.webp'])).rejects.toMatchObject({
+      stderr: expect.stringContaining('paquet npm'),
+    })
+  })
+
+  it('dit quoi installer quand @napi-rs/canvas manque', async () => {
+    const bare = join(work, 'bare')
+    await exec('mkdir', ['-p', bare])
+    await writeFile(join(bare, 'package.json'), JSON.stringify({ name: 'bare', private: true, type: 'module' }))
+    await exec('pnpm', ['add', tarball, '--prefer-offline', '--no-optional'], { cwd: bare })
+    await writeFile(join(bare, 'shot.png'), fixture())
+    await expect(
+      exec(join(bare, 'node_modules/.bin/screenmat'), ['shot.png'], { cwd: bare }),
+    ).rejects.toMatchObject({ stderr: expect.stringContaining('`@napi-rs/canvas` n’est pas installé') })
+  })
 }, 180_000)

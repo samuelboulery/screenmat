@@ -7,7 +7,7 @@ agent that has no shell — four tools, no logic of its own: each one calls
 ## Connecting
 
 ```bash
-claude mcp add screenmat -- pnpm dlx --package=https://github.com/samuelboulery/screenmat/releases/latest/download/screenmat.tgz screenmat-mcp
+claude mcp add screenmat -- pnpm dlx --package=screenmat screenmat-mcp
 ```
 
 From a clone: `claude mcp add screenmat -- node /absolute/path/to/screenmat/cli/mcp.ts`.
@@ -19,7 +19,7 @@ Any MCP client works. The equivalent JSON configuration:
   "mcpServers": {
     "screenmat": {
       "command": "pnpm",
-      "args": ["dlx", "--package=https://github.com/samuelboulery/screenmat/releases/latest/download/screenmat.tgz", "screenmat-mcp"],
+      "args": ["dlx", "--package=screenmat", "screenmat-mcp"],
       "env": { "SCREENMAT_OUT": "/absolute/path/to/your/project/docs/images" }
     }
   }

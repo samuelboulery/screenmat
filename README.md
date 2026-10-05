@@ -80,12 +80,12 @@ core; the CLI, the MCP server and a direct import are thin wrappers around it.
 
 ```bash
 # From any project — no clone needed.
-pnpm dlx https://github.com/samuelboulery/screenmat/releases/latest/download/screenmat.tgz screenshot.png --frame macbook
-pnpm add -D https://github.com/samuelboulery/screenmat/releases/download/v0.1.0/screenmat.tgz   # for a build script (pinned version): import { render } from 'screenmat/node'
+pnpm dlx screenmat screenshot.png --frame macbook
+pnpm add -D screenmat            # for a build script: import { render } from 'screenmat/node'
 ```
 
-The package is attached to each [GitHub release](https://github.com/samuelboulery/screenmat/releases);
-it is not on npm yet. It ships everything but the macOS and Windows wallpapers, which
+The npm package is also attached to each [GitHub release](https://github.com/samuelboulery/screenmat/releases)
+as `screenmat.tgz`. It ships everything but the macOS and Windows wallpapers, which
 are © Apple and © Microsoft: use those from a clone of this repository.
 
 ```bash
@@ -119,7 +119,7 @@ await writeFile('docs/hero.webp', buffer)
 
 ```bash
 # AI agent — register the MCP server once.
-claude mcp add screenmat -- pnpm dlx --package=https://github.com/samuelboulery/screenmat/releases/latest/download/screenmat.tgz screenmat-mcp
+claude mcp add screenmat -- pnpm dlx --package=screenmat screenmat-mcp
 # From a clone: claude mcp add screenmat -- node /absolute/path/to/screenmat/cli/mcp.ts
 ```
 

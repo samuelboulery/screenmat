@@ -39,10 +39,9 @@ project, so a file produced here is identical to what the app would export.
 
 ## Requirements
 
-- **Node 24 or newer.** Without a clone, `pnpm dlx https://github.com/samuelboulery/screenmat/releases/latest/download/screenmat.tgz`
-  or `pnpm add -D` of a versioned one (`releases/download/v0.1.0/screenmat.tgz`):
-  the package, compiled JavaScript, is attached to
-  each GitHub release (not on npm yet). From a clone, Node runs the TypeScript in
+- **Node 24 or newer.** From npm, `pnpm dlx screenmat` or `pnpm add -D screenmat`;
+  the package is compiled JavaScript, also attached to each GitHub release as
+  `screenmat.tgz`. From a clone, Node runs the TypeScript in
   `cli/` directly — there is no build step.
 - **Wallpapers.** The macOS and Windows backgrounds are © Apple and © Microsoft
   and are not in the package; they work from a clone only.
@@ -66,7 +65,7 @@ Three ways in, same engine, same output.
 
 ```bash
 # Command line — defaults are already good.
-pnpm dlx https://github.com/samuelboulery/screenmat/releases/latest/download/screenmat.tgz screenshot.png   # from a clone: pnpm cli screenshot.png
+pnpm dlx screenmat screenshot.png   # from a clone: pnpm cli screenshot.png
 # → screenshot-screenmat.webp  3200×2400  188464 octets
 ```
 
@@ -86,7 +85,7 @@ await writeFile('docs/hero.png', buffer)
 
 ```bash
 # AI agent — register the MCP server once.
-claude mcp add screenmat -- pnpm dlx --package=https://github.com/samuelboulery/screenmat/releases/latest/download/screenmat.tgz screenmat-mcp
+claude mcp add screenmat -- pnpm dlx --package=screenmat screenmat-mcp
 # From a clone: claude mcp add screenmat -- node /absolute/path/to/screenmat/cli/mcp.ts
 ```
 

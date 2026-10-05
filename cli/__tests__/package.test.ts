@@ -7,7 +7,7 @@ import { join, resolve } from 'node:path'
 import { promisify } from 'node:util'
 
 /* Le paquet tel qu'un utilisateur le reçoit : construit, empaqueté, installé
-   dans un projet vide, puis exécuté. C'est le seul test qui voit `dist/` —
+   dans un projet vide, puis exécuté. C'est le seul test qui voit `dist-npm/` —
    tous les autres exécutent les `.ts` du dépôt. */
 
 const exec = promisify(execFile)
@@ -47,13 +47,13 @@ afterAll(async () => {
 })
 
 describe('paquet npm', () => {
-  it('ne contient que dist/, les polices et les métadonnées', async () => {
+  it('ne contient que dist-npm/, les polices et les métadonnées', async () => {
     const { stdout } = await exec('tar', ['-tzf', tarball])
     const entries = stdout.split('\n').filter(Boolean)
-    expect(entries).toContain('package/dist/cli/main.js')
-    expect(entries).toContain('package/dist/cli/capture-child.js')
-    expect(entries.some((entry) => entry.startsWith('package/dist/public/fonts/'))).toBe(true)
-    // `dist/src/lib/wallpapers.js` est le catalogue des identifiants, du code :
+    expect(entries).toContain('package/dist-npm/cli/main.js')
+    expect(entries).toContain('package/dist-npm/cli/capture-child.js')
+    expect(entries.some((entry) => entry.startsWith('package/dist-npm/public/fonts/'))).toBe(true)
+    // `dist-npm/src/lib/wallpapers.js` est le catalogue des identifiants, du code :
     // ce sont les images de `public/wallpapers/` qui ne doivent pas partir.
     expect(entries.filter((entry) => /public\/wallpapers|src\/components|__tests__|\.ts$/.test(entry) && !entry.endsWith('.d.ts'))).toEqual([])
   })

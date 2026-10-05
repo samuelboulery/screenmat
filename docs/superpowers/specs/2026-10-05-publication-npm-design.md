@@ -33,9 +33,9 @@ fonctionnent.
 | --- | --- |
 | `private` | retiré |
 | `version` | `0.1.0` |
-| `bin` | `screenmat` → `dist/cli/main.js` ; `screenmat-mcp` → `dist/cli/mcp.js` |
-| `exports["./node"]` | `{ types: ./dist/cli/api.d.ts, default: ./dist/cli/api.js }` |
-| `files` | `dist/`, `README.md`, `LICENSE` |
+| `bin` | `screenmat` → `dist-npm/cli/main.js` ; `screenmat-mcp` → `dist-npm/cli/mcp.js` |
+| `exports["./node"]` | `{ types: ./dist-npm/cli/api.d.ts, default: ./dist-npm/cli/api.js }` |
+| `files` | `dist-npm/`, `README.md`, `LICENSE` |
 | `engines.node` | `>=24` (inchangé) |
 | `dependencies` | aucune |
 | `optionalDependencies` | `@napi-rs/canvas`, `@modelcontextprotocol/sdk`, `zod`, `playwright-core` (inchangé) |
@@ -54,21 +54,23 @@ sort.
    - `files` : `cli/main.ts`, `cli/mcp.ts`, `cli/api.ts`, `cli/capture-child.ts`.
      Seul ce qu'ils importent est émis (≈ 45 fichiers, 560 Ko avec les `.d.ts`) :
      ni `src/hooks/`, ni composants, ni tests.
-   - `outDir: dist`, `rootDir: .` — la structure est conservée
-     (`dist/cli/`, `dist/src/lib/`), donc tout chemin relatif à
+   - `outDir: dist-npm`, `rootDir: .` — la structure est conservée
+     (`dist-npm/cli/`, `dist-npm/src/lib/`), donc tout chemin relatif à
      `import.meta.url` reste juste.
    - `rewriteRelativeImportExtensions`, `declaration`, mêmes options strictes
      que `tsconfig.cli.json`.
 2. `scripts/build-cli.ts` (Node, sans dépendance) porte tout le build : vide
-   `dist/` (un fichier d'un build précédent partirait sinon dans le tarball),
-   lance l'étape 1, puis copie `public/fonts/` → `dist/public/fonts/`, que
+   `dist-npm/` (un fichier d'un build précédent partirait sinon dans le tarball),
+   lance l'étape 1, puis copie `public/fonts/` → `dist-npm/public/fonts/`, que
    `dom-shim.ts` lit par `../public/fonts/`.
 
 `prepack` lance `pnpm build:cli` : `pnpm pack` et `pnpm publish` construisent
 toujours ce qu'ils empaquettent.
 
 Le shebang `#!/usr/bin/env node` de `main.ts` et `mcp.ts` passe tel quel.
-`dist/` est ignoré par git.
+`dist-npm/` est ignoré par git. Il n'est pas `dist/`, la sortie du build web
+(Vite, Vercel) : partagé, un `pnpm test` effaçait le site construit, et une
+publication sans scripts après `pnpm build` aurait publié le site.
 
 Dans le dépôt rien ne change : `pnpm cli`, `pnpm mcp` et les tests exécutent
 toujours les `.ts` directement.
@@ -103,7 +105,7 @@ Permissions du job : `contents: read`, `id-token: write` (provenance).
 
 1. `pnpm build:cli` puis `pnpm pack` dans un dossier temporaire.
 2. Le tarball ne contient ni `public/wallpapers`, ni `src/components`,
-   ni `__tests__`, et contient `dist/public/fonts/`.
+   ni `__tests__`, et contient `dist-npm/public/fonts/`.
 3. Installation du tarball dans un projet temporaire
    (`pnpm add <tarball>`), puis :
    - `screenmat --help` sort 0 ;

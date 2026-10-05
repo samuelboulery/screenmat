@@ -30,17 +30,17 @@
     "node": ">=24"
   },
   "bin": {
-    "screenmat": "./dist/cli/main.js",
-    "screenmat-mcp": "./dist/cli/mcp.js"
+    "screenmat": "./dist-npm/cli/main.js",
+    "screenmat-mcp": "./dist-npm/cli/mcp.js"
   },
   "exports": {
     "./node": {
-      "types": "./dist/cli/api.d.ts",
-      "default": "./dist/cli/api.js"
+      "types": "./dist-npm/cli/api.d.ts",
+      "default": "./dist-npm/cli/api.js"
     }
   },
   "files": [
-    "dist",
+    "dist-npm",
     "README.md",
     "LICENSE"
   ],

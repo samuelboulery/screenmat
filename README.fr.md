@@ -47,7 +47,7 @@ screenshot, des annotations, du floutage — le tout calculé dans le navigateur
 | **Compositions** | Jusqu'à 24 shots dans un même visuel : `single`, `stack`, `side` ou `tilt3d`, avec écartement, convergence et élévation. |
 | **Calques** | Un vrai arbre — groupes, réordonnancement, masquage, verrouillage, multi-sélection, annuler/rétablir. |
 | **Styles** | Enregistrer un jeu de réglages complet sous un nom, le rappeler depuis l'app, le CLI, MCP ou Node. Le partager, c'est exporter un `.json`. |
-| **Lot** | Un dossier de captures gardées séparées, un seul style, un `.zip` en sortie depuis le menu Export. |
+| **Lot** | Plusieurs captures déposées ou choisies d'un coup, gardées séparées, un seul style, un `.zip` en sortie depuis le menu Export. |
 | **Historique** | Les exports passés vivent dans IndexedDB avec leurs vignettes, réouvrables avec tous leurs réglages. |
 | **Langues** | L'interface en anglais et en français — un bouton `EN` / `FR` dans la barre haute, la langue du navigateur tant qu'aucun choix n'est fait. La landing existe sur `/` et sur `/fr/`. La porte machine et sa documentation restent en anglais. |
 | **Export** | WebP par défaut (7 à 10× plus léger que le PNG à grain égal), PNG à la demande, en 1× / 2× / 3× — 1600, 3200 ou 4800 px de large. |
@@ -181,9 +181,9 @@ public/docs/      la source de la documentation, en Markdown
 ```
 
 `src/lib/render.ts` porte l'unique moteur de rendu, `src/lib/tree.ts` l'unique
-chemin de manipulation de l'arbre de calques, et `src/lib/spec.ts` valide toute
-donnée externe — un style importé ou une scène écrite par un modèle est une
-entrée non fiable, vérifiée champ par champ et ramenée dans ses bornes.
+chemin de manipulation de l'arbre de calques, et `src/lib/spec.ts` (scènes)
+avec `src/lib/styles.ts` (styles) valident toute donnée externe — un style importé
+ou une scène écrite par un modèle est une entrée non fiable, vérifiée champ par champ et ramenée dans ses bornes.
 
 ## Développement
 

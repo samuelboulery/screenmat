@@ -33,6 +33,12 @@ réponse est de l'ajouter là, jamais de contourner dans `src/lib/`.
 
 Node ≥ 24 exécute le TypeScript tel quel : `cli/` n'a pas d'étape de build.
 
+**La capture d'URL (`capture.ts`) pilote Chrome dans un processus enfant
+(`capture-child.ts`)** : `playwright-core` lit `document.currentScript` à son
+import, et le shim jette. Le processus enfant ne charge jamais le shim — ne pas
+« corriger » en y ajoutant `currentScript`, ni importer Playwright ailleurs.
+`capture()` ne renvoie qu'un PNG ; `render` le reçoit comme tout buffer.
+
 `main.ts` charge `api.ts` par `await import()` **après** le parsing des
 arguments : l'addon natif de `@napi-rs/canvas` coûte une centaine de
 millisecondes, et `--help` comme `styles` n'en ont pas besoin.

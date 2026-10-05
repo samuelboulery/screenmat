@@ -89,6 +89,9 @@ pnpm cli shots/*.png --style docs --out-dir ./build
 
 # Une scène complète : annotations, floutage, composition.
 pnpm cli --spec scene.json --scale 3 -o hero@3x.webp
+
+# Une URL, capturée dans un Chrome headless local, puis mise en cadre.
+pnpm cli http://localhost:5173 --frame browser --full-page
 ```
 
 ```ts
@@ -110,9 +113,10 @@ await writeFile('docs/hero.webp', buffer)
 claude mcp add screenmat -- node /chemin/absolu/vers/screenmat/cli/mcp.ts
 ```
 
-Trois outils MCP : `screenmat_render` (écrit un fichier et renvoie son chemin —
+Quatre outils MCP : `screenmat_render` (écrit un fichier et renvoie son chemin —
 jamais les octets de l'image), `screenmat_inspect` (le repère des calques, à
-appeler avant d'en placer un) et `screenmat_list_styles`. Rien n'est jamais
+appeler avant d'en placer un), `screenmat_capture` (une URL, capturée en PNG) et
+`screenmat_list_styles`. Rien n'est jamais
 écrasé, et tout chemin écrit reste sous la racine de sortie configurée.
 
 **La documentation complète vit dans [`public/docs/`](public/docs/)** — une seule
@@ -166,7 +170,9 @@ Seule exception : [Cloudflare Web
 Analytics](https://developers.cloudflare.com/web-analytics/), un compteur de
 pages sans cookie, sans identifiant et sans suivi inter-sites. Il compte des
 visites, rien d'autre. Le bloquer ne change rien au fonctionnement. Le CLI,
-l'API Node et le serveur MCP ne font eux aucun appel réseau.
+l'API Node et le serveur MCP ne font eux aucun appel réseau, sauf pour charger une
+URL qu'on leur demande explicitement de capturer — dans un navigateur, sur votre
+propre machine.
 
 ## Organisation du dépôt
 

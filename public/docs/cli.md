@@ -1,7 +1,7 @@
 # CLI
 
 ```text
-screenmat <image…> [options]     render one or more images
+screenmat <image|url…> [options] render images — a URL is captured first
 screenmat --spec scene.json      full scene, annotations included
 screenmat inspect <image>        dimensions and the layer coordinate frame
 screenmat styles                 saved styles
@@ -78,6 +78,43 @@ a single file, so pass one image with it; with several images, use `--out-dir`.
 
 Without either, the file is written to the **current directory** under
 `<basename>-screenmat.<format>` — the input's folder is not reused.
+
+## Capturing a URL
+
+A positional argument that starts with `http://` or `https://` is opened in a
+headless browser, captured, then rendered like any image.
+
+```bash
+# The page as it loads, framed in a browser window.
+pnpm cli https://example.com --frame browser
+
+# Your dev server, full height, in dark mode, once the app has mounted.
+pnpm cli http://localhost:5173 --full-page --color-scheme dark --wait '#app'
+```
+
+The browser runs on your machine: the installed Google Chrome first, otherwise a
+Chromium managed by Playwright. Capture needs `playwright-core`, an optional
+dependency; with neither browser present, install one with
+`pnpm exec playwright-core install chromium`.
+
+| Flag | Value | Default | Notes |
+| --- | --- | --- | --- |
+| `--viewport` | `<width>x<height>` | `1440x900` | CSS pixels. Width 320–3840, height 240–2160. |
+| `--density` | 1–3 | `2` | `deviceScaleFactor`: 2 keeps the capture sharp at export scale 3. |
+| `--full-page` | flag | off | The whole page height, not only the viewport. |
+| `--color-scheme` | `light`, `dark` | `light` | What the page reads in `prefers-color-scheme`. Not the window `--theme`. |
+| `--wait` | selector or ms | — | A CSS selector to wait for, or a delay in milliseconds (≤ 30000). |
+
+Unlike the render flags, capture values out of range are **rejected**, not
+clamped: a capture at the wrong size only shows once the file is open.
+
+The address bar shows the captured host and path (`example.com/pricing`) unless
+`--url` says otherwise, and the default output name follows the URL:
+`example-com-pricing-screenmat.webp`. Navigation and waiting each time out after
+30 seconds. A full page is cut so the capture stays under 100 million pixels.
+Chrome runs with its sandbox on; on Linux that needs unprivileged user
+namespaces (Ubuntu 24.04: `sysctl kernel.apparmor_restrict_unprivileged_userns=0`). `localhost` and private addresses are allowed — capturing your own
+dev server is the first use case. Only `http:` and `https:` are accepted.
 
 ## Rendering a scene
 
@@ -176,6 +213,12 @@ stdout is either the report or the JSON, so a pipeline can read stdout safely.
 | `--screen-ratio attend … — reçu « x »` | `--screen-ratio` outside the listed ratios. |
 | `--island-side attend left ou right — reçu « x »` | `--island-side` is neither `left` nor `right`. |
 | `--pan attend deux nombres…` | `--pan` is not `x,y`. |
+| `--full-page ne s'applique qu'à une URL http(s)` | A capture flag was passed with no URL among the arguments. |
+| `--viewport attend <largeur>x<hauteur>…` | `--viewport` is not `1440x900`-shaped. |
+| `width attend un entier entre 320 et 3840 — reçu « x »` | A capture option out of range — the field is named. |
+| `Impossible de capturer <url> : …` | Navigation failed, timed out, or a `--wait` selector never appeared. |
+| `… playwright-core n'est pas installé…` | The optional dependency is missing. |
+| `… aucun navigateur trouvé…` | Neither Chrome nor Playwright's Chromium is installed. |
 | `Scène illisible : ce n'est pas du JSON` | `--spec` file is not valid JSON. |
 | `Une scène a besoin d'au moins un shot…` | No entry in `shots` had a usable `input`. |
 

@@ -1,10 +1,10 @@
 # Node API
 
-The direct import — for a build script, a docs generator, a test fixture. Two
-functions, both in `cli/api.ts`.
+The direct import — for a build script, a docs generator, a test fixture. Three
+functions, all exported by `cli/api.ts`.
 
 ```ts
-import { render, inspect } from 'screenmat/node'
+import { render, inspect, capture } from 'screenmat/node'
 ```
 
 From a checkout, import the file: `import { render } from './cli/api.ts'`. Node
@@ -118,6 +118,40 @@ const y = screen.y + (640 - source.y) * k
 
 The reasoning behind that conversion is in [Coordinates](#coordinates).
 
+## capture
+
+```ts
+capture(url: string, options?: CaptureOptions): Promise<Buffer>
+```
+
+Opens `url` in a headless browser and resolves with a PNG — bytes `render`
+takes as `input` directly.
+
+```ts
+const { buffer } = await render({
+  input: await capture('http://localhost:5173', { fullPage: true, waitFor: '#app' }),
+  settings: { frame: 'browser', url: 'localhost:5173' },
+})
+```
+
+| Option | Type | Default | Notes |
+| --- | --- | --- | --- |
+| `width`, `height` | integer | `1440`, `900` | Viewport in CSS pixels: 320–3840 × 240–2160. |
+| `density` | number | `2` | `deviceScaleFactor`, 1–3. |
+| `fullPage` | boolean | `false` | The whole page height. |
+| `colorScheme` | `'light'`, `'dark'` | `'light'` | What the page reads in `prefers-color-scheme`. |
+| `waitFor` | string or number | — | A CSS selector to wait for, or a delay in ms (≤ 30000). |
+
+Requires `playwright-core` (an `optionalDependency`) and a browser: the
+installed Google Chrome first, otherwise Playwright's Chromium
+(`pnpm exec playwright-core install chromium`). Only `http:` and `https:` URLs
+are accepted; `localhost` is. Out-of-range options reject — they are not
+clamped. Navigation and waiting each time out after 30 seconds, a full page is
+cut under 100 million pixels, and concurrent calls run one after the other.
+
+The browser runs in a child process: Playwright reads browser globals when it
+loads, and this process already carries the DOM shim the engine needs.
+
 ## Also exported
 
 | Export | Use |
@@ -127,8 +161,8 @@ The reasoning behind that conversion is in [Coordinates](#coordinates).
 
 ## Errors
 
-Both functions reject with an `Error`. There is no silent failure and no partial
-result.
+All three functions reject with an `Error`. There is no silent failure and no
+partial result.
 
 | Message | Cause |
 | --- | --- |
@@ -138,6 +172,9 @@ result.
 | `Scène illisible : ce n'est pas du JSON` | A string was passed that is not valid JSON. |
 | `Une scène est un objet JSON` | The argument is not an object. |
 | `Une scène a besoin d'au moins un shot…` | No entry in `shots` had a usable `input`. |
+| `url attend une URL http(s) — reçu « x »` | `capture` was given something other than an `http:`/`https:` URL. |
+| `width attend un entier entre 320 et 3840 — reçu « x »` | A `capture` option out of range — the field is named. |
+| `Impossible de capturer <url> : …` | Navigation failed or timed out, a `waitFor` selector never appeared, `playwright-core` is missing, no browser was found, or the capture outgrew its time or size budget. |
 | `Style « x » introuvable dans <dir> — disponibles : …` | Unknown `style` name. |
 
 Out-of-range values do not throw: they are clamped. An unknown enum value falls

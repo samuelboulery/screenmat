@@ -33,12 +33,24 @@ describe('writeRoot', () => {
     expect(writeRoot(join(dir, 'shot.png'))).toBe(join(dir, 'ailleurs'))
     delete process.env.SCREENMAT_OUT
   })
+
+  it('prend le dossier courant quand rien n’est fourni — une capture d’URL', () => {
+    delete process.env.SCREENMAT_OUT
+    expect(writeRoot()).toBe(process.cwd())
+    process.env.SCREENMAT_OUT = join(dir, 'ailleurs')
+    expect(writeRoot()).toBe(join(dir, 'ailleurs'))
+    delete process.env.SCREENMAT_OUT
+  })
 })
 
 describe('resolveUnder', () => {
   it('accepte un nom simple et un sous-dossier', () => {
     expect(resolveUnder(dir, 'a.png')).toBe(join(dir, 'a.png'))
     expect(resolveUnder(dir, 'sous/a.png')).toBe(join(dir, 'sous', 'a.png'))
+  })
+
+  it('accepte la racine du disque comme racine d’écriture', () => {
+    expect(resolveUnder('/', 'a.png')).toBe('/a.png')
   })
 
   it('refuse ce qui sort de la racine', () => {

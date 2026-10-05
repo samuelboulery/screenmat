@@ -1,8 +1,8 @@
 # MCP server
 
 `cli/mcp.ts` speaks the Model Context Protocol over stdio. It is the door for an
-agent that has no shell — three tools, no logic of its own: each one calls
-`render()` or `inspect()`.
+agent that has no shell — four tools, no logic of its own: each one calls
+`render()`, `inspect()` or `capture()`.
 
 ## Connecting
 
@@ -26,11 +26,13 @@ Any MCP client works. The equivalent JSON configuration:
 
 | Variable | Effect |
 | --- | --- |
-| `SCREENMAT_OUT` | The only directory the server may write into. Default: the folder of the screenshot it was given. |
+| `SCREENMAT_OUT` | The only directory the server may write into. Default: the folder of the screenshot it was given — or, for `screenmat_capture`, the server's working directory. |
 | `SCREENMAT_STYLES` | Where saved styles live. Default: `~/.screenmat/styles`. |
 
 The server needs `@modelcontextprotocol/sdk`, `zod` and `@napi-rs/canvas` — all
 three are `optionalDependencies`, installed by a plain `pnpm install`.
+`screenmat_capture` also needs `playwright-core` (optional too) and a browser:
+the installed Google Chrome, or `pnpm exec playwright-core install chromium`.
 
 ## Writing safely
 
@@ -138,6 +140,40 @@ The full frame, with the pixel-to-fraction conversion, is in
 [Coordinates](#coordinates). This tool's description carries it too, so an agent
 reads it without being told.
 
+## screenmat_capture
+
+Opens a URL in a headless browser on the machine running the server and writes
+the capture as a PNG. That PNG is then the `input` of `screenmat_inspect` and
+`screenmat_render`: capture once, then place layers on and render the same pixels.
+
+| Parameter | Type | Notes |
+| --- | --- | --- |
+| `url` | string | Required. `http:` or `https:` only; `localhost` is allowed. |
+| `width`, `height` | integer | Optional. Viewport in CSS pixels: 320–3840 × 240–2160. Default `1440` × `900`. |
+| `density` | number | Optional, 1–3. `deviceScaleFactor`. Default `2`. |
+| `fullPage` | boolean | Optional. The whole page height. |
+| `colorScheme` | `light`, `dark` | Optional. What the page reads in `prefers-color-scheme`. Default `light`. |
+| `waitFor` | string or number | Optional. A CSS selector to wait for, or a delay in ms (≤ 30000). |
+| `output` | string | Optional. Must end in `.png` and not start with a dot. Default `<host-path>.png`, resolved under the write root. |
+
+Out-of-range values fail the call rather than being clamped. The URL and
+`output` are checked before any browser is launched. Captures run one at a time,
+in a sandboxed browser with no downloads, no service workers and no request
+outside `http:`/`https:` — redirects included.
+
+> **Warning** — `localhost` and private addresses are reachable, because
+> capturing your own dev server is the point. A model steered by a malicious
+> page or prompt can therefore capture an internal page and read it back. The
+> tool carries `openWorldHint`, so a client can ask before each call; set
+> `SCREENMAT_OUT` to keep the files it writes in one folder.
+
+```json
+{ "output": "/abs/path/example-com.png", "width": 2880, "height": 1800, "address": "example.com" }
+```
+
+`address` is the text to pass as `settings.url` to `screenmat_render`, so the
+browser frame shows the page that was captured.
+
 ## screenmat_list_styles
 
 No parameters. Lists the styles that were tuned by hand in the app and dropped
@@ -156,6 +192,8 @@ settings — see [Styles](#styles).
 ## A typical exchange
 
 ```text
+0. screenmat_capture         → only when starting from a URL
+                             → /project/docs/images/localhost-5173-login.png
 1. screenmat_list_styles     → is there a house style? → "docs"
 2. screenmat_inspect         → screen.y = 0.011, screen.h = 0.61125
 3. screenmat_render          → style "docs", one arrow, one redaction

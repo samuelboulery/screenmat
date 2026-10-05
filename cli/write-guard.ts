@@ -13,11 +13,13 @@ import { dirname, resolve, sep } from 'node:path'
 /**
  * Le dossier sous lequel le serveur accepte d'écrire. Par défaut celui du
  * screenshot fourni : « screenmat écrit à côté de la capture qu'on lui a
- * donnée ». `SCREENMAT_OUT` le déplace, comme `SCREENMAT_STYLES` le fait pour
+ * donnée ». Sans screenshot — une capture d'URL —, le dossier courant du
+ * serveur. `SCREENMAT_OUT` le déplace, comme `SCREENMAT_STYLES` le fait pour
  * les styles.
  */
-export function writeRoot(input: string): string {
-  return resolve(process.env.SCREENMAT_OUT ?? dirname(resolve(input)))
+export function writeRoot(input?: string): string {
+  const fallback = input === undefined ? process.cwd() : dirname(resolve(input))
+  return resolve(process.env.SCREENMAT_OUT ?? fallback)
 }
 
 /**
@@ -28,7 +30,9 @@ export function writeRoot(input: string): string {
  */
 export function resolveUnder(root: string, wanted: string): string {
   const target = resolve(root, wanted)
-  if (target !== root && !target.startsWith(root + sep)) {
+  // `/` finit déjà par le séparateur : `root + sep` donnerait `//`.
+  const prefix = root.endsWith(sep) ? root : root + sep
+  if (target !== root && !target.startsWith(prefix)) {
     throw new Error(
       `\`output\` doit rester sous ${root} — reçu ${target}. Passer un chemin relatif, ou élargir avec SCREENMAT_OUT.`,
     )

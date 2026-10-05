@@ -13,6 +13,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { z } from 'zod'
 import { basename } from 'node:path'
 import { inspect, render } from './api.ts'
+import { addressText, capture, captureName, captureTarget } from './capture.ts'
 import { resolveUnder, writeNew, writeRoot } from './write-guard.ts'
 import { STYLES_DIR, listStyles } from './styles-dir.ts'
 import { ANNOTATION_LIMITS } from '../src/lib/annotate.ts'
@@ -197,6 +198,46 @@ ${REPERE}`,
     },
   },
   async ({ input, settings: overrides, pan: position }) => json(await inspect(input, overrides, position)),
+)
+
+server.registerTool(
+  'screenmat_capture',
+  {
+    title: 'Capturer une page web',
+    // Charge une page arbitraire du réseau : un client peut demander confirmation.
+    annotations: { readOnlyHint: false, openWorldHint: true },
+    description: `Ouvre une URL dans Chrome headless et écrit sa capture en PNG. Renvoie son
+chemin et \`address\`, le texte à passer en settings.url à screenmat_render pour
+que la barre du navigateur affiche la page capturée. Ce PNG est ensuite l'input
+de screenmat_inspect et screenmat_render : capturer une fois, puis annoter et
+rendre les mêmes pixels.`,
+    inputSchema: {
+      url: z.string().max(2048).describe('URL http(s) à capturer. localhost accepté.'),
+      width: z.number().int().optional().describe('Viewport en px CSS, 320–3840. Défaut : 1440.'),
+      height: z.number().int().optional().describe('Viewport en px CSS, 240–2160. Défaut : 900.'),
+      density: z.number().optional().describe('deviceScaleFactor, 1–3. Défaut : 2.'),
+      fullPage: z.boolean().optional().describe('Toute la hauteur de la page.'),
+      colorScheme: z.enum(['light', 'dark']).optional().describe('prefers-color-scheme de la page.'),
+      waitFor: z
+        .union([z.string(), z.number()])
+        .optional()
+        .describe('Sélecteur CSS à attendre, ou délai en ms (≤ 30000).'),
+      output: z
+        .string()
+        .regex(/(^|\/)[^./][^/]*\.png$/i, 'un nom en .png, sans point initial')
+        .optional()
+        .describe('Chemin du PNG, en .png. Défaut : <hôte-chemin>.png.'),
+    },
+  },
+  async ({ url, output, ...options }) => {
+    // URL et chemin validés avant de lancer un navigateur pour rien.
+    const target = captureTarget(url)
+    const wanted = resolveUnder(writeRoot(), output ?? `${captureName(target)}.png`)
+    const png = await capture(url, options)
+    const path = await writeNew(wanted, png)
+    // Largeur et hauteur lues dans l'en-tête IHDR du PNG, sans le décoder.
+    return json({ output: path, width: png.readUInt32BE(16), height: png.readUInt32BE(20), address: addressText(target) })
+  },
 )
 
 server.registerTool(

@@ -275,3 +275,6 @@ export async function inspect(
 }
 
 export { BASE_WIDTH, supportsWebp }
+// La capture d'URL vit à part : elle ne dépend ni du shim ni du moteur, et
+// `render` reçoit son PNG comme n'importe quel buffer.
+export { capture, type CaptureOptions } from './capture.ts'

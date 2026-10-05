@@ -3,7 +3,8 @@
 > A local-first tool that turns a raw screenshot into a shareable visual:
 > rounded window frame, generative background derived from the screenshot's own
 > colours, annotations, redaction, multi-shot compositions, high-resolution
-> export. No backend, no account, no network call. The same rendering engine is
+> export. No backend, no account, no network call — except loading a page you
+> explicitly ask it to capture. The same rendering engine is
 > reachable from a Node API, a CLI, and an MCP server — that second door is what
 > this documentation covers.
 
@@ -15,13 +16,14 @@ concatenate all eight for the complete reference (roughly 2000 lines).
 - [Overview](/docs/overview.md): what the machine door is, requirements, a
   60-second quickstart in all three modes, and which settings each façade can
   reach.
-- [CLI](/docs/cli.md): the four command forms, every flag with its default and
-  bounds, output paths, the `--json` result shape, exit codes and error messages.
+- [CLI](/docs/cli.md): the four command forms, URL capture, every flag with its
+  default and bounds, output paths, the `--json` result shape, exit codes and error messages.
 - [MCP server](/docs/mcp.md): how to register the server, the write guard
-  (`SCREENMAT_OUT`, never overwrites), and the three tools — `screenmat_render`,
-  `screenmat_inspect`, `screenmat_list_styles` — with their full parameters.
-- [Node API](/docs/api.md): `render(spec)` and `inspect(input, settings, pan)`,
-  their result types, and the errors they throw.
+  (`SCREENMAT_OUT`, never overwrites), and the four tools — `screenmat_capture`,
+  `screenmat_render`, `screenmat_inspect`, `screenmat_list_styles` — with their
+  full parameters.
+- [Node API](/docs/api.md): `render(spec)`, `inspect(input, settings, pan)` and
+  `capture(url, options)`, their result types, and the errors they throw.
 - [Scene format](/docs/scene.md): the complete serialisable JSON — settings,
   composition, shots, layers, watermark, palette — every field with its default
   and its bounds, plus how validation clamps rather than rejects.

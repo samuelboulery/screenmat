@@ -88,6 +88,9 @@ pnpm cli shots/*.png --style docs --out-dir ./build
 
 # A full scene: annotations, redaction, composition.
 pnpm cli --spec scene.json --scale 3 -o hero@3x.webp
+
+# A URL, captured in a local headless Chrome, then framed.
+pnpm cli http://localhost:5173 --frame browser --full-page
 ```
 
 ```ts
@@ -109,9 +112,10 @@ await writeFile('docs/hero.webp', buffer)
 claude mcp add screenmat -- node /absolute/path/to/screenmat/cli/mcp.ts
 ```
 
-Three MCP tools: `screenmat_render` (writes a file, returns its path — never the
+Four MCP tools: `screenmat_render` (writes a file, returns its path — never the
 image bytes), `screenmat_inspect` (the layer coordinate frame, to call before
-placing an annotation) and `screenmat_list_styles`. Nothing is ever overwritten,
+placing an annotation), `screenmat_capture` (a URL, captured to a PNG) and
+`screenmat_list_styles`. Nothing is ever overwritten,
 and every written path is confined to the configured output root.
 
 **Full documentation lives in [`public/docs/`](public/docs/)** — one source,
@@ -163,7 +167,8 @@ The one exception is [Cloudflare Web
 Analytics](https://developers.cloudflare.com/web-analytics/), a page counter
 with no cookie, no identifier and no cross-site tracking. It counts visits and
 nothing else. Block it and the app is unaffected. The CLI, the Node API and the
-MCP server make no network call at all.
+MCP server make no network call, except to load a URL you explicitly ask them to
+capture — in a browser on your own machine.
 
 ## Project layout
 

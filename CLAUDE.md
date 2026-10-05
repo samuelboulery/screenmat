@@ -13,8 +13,9 @@ l'historique dans IndexedDB. Partager un style = exporter un fichier `.json`.
 
 **Tech stack :** React 19 · TypeScript strict · Vite 8 · Tailwind CSS 4 (config
 CSS-first) · Vitest. Deux dépendances runtime seulement : React et
-`lucide-react`. `cli/` en ajoute trois, en `optionalDependencies` et jamais
-importées par `src/` : `@napi-rs/canvas`, `@modelcontextprotocol/sdk`, `zod`.
+`lucide-react`. `cli/` en ajoute quatre, en `optionalDependencies` et jamais
+importées par `src/` : `@napi-rs/canvas`, `@modelcontextprotocol/sdk`, `zod`,
+`playwright-core` (capture d'URL seulement).
 
 ## Trois skills portent le détail — les invoquer avant d'écrire
 
@@ -114,7 +115,8 @@ pnpm mcp                # serveur MCP sur stdio
   ni identifiant).
   Aucune donnée d'image ne sort, aucune dépendance à un service distant pour le
   rendu : bloqué ou hors ligne, l'app fonctionne à l'identique, polices
-  comprises. `cli/` n'appelle rien du tout.
+  comprises. `cli/` n'appelle le réseau que pour charger l'URL qu'on lui demande
+  de capturer (`cli/capture.ts`), dans un navigateur local ; jamais pour rendre.
 - Les fonds macOS et Windows (`public/wallpapers/`) sont servis par la même
   origine et chargés à la demande, comme les polices ; hors ligne, un fond jamais
   affiché ne vient pas, et l'app le dit. Ces images sont © Apple et © Microsoft,

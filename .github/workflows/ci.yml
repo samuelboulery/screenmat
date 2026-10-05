@@ -23,4 +23,13 @@ jobs:
 
       - run: pnpm typecheck
 
+      # Les tests de capture d'URL exigent un navigateur en CI (ils ne sautent
+      # qu'en local) : le Chromium headless de Playwright, sans dépendre du
+      # Chrome que l'image du runner fournit ou non.
+      - run: pnpm exec playwright-core install --with-deps --only-shell chromium
+
+      # La capture lance Chromium avec son bac à sable, qui a besoin des user
+      # namespaces non privilégiés ; Ubuntu 24.04 les restreint par AppArmor.
+      - run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+
       - run: pnpm test

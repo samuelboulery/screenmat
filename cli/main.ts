@@ -11,6 +11,15 @@ import { parseArgs } from 'node:util'
 import { basename, extname, join } from 'node:path'
 import { readFile, writeFile } from 'node:fs/promises'
 import { STYLES_DIR, listStyles } from './styles-dir.ts'
+import {
+  addressText,
+  capture,
+  captureFlags,
+  captureName,
+  captureTarget,
+  type CaptureFlags,
+  type CaptureOptions,
+} from './capture.ts'
 import type { RenderResult } from './api.ts'
 import { SCREEN_RATIOS } from '../src/lib/screen.ts'
 import { SERIES } from '../src/lib/series.ts'
@@ -45,6 +54,11 @@ const OPTIONS = {
   'screen-ratio': { type: 'string' },
   'island-side': { type: 'string' },
   pan: { type: 'string' },
+  viewport: { type: 'string' },
+  density: { type: 'string' },
+  'full-page': { type: 'boolean' },
+  'color-scheme': { type: 'string' },
+  wait: { type: 'string' },
   json: { type: 'boolean' },
   help: { type: 'boolean', short: 'h' },
 } as const
@@ -58,7 +72,7 @@ function wrap(items: readonly string[], per: number, indent: string): string {
 
 const HELP = `screenmat — un screenshot brut, un visuel prêt à partager.
 
-  screenmat <image…> [options]     rendu direct
+  screenmat <image|url…> [options] rendu direct, une URL est d'abord capturée
   screenmat --spec scene.json      scène complète, annotations comprises
   screenmat inspect <image>        dimensions et repère des calques
   screenmat styles                 styles disponibles
@@ -91,6 +105,16 @@ ${wrap(SERIES.windows, 3, '                     ')}
       --pan <x,y>        part visible d'un screenshot rogné, 0 à 1 par axe
                          (défaut : 0.5,0.5)
       --json             résultat machine sur stdout
+
+Capture d'URL (Chrome installé, ou \`pnpm exec playwright-core install chromium\`)
+      --viewport <LxH>   taille de la fenêtre du navigateur (défaut : 1440x900)
+      --density 1|2|3    densité de pixels (défaut : 2)
+      --full-page        toute la hauteur de la page
+      --color-scheme light|dark
+                         ce que la page lit dans prefers-color-scheme
+      --wait <sélecteur|ms>
+                         attendre un élément, ou un délai, avant la capture
+      La barre d'adresse reprend l'URL capturée, sauf --url.
   -h, --help
 
 Les styles se règlent dans l'app web, s'exportent en .json et se déposent dans
@@ -199,6 +223,12 @@ async function main(): Promise<void> {
     return
   }
 
+  const { options, given } = captureFlags(flags as CaptureFlags)
+  // Un flag de capture sans URL ne ferait rien, en silence.
+  if (given.length > 0 && !positionals.some(isUrl)) {
+    throw new Error(`\`${given[0]}\` ne s'applique qu'à une URL http(s)`)
+  }
+
   const [command, ...rest] = positionals
 
   if (command === 'styles') {
@@ -222,14 +252,30 @@ async function main(): Promise<void> {
 
   const { render } = await engine()
   for (const input of positionals) {
+    const shot = await source(input, flags, options)
     const result = await render({
-      input,
-      settings: settingsFromFlags(flags),
+      input: shot.input,
+      settings: shot.settings,
       pan: panFromFlags(flags),
       ...(typeof flags.style === 'string' ? { style: flags.style } : {}),
       ...(typeof flags.scale === 'string' ? { scale: Number(flags.scale) } : {}),
     })
-    await emit(result, outputPath(input, flags, result.format), json)
+    await emit(result, outputPath(shot.name, flags, result.format), json)
+  }
+}
+
+const isUrl = (input: string): boolean => /^https?:\/\//i.test(input)
+
+/** Une image se lit telle quelle ; une URL se capture d'abord, et prête son
+ *  adresse à la barre du navigateur comme son nom au fichier de sortie. */
+async function source(input: string, flags: Flags, options: CaptureOptions) {
+  const settings = settingsFromFlags(flags)
+  if (!isUrl(input)) return { input, settings, name: input }
+  const url = captureTarget(input)
+  return {
+    input: await capture(input, options),
+    settings: { url: addressText(url), ...settings },
+    name: captureName(url),
   }
 }
 

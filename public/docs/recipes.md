@@ -140,6 +140,25 @@ shot, and each shot keeps its own coordinate frame.
 The watermark is drawn last, over everything. `size` is its width as a fraction
 of the canvas.
 
+## From a URL, in one call
+
+```ts
+import { capture, render } from 'screenmat/node'
+import { writeFile } from 'node:fs/promises'
+
+const { buffer } = await render({
+  input: await capture('http://localhost:5173', { waitFor: '#app' }),
+  settings: { frame: 'browser', url: 'localhost:5173', seed: 1 },
+  scale: 2,
+})
+
+await writeFile('docs/images/home.webp', buffer)
+```
+
+`capture` launches and closes its own browser. When the page needs a session —
+a login, a cookie, a state set up by clicking — drive Playwright yourself, as
+below, and hand over the screenshot.
+
 ## From a browser test, without touching disk
 
 ```ts

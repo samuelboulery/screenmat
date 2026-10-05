@@ -26,6 +26,8 @@ project, so a file produced here is identical to what the app would export.
 
 ## What you can drive
 
+- Capture a web page from its URL — your dev server included — in a headless
+  browser on your own machine.
 - Frame a screenshot (`browser`, `macbook`, `iphone`, or no frame at all).
 - Generate a deterministic background — from the screenshot colours (`mesh`, `gradient`, `solid`), the real macOS wallpapers from Big Sur to Golden Gate (`tahoe-dark`, `sonoma-light`, …), the Windows ones from XP to 11 (`windows-11-dark`, `windows-xp`, …), dithered (`bayer`, `halftone`, `atkinson`, `contours`, `truchet`, … eleven patterns) — or use an image.
 - Place annotations: text, badges, arrows, lines, boxes, ellipses.
@@ -41,6 +43,8 @@ project, so a file produced here is identical to what the app would export.
 - **`@napi-rs/canvas`**, which provides Canvas 2D outside the browser. It ships
   as an `optionalDependency`, together with `@modelcontextprotocol/sdk` and
   `zod` for the MCP server. The web bundle contains none of them.
+- **To capture a URL only:** `playwright-core`, also optional, and a browser —
+  the installed Google Chrome, or `pnpm exec playwright-core install chromium`.
 
 ```bash
 pnpm install
@@ -94,6 +98,7 @@ surface. When a setting is missing from the one you are using, the scene file
 | Multi-shot composition | `--spec` only | `layout` + `spread` | yes |
 | Watermark, frozen palette, background image | `--spec` only | no | yes |
 | Named style | yes | yes | yes |
+| Capture a URL | positional URL | `screenmat_capture` | `capture()` |
 
 ## Guarantees
 
@@ -101,7 +106,8 @@ surface. When a setting is missing from the one you are using, the scene file
   encoded in the browser (or in your own Node process). The web app loads a
   cookieless page counter — [Cloudflare Web
   Analytics](https://developers.cloudflare.com/web-analytics/) — and nothing
-  else; the CLI, the Node API and the MCP server make no network call at all.
+  else; the CLI, the Node API and the MCP server make no network call, except
+  to load a URL you explicitly ask them to capture.
 - **One rendering path.** Preview, web export, CLI and MCP all call
   `renderScene()`. The export matches the preview by construction.
 - **External JSON is validated field by field.** A scene produced by a model is

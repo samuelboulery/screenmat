@@ -84,7 +84,8 @@ await writeFile('docs/hero.png', buffer)
 
 ```bash
 # AI agent — register the MCP server once.
-claude mcp add screenmat -- node /absolute/path/to/screenmat/cli/mcp.ts
+claude mcp add screenmat -- pnpm dlx -p screenmat screenmat-mcp
+# From a clone: claude mcp add screenmat -- node /absolute/path/to/screenmat/cli/mcp.ts
 ```
 
 ## Which façade reaches what

@@ -110,6 +110,11 @@ le workflow joint le paquet à une release GitHub du tag, sous le nom fixe
 obligatoire : le job `release` échoue avant de créer quoi que ce soit s'il manque.
 Les docs reviennent aux formes npm ; `screenmat.tgz` reste joint à chaque release.
 
+**Publication de confiance (2026-10-05).** À partir de `0.1.2`, plus de jeton : npm
+fait confiance à `release.yml` par OIDC, en `npm stage publish` seulement. Chaque
+version attend une approbation 2FA du propriétaire avant d'être en ligne.
+`NPM_TOKEN` est retiré du dépôt.
+
 ## Vérification avant publication
 
 `cli/__tests__/package.test.ts`, lent, exécuté par `pnpm test` :

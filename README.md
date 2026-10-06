@@ -6,6 +6,7 @@
 A rounded macOS-style window, a background generated from the screenshot's own
 colours, annotations, redaction — rendered entirely in your browser.
 
+[![npm](https://img.shields.io/npm/v/screenmat.svg)](https://www.npmjs.com/package/screenmat)
 [![CI](https://github.com/samuelboulery/screenmat/actions/workflows/ci.yml/badge.svg)](https://github.com/samuelboulery/screenmat/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-7DE2FF.svg)](LICENSE)
 [![React 19](https://img.shields.io/badge/React-19-A378FF.svg)](https://react.dev)
@@ -205,10 +206,19 @@ pnpm dev          # dev server
 pnpm build        # tsc -b && vite build
 pnpm typecheck    # tsc -b, across app, node and cli
 pnpm test         # Vitest — pure logic plus headless CLI rendering
+pnpm build:cli    # the npm package, in dist-npm/
 ```
 
 Only two runtime dependencies: React and `lucide-react`. Colour handling, canvas
 work, zip writing and the UI components are all written by hand, on purpose.
+
+## Releases
+
+Bump `version` in `package.json`, merge to `main`, then push the tag `vX.Y.Z` on
+`main`. `release.yml` checks the tag, runs the tests, attaches `screenmat.tgz` to
+a GitHub release, and stages the version on npm through trusted publishing (OIDC,
+no token). It goes live once the owner approves it with 2FA — on npmjs.com or
+with `npm stage approve <id>`.
 
 ## Contributing
 

@@ -6,6 +6,7 @@
 Une fenêtre arrondie façon macOS, un fond génératif dérivé des couleurs du
 screenshot, des annotations, du floutage — le tout calculé dans le navigateur.
 
+[![npm](https://img.shields.io/npm/v/screenmat.svg)](https://www.npmjs.com/package/screenmat)
 [![CI](https://github.com/samuelboulery/screenmat/actions/workflows/ci.yml/badge.svg)](https://github.com/samuelboulery/screenmat/actions/workflows/ci.yml)
 [![Licence : MIT](https://img.shields.io/badge/Licence-MIT-7DE2FF.svg)](LICENSE)
 [![React 19](https://img.shields.io/badge/React-19-A378FF.svg)](https://react.dev)
@@ -209,11 +210,21 @@ pnpm dev          # serveur de dev
 pnpm build        # tsc -b && vite build
 pnpm typecheck    # tsc -b, sur l'app, node et cli
 pnpm test         # Vitest — logique pure et rendu headless du CLI
+pnpm build:cli    # le paquet npm, dans dist-npm/
 ```
 
 Deux dépendances runtime seulement : React et `lucide-react`. La couleur, le
 canvas, l'écriture de zip et les composants d'interface sont écrits à la main,
 volontairement.
+
+## Publier une version
+
+Monter `version` dans `package.json`, merger sur `main`, puis pousser le tag
+`vX.Y.Z` sur `main`. `release.yml` vérifie le tag, lance les tests, joint
+`screenmat.tgz` à une release GitHub et met la version en attente sur npm par
+publication de confiance (OIDC, sans jeton). Elle n'est en ligne qu'une fois
+approuvée par le propriétaire avec sa 2FA — sur npmjs.com ou par
+`npm stage approve <id>`.
 
 ## Contribuer
 
